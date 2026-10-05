@@ -4,6 +4,21 @@ All notable changes to this project are documented here.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the
 project uses [Semantic Versioning](https://semver.org).
 
+## [0.8.0] - 2026-10-05
+
+### Added
+
+- `docs/research/watch-references.md`: survey of existing watch displays, difference axes,
+  ideas rejected because they already exist (shadow gnomons, spirals, moiré, vernier, tactile
+  bumps, fluid) and the gaps the new concepts occupy.
+- Watch 004 — Shears: hour by the direction of a scissor pair, minutes by its opening angle,
+  seconds as a bead sliding along the handles.
+- Watch 005 — Turntable: the whole head turns on the strap and is the hour hand; read at a
+  fixed index on the strap.
+- Watch 006 — Cipher: nine scrambled rings that only form whole numerals in the window at twelve.
+- `WatchCase` `headRef` so a concept can move the head separately from lugs and strap.
+- Gallery categories Linkage, Kinetic, Experimental; refreshed thumbnails.
+
 ## [0.7.3] - 2026-10-05
 
 ### Fixed
