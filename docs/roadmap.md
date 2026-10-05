@@ -9,7 +9,7 @@ Status of the phases defined in `PROJECT_VISION.md` §15.
 | 0.3.0   | Phase 2 — First 3D watch (React Three Fiber)                           | done    |
 | 0.4.0   | Phase 3 — Viewer architecture + concept registry                       | done    |
 | 0.5.0   | Additional concepts (Rotating Numeral Ring, Eclipse) + Phase 4 gallery | done    |
-| 0.6.0   | Phase 5 — Customization                                                | planned |
+| 0.6.0   | Phase 5 — Customization                                                | done    |
 | 0.7.0   | Phase 6 — GLB export                                                   | planned |
 
 Later: Phase 7 (AI concept pipeline), Phase 8 (Blender assets).

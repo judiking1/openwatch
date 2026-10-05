@@ -4,6 +4,20 @@ All notable changes to this project are documented here.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the
 project uses [Semantic Versioning](https://semver.org).
 
+## [0.6.0] - 2026-10-05
+
+### Added
+
+- Concepts declare their customisable fields (`customization`); shared case / crystal /
+  strap fields live in `src/three/parts/fields.ts`.
+- Customize panel grouped by Case, Dial, Indicators, Crystal and Strap (colour pickers,
+  finish sliders, strap style).
+- Per-concept appearance overrides persisted in localStorage, with reset.
+
+### Changed
+
+- Side panel scrolls independently of the 3D stage; mobile layout stacks stage and panel.
+
 ## [0.5.0] - 2026-10-05
 
 ### Added
