@@ -1,0 +1,203 @@
+import { useFrame } from '@react-three/fiber'
+import { useEffect, useMemo, useRef } from 'react'
+import { ExtrudeGeometry, Shape, type Group } from 'three'
+import { Crystal } from '../../three/parts/Crystal'
+import { WatchCase } from '../../three/parts/WatchCase'
+import { createDialTexture, dialRotationZ } from '../../three/utils/dial'
+import { useTimeStore } from '../../stores/timeStore'
+import { clockTimeFromMs, dialPoint } from '../../utils/time'
+import type { ShearsAppearance } from './appearance'
+import { OPENING_PER_MINUTE, SECONDS_TRACK, shearsPose } from './shears'
+
+const DIAL_RADIUS = 100
+const HOUR_NUMERALS = 90
+const BLADE_LENGTH = 68
+const SCALE = { tickInner: 72, tickOuter: 76, labels: 81, extent: 86 }
+
+function drawDial(ctx: CanvasRenderingContext2D, dial: string, numerals: string) {
+  ctx.fillStyle = dial
+  ctx.fillRect(-DIAL_RADIUS, -DIAL_RADIUS, DIAL_RADIUS * 2, DIAL_RADIUS * 2)
+  ctx.fillStyle = numerals
+  ctx.strokeStyle = numerals
+  ctx.textAlign = 'center'
+  ctx.textBaseline = 'middle'
+  ctx.font = '600 9px Inter, system-ui, sans-serif'
+  for (let i = 0; i < 12; i++) {
+    const p = dialPoint(HOUR_NUMERALS, i * 30)
+    ctx.fillText(String(i === 0 ? 12 : i), p.x, p.y)
+    for (let q = 1; q < 4; q++) {
+      const a = dialPoint(HOUR_NUMERALS - 1, i * 30 + q * 7.5)
+      const b = dialPoint(HOUR_NUMERALS + 1, i * 30 + q * 7.5)
+      ctx.lineWidth = 0.5
+      ctx.beginPath()
+      ctx.moveTo(a.x, a.y)
+      ctx.lineTo(b.x, b.y)
+      ctx.stroke()
+    }
+  }
+}
+
+/** Minute scale carried by the blade pair: value m sits at ±1.5·m° from the bisector. */
+function drawCarrier(ctx: CanvasRenderingContext2D, color: string, tip: string) {
+  ctx.strokeStyle = color
+  ctx.fillStyle = color
+  ctx.textAlign = 'center'
+  ctx.textBaseline = 'middle'
+  ctx.font = '700 5.6px Inter, system-ui, sans-serif'
+  const half = OPENING_PER_MINUTE / 2
+  for (let m = 0; m <= 60; m++) {
+    for (const side of m === 0 ? [1] : [-1, 1]) {
+      const angle = side * m * half
+      const major = m % 5 === 0
+      const a = dialPoint(major ? SCALE.tickInner - 1.5 : SCALE.tickInner, angle)
+      const b = dialPoint(SCALE.tickOuter, angle)
+      ctx.lineWidth = major ? 0.55 : 0.3
+      ctx.beginPath()
+      ctx.moveTo(a.x, a.y)
+      ctx.lineTo(b.x, b.y)
+      ctx.stroke()
+      if (m % 10 === 0 && m > 0) {
+        const p = dialPoint(SCALE.labels, angle)
+        ctx.save()
+        ctx.translate(p.x, p.y)
+        ctx.rotate((angle * Math.PI) / 180)
+        ctx.fillText(String(m), 0, 0)
+        ctx.restore()
+      }
+    }
+  }
+  // Hour tip on the bisector.
+  ctx.fillStyle = tip
+  ctx.beginPath()
+  ctx.moveTo(0, -(SCALE.extent - 0.3))
+  ctx.lineTo(-2.6, -(SCALE.labels + 0.5))
+  ctx.lineTo(-1.1, -(SCALE.labels + 0.5))
+  ctx.lineTo(-1.1, -50)
+  ctx.lineTo(1.1, -50)
+  ctx.lineTo(1.1, -(SCALE.labels + 0.5))
+  ctx.lineTo(2.6, -(SCALE.labels + 0.5))
+  ctx.closePath()
+  ctx.fill()
+
+  // Seconds track along the handles (opposite the blades).
+  ctx.strokeStyle = color
+  ctx.lineWidth = 0.35
+  ctx.beginPath()
+  ctx.moveTo(0, SECONDS_TRACK.inner)
+  ctx.lineTo(0, SECONDS_TRACK.outer)
+  ctx.stroke()
+  for (const s of [0, 15, 30, 45, 60]) {
+    const y = SECONDS_TRACK.inner + ((SECONDS_TRACK.outer - SECONDS_TRACK.inner) * s) / 60
+    ctx.lineWidth = s % 30 === 0 ? 0.5 : 0.3
+    ctx.beginPath()
+    ctx.moveTo(-1.6, y)
+    ctx.lineTo(1.6, y)
+    ctx.stroke()
+  }
+}
+
+function bladeGeometry(): ExtrudeGeometry {
+  // Drawn pointing +y from the pivot, shank and ring on −y.
+  const s = new Shape()
+  s.moveTo(0, BLADE_LENGTH)
+  s.quadraticCurveTo(3.6, 30, 3.4, 6)
+  s.lineTo(2.2, -26)
+  s.lineTo(-2.2, -26)
+  s.lineTo(-3, 6)
+  s.quadraticCurveTo(-1.6, 40, 0, BLADE_LENGTH)
+  return new ExtrudeGeometry(s, {
+    depth: 1.1,
+    bevelEnabled: true,
+    bevelSize: 0.35,
+    bevelThickness: 0.35,
+    bevelSegments: 2,
+    curveSegments: 16,
+  })
+}
+
+function Blade({
+  groupRef,
+  z,
+  color,
+  geometry,
+}: {
+  groupRef: React.RefObject<Group | null>
+  z: number
+  color: string
+  geometry: ExtrudeGeometry
+}) {
+  return (
+    <group ref={groupRef} position={[0, 0, z]}>
+      <mesh geometry={geometry} castShadow>
+        <meshStandardMaterial color={color} metalness={0.85} roughness={0.25} />
+      </mesh>
+      <mesh position={[0, -33, 0.5]}>
+        <torusGeometry args={[7, 1.6, 12, 48]} />
+        <meshStandardMaterial color={color} metalness={0.85} roughness={0.25} />
+      </mesh>
+    </group>
+  )
+}
+
+/** Watch 004 — Shears: hour by direction, minutes by opening angle. */
+export function ShearsWatch({ appearance }: { appearance: ShearsAppearance }) {
+  const carrier = useRef<Group>(null)
+  const bladeA = useRef<Group>(null)
+  const bladeB = useRef<Group>(null)
+  const bead = useRef<Group>(null)
+
+  const { dialColor, numeralColor, scaleColor, hourTipColor } = appearance
+  const dial = useMemo(
+    () => createDialTexture(DIAL_RADIUS, (ctx) => drawDial(ctx, dialColor, numeralColor)),
+    [dialColor, numeralColor],
+  )
+  const carrierTexture = useMemo(
+    () => createDialTexture(SCALE.extent, (ctx) => drawCarrier(ctx, scaleColor, hourTipColor)),
+    [scaleColor, hourTipColor],
+  )
+  const blade = useMemo(() => bladeGeometry(), [])
+  useEffect(() => () => dial.dispose(), [dial])
+  useEffect(() => () => carrierTexture.dispose(), [carrierTexture])
+  useEffect(() => () => blade.dispose(), [blade])
+
+  useFrame(() => {
+    const p = shearsPose(clockTimeFromMs(useTimeStore.getState().now()))
+    if (carrier.current) carrier.current.rotation.z = dialRotationZ(p.bisector)
+    if (bladeA.current) bladeA.current.rotation.z = dialRotationZ(p.bladeA)
+    if (bladeB.current) bladeB.current.rotation.z = dialRotationZ(p.bladeB)
+    if (bead.current) bead.current.position.y = -p.secondRadius
+  })
+
+  return (
+    <WatchCase {...appearance} radius={DIAL_RADIUS}>
+      <mesh receiveShadow>
+        <circleGeometry args={[DIAL_RADIUS + 1, 128]} />
+        <meshStandardMaterial map={dial} roughness={0.85} />
+      </mesh>
+
+      <group ref={carrier} position={[0, 0, 0.4]}>
+        <mesh>
+          <circleGeometry args={[SCALE.extent, 128]} />
+          <meshStandardMaterial map={carrierTexture} transparent roughness={0.7} />
+        </mesh>
+        <group ref={bead} position={[0, -SECONDS_TRACK.inner, 6]}>
+          <mesh>
+            <sphereGeometry args={[2.2, 24, 16]} />
+            <meshStandardMaterial color={appearance.secondColor} roughness={0.35} />
+          </mesh>
+        </group>
+      </group>
+
+      <Blade groupRef={bladeA} z={1.4} color={appearance.bladeColor} geometry={blade} />
+      <Blade groupRef={bladeB} z={3} color={appearance.bladeColor} geometry={blade} />
+
+      {/* pivot screw */}
+      <mesh position={[0, 0, 5]} rotation={[Math.PI / 2, 0, 0]}>
+        <cylinderGeometry args={[3, 3, 1.6, 32]} />
+        <meshStandardMaterial color={appearance.caseColor} metalness={1} roughness={0.2} />
+      </mesh>
+
+      <Crystal crystalTint={appearance.crystalTint} crystalOpacity={appearance.crystalOpacity} />
+    </WatchCase>
+  )
+}
