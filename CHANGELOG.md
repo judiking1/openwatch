@@ -4,6 +4,17 @@ All notable changes to this project are documented here.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the
 project uses [Semantic Versioning](https://semver.org).
 
+## [0.7.2] - 2026-10-05
+
+### Added
+
+- GitHub Pages deployment workflow: every push to `main` runs lint, tests and build, then deploys.
+
+### Changed
+
+- Relative Vite `base` so the app works under `/openwatch/`.
+- Trunk-based workflow on `main` documented in `AGENTS.md`.
+
 ## [0.7.1] - 2026-10-05
 
 ### Fixed
