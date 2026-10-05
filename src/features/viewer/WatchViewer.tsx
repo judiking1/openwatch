@@ -1,5 +1,7 @@
-import { Suspense, useRef, useState } from 'react'
+import { Suspense, useRef } from 'react'
+import { resolveAppearance, useAppearanceStore } from '../../stores/appearanceStore'
 import type { WatchConcept } from '../../types/watch'
+import { CustomizationPanel } from '../customization/CustomizationPanel'
 import { TimeControls } from '../time/TimeControls'
 import { WatchInfo } from './WatchInfo'
 import { WatchStage, type WatchStageHandle } from './WatchStage'
@@ -14,8 +16,9 @@ type Props = {
 export function WatchViewer({ concept, bare = false }: Props) {
   const stage = useRef<WatchStageHandle>(null)
   const stageBox = useRef<HTMLDivElement>(null)
-  const [appearance] = useState(concept.defaultAppearance)
   const { Model, metadata } = concept
+  const overrides = useAppearanceStore((s) => s.overrides[metadata.id])
+  const appearance = resolveAppearance(concept.defaultAppearance, overrides)
 
   if (bare) {
     return (
@@ -45,6 +48,12 @@ export function WatchViewer({ concept, bare = false }: Props) {
       <aside className="panel">
         <WatchInfo meta={metadata} />
         <TimeControls />
+        <CustomizationPanel
+          fields={concept.customization}
+          appearance={appearance}
+          onChange={(key, value) => useAppearanceStore.getState().set(metadata.id, key, value)}
+          onReset={() => useAppearanceStore.getState().reset(metadata.id)}
+        />
       </aside>
     </div>
   )

@@ -1,3 +1,5 @@
+import type { CustomizationField } from '../../types/watch'
+import { caseFields } from '../../three/parts/fields'
 import type { CaseAppearance } from '../../three/parts/WatchCase'
 import type { CrystalAppearance } from '../../three/parts/Crystal'
 
@@ -21,3 +23,11 @@ export const defaultEclipseAppearance: EclipseAppearance = {
   discColor: '#121114',
   moonColor: '#1b1a1f',
 }
+
+export const eclipseFields: CustomizationField<EclipseAppearance>[] = [
+  ...caseFields,
+  { key: 'glowColor', label: 'Glow', group: 'Dial', control: { type: 'color' } },
+  { key: 'markerColor', label: 'Markers', group: 'Dial', control: { type: 'color' } },
+  { key: 'discColor', label: 'Discs', group: 'Indicators', control: { type: 'color' } },
+  { key: 'moonColor', label: 'Moon', group: 'Indicators', control: { type: 'color' } },
+]

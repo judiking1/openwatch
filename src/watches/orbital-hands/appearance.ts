@@ -1,3 +1,5 @@
+import type { CustomizationField } from '../../types/watch'
+import { caseFields } from '../../three/parts/fields'
 import type { CaseAppearance } from '../../three/parts/WatchCase'
 import type { CrystalAppearance } from '../../three/parts/Crystal'
 
@@ -25,3 +27,13 @@ export const defaultOrbitalHandsAppearance: OrbitalHandsAppearance = {
   secondColor: '#e0533d',
   trackColor: '#3a3d4a',
 }
+
+export const orbitalHandsFields: CustomizationField<OrbitalHandsAppearance>[] = [
+  ...caseFields,
+  { key: 'dialColor', label: 'Background', group: 'Dial', control: { type: 'color' } },
+  { key: 'numeralColor', label: 'Numerals', group: 'Dial', control: { type: 'color' } },
+  { key: 'trackColor', label: 'Orbit tracks', group: 'Dial', control: { type: 'color' } },
+  { key: 'hourColor', label: 'Hour', group: 'Indicators', control: { type: 'color' } },
+  { key: 'minuteColor', label: 'Minute', group: 'Indicators', control: { type: 'color' } },
+  { key: 'secondColor', label: 'Second', group: 'Indicators', control: { type: 'color' } },
+]

@@ -1,3 +1,5 @@
+import type { CustomizationField } from '../../types/watch'
+import { caseFields } from '../../three/parts/fields'
 import type { CaseAppearance } from '../../three/parts/WatchCase'
 import type { CrystalAppearance } from '../../three/parts/Crystal'
 
@@ -23,3 +25,12 @@ export const defaultNumeralRingAppearance: NumeralRingAppearance = {
   beamColor: '#7fd1c7',
   secondColor: '#e0533d',
 }
+
+export const numeralRingFields: CustomizationField<NumeralRingAppearance>[] = [
+  ...caseFields,
+  { key: 'dialColor', label: 'Background', group: 'Dial', control: { type: 'color' } },
+  { key: 'hourRingColor', label: 'Hour numerals', group: 'Dial', control: { type: 'color' } },
+  { key: 'minuteRingColor', label: 'Minute numerals', group: 'Dial', control: { type: 'color' } },
+  { key: 'beamColor', label: 'Beam', group: 'Indicators', control: { type: 'color' } },
+  { key: 'secondColor', label: 'Seconds dot', group: 'Indicators', control: { type: 'color' } },
+]

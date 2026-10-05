@@ -22,3 +22,17 @@ describe('concept registry', () => {
     expect(getConcept('nope')).toBeUndefined()
   })
 })
+
+describe('concept customization', () => {
+  it('only exposes keys that exist in the default appearance', () => {
+    for (const c of concepts) {
+      for (const field of c.customization) {
+        expect(c.defaultAppearance, `${c.metadata.id}.${field.key}`).toHaveProperty(field.key)
+      }
+    }
+  })
+
+  it('exposes at least three customisable properties per concept', () => {
+    for (const c of concepts) expect(c.customization.length).toBeGreaterThanOrEqual(3)
+  })
+})

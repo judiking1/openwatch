@@ -37,7 +37,23 @@ export type WatchModelProps<A> = {
 export type WatchConcept<A extends object = Appearance> = {
   metadata: WatchMetadata
   defaultAppearance: A
+  /** The parameters this concept declares safe to customise. */
+  customization: CustomizationField<A>[]
   Model: ComponentType<WatchModelProps<A>>
+}
+
+export type CustomizationGroup = 'Case' | 'Dial' | 'Indicators' | 'Crystal' | 'Strap'
+
+export type CustomizationControl =
+  | { type: 'color' }
+  | { type: 'range'; min: number; max: number; step: number }
+  | { type: 'select'; options: Array<{ value: string; label: string }> }
+
+export type CustomizationField<A extends object = Appearance> = {
+  key: keyof A & string
+  label: string
+  group: CustomizationGroup
+  control: CustomizationControl
 }
 
 /** Helper that keeps the concept fully typed at definition site and erases it for the registry. */
