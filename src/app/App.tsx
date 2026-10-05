@@ -48,7 +48,7 @@ export function App() {
       {!bare && (
         <header className="topbar">
           <a href="#/" className="brand">
-            Orbital Watch Lab
+            Orbital Watch Lab <span className="version">v{__APP_VERSION__}</span>
           </a>
           <nav>
             <a href="#/">Exhibition</a>

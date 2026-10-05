@@ -13,3 +13,17 @@ Status of the phases defined in `PROJECT_VISION.md` §15.
 | 0.7.0   | Phase 6 — GLB export                                                   | done   |
 
 Later: Phase 7 (AI concept pipeline), Phase 8 (Blender assets).
+
+## MVP status (PROJECT_VISION.md §18)
+
+All MVP criteria are met as of 0.7.x: three selectable concepts, realtime 3D viewer with
+orbit/zoom, live and manual time, more than three customisable properties per concept, and
+new concepts plug in through the registry. `1.0.0` is reserved for a human review of the MVP.
+
+## Next candidates
+
+- Visual review pass with real devices; tune lighting and strap geometry.
+- Concept 004+ (ideas: wandering hours, sliding scales, split orbit, layered transparent discs).
+- Crescent-shaped minute aperture for Eclipse; readability study for Fixed Beam numerals.
+- Share links that encode appearance as well as time.
+- Phase 7 — AI-assisted concept pipeline (concept document template, review checklist).

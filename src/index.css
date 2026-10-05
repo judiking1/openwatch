@@ -102,6 +102,7 @@ input[type='range'] {
 
 .topbar nav a {
   color: var(--text-dim);
+  white-space: nowrap;
 }
 
 .topbar nav a:hover {
@@ -210,6 +211,14 @@ input[type='range'] {
 
   .gallery {
     padding: 24px 16px 48px;
+  }
+
+  .topbar {
+    padding: 12px 16px;
+  }
+
+  .version {
+    display: none;
   }
 
   .panel {
