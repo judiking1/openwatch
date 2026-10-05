@@ -4,6 +4,17 @@ All notable changes to this project are documented here.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the
 project uses [Semantic Versioning](https://semver.org).
 
+## [0.3.0] - 2026-10-05
+
+### Added
+
+- Three.js, React Three Fiber and drei.
+- Procedural 3D Orbital Hands watch: case, bezel, crown, lugs, curved strap, crystal,
+  canvas-textured dial with fixed numerals, orbit tracks and three extruded orbiting indicators.
+- Offline studio lighting (procedural light formers, no HDR download).
+- 3D viewer at `#/watch/orbital-hands`: orbit camera, zoom, reset view, fullscreen,
+  live / manual / accelerated time and concept metadata panel.
+
 ## [0.2.0] - 2026-10-05
 
 ### Added
