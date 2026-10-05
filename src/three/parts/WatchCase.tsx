@@ -1,4 +1,5 @@
-import type { ReactNode } from 'react'
+import type { ReactNode, Ref } from 'react'
+import type { Group } from 'three'
 
 export type CaseAppearance = {
   caseColor: string
@@ -11,6 +12,11 @@ type Props = CaseAppearance & {
   /** Inner (dial-side) radius of the case opening, in dial units. */
   radius?: number
   children?: ReactNode
+  /**
+   * The head (case, bezel, crown and everything inside) is wrapped in this group,
+   * separate from the lugs and strap, so a concept can move the head itself.
+   */
+  headRef?: Ref<Group>
 }
 
 type StrapSegment = { y: number; z: number; tilt: number; length: number }
@@ -62,6 +68,7 @@ export function WatchCase({
   strapStyle,
   radius = 100,
   children,
+  headRef,
 }: Props) {
   const metal = <meshStandardMaterial color={caseColor} metalness={1} roughness={caseRoughness} />
   const outer = radius + 14
@@ -69,31 +76,34 @@ export function WatchCase({
 
   return (
     <group>
-      {/* case middle */}
-      <mesh position={[0, 0, -9]} rotation={[Math.PI / 2, 0, 0]} castShadow receiveShadow>
-        <cylinderGeometry args={[outer, outer - 3, 16, 128]} />
-        {metal}
-      </mesh>
-      {/* bezel */}
-      <mesh position={[0, 0, 3]}>
-        <torusGeometry args={[radius + 6, 7, 32, 128]} />
-        {metal}
-      </mesh>
-      {/* caseback */}
-      <mesh position={[0, 0, -18]} rotation={[Math.PI / 2, 0, 0]}>
-        <cylinderGeometry args={[outer - 8, outer - 4, 4, 96]} />
-        {metal}
-      </mesh>
-      {/* crown */}
-      <group position={[outer + 4, 0, -6]} rotation={[0, 0, Math.PI / 2]}>
-        <mesh>
-          <cylinderGeometry args={[8, 8, 12, 32]} />
+      <group ref={headRef}>
+        {/* case middle */}
+        <mesh position={[0, 0, -9]} rotation={[Math.PI / 2, 0, 0]} castShadow receiveShadow>
+          <cylinderGeometry args={[outer, outer - 3, 16, 128]} />
           {metal}
         </mesh>
-        <mesh position={[0, -7, 0]}>
-          <cylinderGeometry args={[4, 4, 4, 24]} />
+        {/* bezel */}
+        <mesh position={[0, 0, 3]}>
+          <torusGeometry args={[radius + 6, 7, 32, 128]} />
           {metal}
         </mesh>
+        {/* caseback */}
+        <mesh position={[0, 0, -18]} rotation={[Math.PI / 2, 0, 0]}>
+          <cylinderGeometry args={[outer - 8, outer - 4, 4, 96]} />
+          {metal}
+        </mesh>
+        {/* crown */}
+        <group position={[outer + 4, 0, -6]} rotation={[0, 0, Math.PI / 2]}>
+          <mesh>
+            <cylinderGeometry args={[8, 8, 12, 32]} />
+            {metal}
+          </mesh>
+          <mesh position={[0, -7, 0]}>
+            <cylinderGeometry args={[4, 4, 4, 24]} />
+            {metal}
+          </mesh>
+        </group>
+        {children}
       </group>
       {/* lugs */}
       {[-1, 1].map((sy) =>
@@ -115,7 +125,6 @@ export function WatchCase({
           ))}
         </group>
       ))}
-      {children}
     </group>
   )
 }
