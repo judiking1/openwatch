@@ -4,6 +4,16 @@ All notable changes to this project are documented here.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the
 project uses [Semantic Versioning](https://semver.org).
 
+## [0.5.0] - 2026-10-05
+
+### Added
+
+- Watch 002 — Fixed Beam: numerals rotate beneath a fixed luminous beam.
+- Watch 003 — Eclipse: time read through apertures in rotating dark discs over a glowing face.
+- Exhibition gallery (home) with thumbnails, metadata badges and category filters.
+- `?t=HH:MM:SS` freezes the clock; `&bare` renders only the 3D stage.
+- `scripts/capture-thumbnails.mjs` to regenerate gallery thumbnails.
+
 ## [0.4.0] - 2026-10-05
 
 ### Changed
