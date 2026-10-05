@@ -1,31 +1,37 @@
 import { Path, Shape } from 'three'
-import { dialPoint3 } from '../../three/utils/dial'
+import { degToRad } from '../../utils/time'
 
 export const ECLIPSE = {
   hourDisc: { inner: 20, outer: 72, apertureRadius: 58, apertureSize: 11 },
-  minuteDisc: { inner: 74, outer: 100, apertureRadius: 88, apertureSize: 8 },
+  minuteDisc: { inner: 74, outer: 100, window: { inner: 79, outer: 98, halfAngle: 18 } },
+  minuteScale: { numeralRadius: 85, tickInner: 92, tickOuter: 97 },
   sun: 12,
   moon: { radius: 10, orbit: 7 },
 } as const
 
-function circlePath(path: Path, x: number, y: number, r: number, clockwise: boolean) {
-  path.absarc(x, y, r, 0, Math.PI * 2, clockwise)
-  return path
+/** Dial angle (clockwise from 12) → math angle (anticlockwise from +x) in radians. */
+function mathAngle(dialDeg: number): number {
+  return degToRad(90 - dialDeg)
 }
 
-/**
- * Annulus with one round aperture, drawn with the aperture at 12 o'clock
- * (rotate the mesh by the hand angle to place it).
- */
-export function apertureDiscShape(
-  inner: number,
-  outer: number,
-  apertureRadius: number,
-  apertureSize: number,
-): Shape {
-  const shape = circlePath(new Shape(), 0, 0, outer, false) as Shape
-  shape.holes.push(circlePath(new Path(), 0, 0, inner, true))
-  const [x, y] = dialPoint3(apertureRadius, 0)
-  shape.holes.push(circlePath(new Path(), x, y, apertureSize, true))
+export function circleHole(radius: number, size: number): Path {
+  return new Path().absarc(0, radius, size, 0, Math.PI * 2, true)
+}
+
+/** Annular-sector window centred on 12 o'clock. */
+export function sectorHole(inner: number, outer: number, halfAngleDeg: number): Path {
+  const a0 = mathAngle(-halfAngleDeg)
+  const a1 = mathAngle(halfAngleDeg)
+  const p = new Path()
+  p.absarc(0, 0, outer, a0, a1, true)
+  p.absarc(0, 0, inner, a1, a0, false)
+  p.closePath()
+  return p
+}
+
+/** Annulus with a centre hole plus the given aperture(s), drawn at 12 o'clock. */
+export function apertureDiscShape(inner: number, outer: number, ...apertures: Path[]): Shape {
+  const shape = new Shape().absarc(0, 0, outer, 0, Math.PI * 2, false) as Shape
+  shape.holes.push(new Path().absarc(0, 0, inner, 0, Math.PI * 2, true), ...apertures)
   return shape
 }

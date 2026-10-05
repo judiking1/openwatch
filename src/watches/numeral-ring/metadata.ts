@@ -9,9 +9,10 @@ export const numeralRingMetadata: WatchMetadata = {
     'A rotating numeral ring interpretation. Nothing on this dial points at the time: a single luminous beam is fixed at twelve, and the numerals themselves rotate underneath it. An inner ring carries the hours, an outer ring the minutes, and a small central disc the seconds.',
   howToRead: [
     'Read every value at the beam at twelve o’clock.',
-    'Inner ring: the hour numeral under the beam (between two numerals = between hours).',
+    'Inner ring: the hour numeral centred under the beam.',
     'Outer ring: the minute value under the beam.',
-    'Centre disc: the red dot passes under the beam once a minute.',
+    'Centre disc: the seconds value under the beam.',
+    'Rings turn anticlockwise so values advance clockwise past the beam; the hour ring jumps on the hour.',
   ],
   experimental:
     'Inverts the moving part: the scale moves, the index does not. Mechanically close to existing disc displays; the experiment is in making the whole dial the moving part.',

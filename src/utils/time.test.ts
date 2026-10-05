@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { dialPoint, formatClock, handAngles, type ClockTime } from './time'
+import { dialPoint, formatClock, handAngles, jumpHourAngle, type ClockTime } from './time'
 
 const t = (hours: number, minutes = 0, seconds = 0, milliseconds = 0): ClockTime => ({
   hours,
@@ -55,5 +55,24 @@ describe('dialPoint', () => {
 describe('formatClock', () => {
   it('zero-pads', () => {
     expect(formatClock(t(7, 5, 3))).toBe('07:05:03')
+  })
+})
+
+describe('jumpHourAngle', () => {
+  it('holds the whole hour for the full hour', () => {
+    expect(jumpHourAngle(t(7, 0, 1))).toBe(210)
+    expect(jumpHourAngle(t(7, 45, 30))).toBe(210)
+    expect(jumpHourAngle(t(7, 59, 59, 999))).toBe(210)
+  })
+
+  it('eases from the previous hour right after the hour', () => {
+    expect(jumpHourAngle(t(8, 0, 0, 0))).toBe(210)
+    expect(jumpHourAngle(t(8, 0, 0, 300))).toBe(225)
+    expect(jumpHourAngle(t(8, 0, 0, 600))).toBe(240)
+  })
+
+  it('handles midnight and noon', () => {
+    expect(jumpHourAngle(t(0, 30))).toBe(0)
+    expect(jumpHourAngle(t(12, 30))).toBe(0)
   })
 })

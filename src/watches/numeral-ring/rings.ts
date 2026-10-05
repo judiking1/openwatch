@@ -1,11 +1,13 @@
-import type { HandAngles } from '../../utils/time'
+import { handAngles, jumpHourAngle, type ClockTime, type HandAngles } from '../../utils/time'
 
 /**
- * The beam is fixed at 0°. Each ring is rotated by minus the hand angle, so the
- * mark that represents the current value lands under the beam.
+ * The beam is fixed at 0°. Each ring is rotated by minus the value's angle, so the
+ * mark for the current value lands under the beam. Hours jump (one numeral sits
+ * centred under the beam for the whole hour) so 7:45 never reads as "8".
  */
-export function ringRotations(angles: HandAngles): HandAngles {
-  return { hour: -angles.hour, minute: -angles.minute, second: -angles.second }
+export function ringRotations(t: ClockTime): HandAngles {
+  const a = handAngles(t)
+  return { hour: -jumpHourAngle(t), minute: -a.minute, second: -a.second }
 }
 
 /** Where a mark printed at `markAngle` on a ring ends up after rotating the ring. */

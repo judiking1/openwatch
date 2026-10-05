@@ -54,3 +54,14 @@ export function formatClock(t: ClockTime): string {
   const pad = (n: number) => String(n).padStart(2, '0')
   return `${pad(t.hours)}:${pad(t.minutes)}:${pad(t.seconds)}`
 }
+
+/**
+ * Jumping-hour angle: stays on the whole hour for the full hour, then steps to the
+ * next one, easing over `jumpMs` right after the hour so the change is visible.
+ */
+export function jumpHourAngle(t: ClockTime, jumpMs = 600): number {
+  const msIntoHour = ((t.minutes * 60 + t.seconds) * 1000 + t.milliseconds) % 3_600_000
+  const p = Math.min(1, msIntoHour / jumpMs)
+  const eased = p * p * (3 - 2 * p)
+  return ((t.hours % 12) - 1 + eased) * 30
+}

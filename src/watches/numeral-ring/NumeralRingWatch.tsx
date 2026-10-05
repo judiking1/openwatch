@@ -5,13 +5,14 @@ import { Crystal } from '../../three/parts/Crystal'
 import { WatchCase } from '../../three/parts/WatchCase'
 import { createDialTexture, dialRotationZ } from '../../three/utils/dial'
 import { useTimeStore } from '../../stores/timeStore'
-import { clockTimeFromMs, degToRad, dialPoint, handAngles } from '../../utils/time'
+import { clockTimeFromMs, degToRad, dialPoint } from '../../utils/time'
 import type { NumeralRingAppearance } from './appearance'
 import { ringRotations } from './rings'
 
 const DIAL_RADIUS = 100
 const HOUR_RING = { inner: 26, outer: 60, text: 46 }
 const MINUTE_RING = { inner: 62, outer: 99, text: 82 }
+const SECOND_DISC = { outer: 24, text: 15 }
 
 /** Numerals drawn tangentially so the one at 12 o'clock reads upright. */
 function drawRingLabels(
@@ -58,6 +59,23 @@ function drawMinuteRing(ctx: CanvasRenderingContext2D, color: string) {
 }
 
 /** RingGeometry UVs span the ring's outer radius, so the texture extent must match it. */
+function drawSecondDisc(ctx: CanvasRenderingContext2D, color: string) {
+  const labels = Array.from({ length: 6 }, (_, i) => String(i * 10).padStart(2, '0'))
+  drawRingLabels(ctx, labels, SECOND_DISC.text, '600 5px Inter, system-ui, sans-serif', color)
+  ctx.strokeStyle = color
+  for (let i = 0; i < 60; i++) {
+    if (i % 10 === 0) continue
+    const major = i % 5 === 0
+    const a = dialPoint(SECOND_DISC.outer - (major ? 4 : 2.5), i * 6)
+    const b = dialPoint(SECOND_DISC.outer - 0.8, i * 6)
+    ctx.lineWidth = major ? 0.7 : 0.4
+    ctx.beginPath()
+    ctx.moveTo(a.x, a.y)
+    ctx.lineTo(b.x, b.y)
+    ctx.stroke()
+  }
+}
+
 function useRingTexture(
   draw: (ctx: CanvasRenderingContext2D, color: string) => void,
   color: string,
@@ -83,9 +101,10 @@ export function NumeralRingWatch({ appearance }: { appearance: NumeralRingAppear
     appearance.minuteRingColor,
     MINUTE_RING.outer,
   )
+  const secondTexture = useRingTexture(drawSecondDisc, appearance.secondColor, SECOND_DISC.outer)
 
   useFrame(() => {
-    const r = ringRotations(handAngles(clockTimeFromMs(useTimeStore.getState().now())))
+    const r = ringRotations(clockTimeFromMs(useTimeStore.getState().now()))
     if (hourRing.current) hourRing.current.rotation.z = dialRotationZ(r.hour)
     if (minuteRing.current) minuteRing.current.rotation.z = dialRotationZ(r.minute)
     if (secondDisc.current) secondDisc.current.rotation.z = dialRotationZ(r.second)
@@ -125,18 +144,18 @@ export function NumeralRingWatch({ appearance }: { appearance: NumeralRingAppear
       {/* seconds disc */}
       <group ref={secondDisc} position={[0, 0, 2.5]}>
         <mesh>
-          <circleGeometry args={[HOUR_RING.inner - 2, 64]} />
+          <circleGeometry args={[SECOND_DISC.outer, 64]} />
           <meshStandardMaterial color={appearance.caseColor} metalness={0.9} roughness={0.35} />
         </mesh>
-        <mesh position={[0, 16, 0.2]}>
-          <circleGeometry args={[2.6, 32]} />
-          <meshStandardMaterial color={appearance.secondColor} />
+        <mesh position={[0, 0, 0.1]}>
+          <circleGeometry args={[SECOND_DISC.outer, 64]} />
+          <meshStandardMaterial map={secondTexture} transparent roughness={0.6} />
         </mesh>
       </group>
 
       {/* fixed luminous beam at twelve */}
-      <mesh position={[0, 61, 4]}>
-        <planeGeometry args={[13, 76]} />
+      <mesh position={[0, 53, 4]}>
+        <planeGeometry args={[13, 92]} />
         <meshBasicMaterial
           color={appearance.beamColor}
           transparent
@@ -145,8 +164,8 @@ export function NumeralRingWatch({ appearance }: { appearance: NumeralRingAppear
         />
       </mesh>
       {[-1, 1].map((side) => (
-        <mesh key={side} position={[side * 6.8, 61, 4.2]}>
-          <boxGeometry args={[0.6, 76, 0.6]} />
+        <mesh key={side} position={[side * 6.8, 53, 4.2]}>
+          <boxGeometry args={[0.6, 92, 0.6]} />
           <meshBasicMaterial color={appearance.beamColor} />
         </mesh>
       ))}

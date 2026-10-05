@@ -8,9 +8,9 @@ export const eclipseMetadata: WatchMetadata = {
   description:
     'A glowing dial almost completely covered by two dark rotating discs. There are no hands: each disc has a single round aperture, and time is read from what the light reveals. At the centre a small moon circles a sun, eclipsing it differently every second.',
   howToRead: [
-    'Inner disc: the hour marker glowing through the round aperture.',
-    'Outer ring: the minute tick visible through the outer aperture.',
-    'Centre: the moon’s position around the sun shows the seconds.',
+    'Inner disc: the hour numeral framed by the round aperture (it jumps on the hour).',
+    'Outer ring: read the minute at the small notch in the curved window; the nearest five-minute numeral is always visible.',
+    'Centre: the direction of the moon against the tick ring around the sun shows the seconds.',
   ],
   experimental:
     'Time as changing negative space. Reading relies on light and occlusion rather than any pointing element.',

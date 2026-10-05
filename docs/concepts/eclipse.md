@@ -11,10 +11,12 @@ hands. Each disc has one round aperture; you read the time from what the light r
 
 ## How to read it
 
-- Inner disc (hours) — the hour numeral glowing through the aperture.
-- Outer ring (minutes) — the minute tick visible through the smaller aperture.
-- Centre — a dark moon orbits a small sun once a minute; its position shows the seconds
-  and the overlap changes continuously like an eclipse.
+- Inner disc (hours) — a round aperture frames one whole hour numeral. The disc **jumps**
+  on the hour; a sweeping aperture showed half of the next numeral and 7:45 read as "8".
+- Outer ring (minutes) — a curved ±18° window shows the minute ticks and at least one
+  five-minute numeral; read the value at the notch in the middle of the window.
+- Centre — a dark moon orbits a small sun once a minute; its direction against the tick
+  ring around the sun shows the seconds and the overlap changes like an eclipse.
 
 ## Geometry
 
@@ -23,5 +25,4 @@ the disc is rotated by the hand angle. Constants live in `src/watches/eclipse/ge
 
 ## Open questions
 
-- A crescent-shaped minute aperture could read more like a moon phase.
 - Is the seconds eclipse readable enough, or purely decorative?

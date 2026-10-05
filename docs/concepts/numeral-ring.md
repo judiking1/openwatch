@@ -13,9 +13,12 @@ the dial points anywhere. The numerals rotate beneath the beam instead.
 
 Everything is read at the beam.
 
-- Inner ring — hour numerals 1–12. Between two numerals means between hours.
-- Outer ring — minutes 00–55 with minute ticks.
-- Centre disc — a red dot passes under the beam once per minute.
+- Inner ring — hour numerals 1–12. The ring **jumps** on the hour so one numeral sits centred
+  under the beam for the whole hour (a sweeping ring made 7:45 read as "8").
+- Outer ring — minutes 00–55 with minute ticks, sweeping continuously.
+- Centre disc — seconds 00–50 with ticks, sweeping under the beam.
+
+Rings turn anticlockwise so values advance clockwise past the beam.
 
 ## Time math
 
