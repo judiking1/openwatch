@@ -1,0 +1,32 @@
+:root {
+  --bg: #0e0f13;
+  --panel: #171920;
+  --panel-border: #262935;
+  --text: #e8e4da;
+  --text-dim: #8b8a86;
+  --accent: #c9a96e;
+  --danger: #e0533d;
+  color-scheme: dark;
+  font-family:
+    'Inter',
+    system-ui,
+    -apple-system,
+    'Segoe UI',
+    sans-serif;
+  color: var(--text);
+  background: var(--bg);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  background: var(--bg);
+}
+
+.app-shell {
+  padding: 24px;
+}
