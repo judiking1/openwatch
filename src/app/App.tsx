@@ -1,55 +1,63 @@
-import { lazy, Suspense } from 'react'
+import { lazy, Suspense, useEffect } from 'react'
+import { Gallery } from '../features/gallery/Gallery'
 import { OrbitalHandsPrototype } from '../features/prototype/OrbitalHandsPrototype'
 import { concepts, getConcept } from '../watches/registry'
-import { useHashRoute } from './useHashRoute'
+import { useTimeStore } from '../stores/timeStore'
+import { parseRoute, useHashRoute } from './useHashRoute'
 
 const WatchViewer = lazy(() => import('../features/viewer/WatchViewer'))
 
-function Page({ route }: { route: string }) {
-  if (route === '/lab/orbital-hands-2d') return <OrbitalHandsPrototype />
+/** `?t=HH:MM:SS` freezes the clock at that time (handy for screenshots and sharing). */
+function applyTimeParam(params: URLSearchParams) {
+  const t = params.get('t')
+  if (!t) return
+  const [h = 0, m = 0, s = 0] = t.split(':').map(Number)
+  const d = new Date()
+  d.setHours(h, m, s, 0)
+  const store = useTimeStore.getState()
+  store.setManualTime(d.getTime())
+  store.setPaused(true)
+}
 
-  const watchMatch = route.match(/^\/watch\/([\w-]+)$/)
+function Page({ hash }: { hash: string }) {
+  const { path, params } = parseRoute(hash)
+  if (path === '/lab/orbital-hands-2d') return <OrbitalHandsPrototype />
+
+  const watchMatch = path.match(/^\/watch\/([\w-]+)$/)
   if (watchMatch) {
     const concept = getConcept(watchMatch[1])
     if (!concept) return <div className="placeholder">Unknown watch “{watchMatch[1]}”.</div>
     return (
       <Suspense fallback={<div className="placeholder">Loading viewer…</div>}>
-        <WatchViewer key={concept.metadata.id} concept={concept} />
+        <WatchViewer key={concept.metadata.id} concept={concept} bare={params.has('bare')} />
       </Suspense>
     )
   }
 
-  return (
-    <div className="placeholder">
-      <ul>
-        {concepts.map((c) => (
-          <li key={c.metadata.id}>
-            <a href={`#/watch/${c.metadata.id}`}>
-              {c.metadata.number} — {c.metadata.name}
-            </a>
-          </li>
-        ))}
-      </ul>
-    </div>
-  )
+  return <Gallery concepts={concepts} />
 }
 
 export function App() {
   const route = useHashRoute()
+  const bare = parseRoute(route).params.has('bare')
+
+  useEffect(() => applyTimeParam(parseRoute(route).params), [route])
 
   return (
     <div className="app">
-      <header className="topbar">
-        <a href="#/" className="brand">
-          Orbital Watch Lab
-        </a>
-        <nav>
-          <a href="#/">Exhibition</a>
-          <a href="#/lab/orbital-hands-2d">2D Lab</a>
-        </nav>
-      </header>
+      {!bare && (
+        <header className="topbar">
+          <a href="#/" className="brand">
+            Orbital Watch Lab
+          </a>
+          <nav>
+            <a href="#/">Exhibition</a>
+            <a href="#/lab/orbital-hands-2d">2D Lab</a>
+          </nav>
+        </header>
+      )}
       <main className="app-main">
-        <Page route={route} />
+        <Page hash={route} />
       </main>
     </div>
   )

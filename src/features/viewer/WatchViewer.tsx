@@ -6,14 +6,28 @@ import { WatchStage, type WatchStageHandle } from './WatchStage'
 
 type Props = {
   concept: WatchConcept
+  /** Render only the 3D stage (used for thumbnails / embeds). */
+  bare?: boolean
 }
 
 /** Generic exhibition viewer: works for any registered concept. */
-export function WatchViewer({ concept }: Props) {
+export function WatchViewer({ concept, bare = false }: Props) {
   const stage = useRef<WatchStageHandle>(null)
   const stageBox = useRef<HTMLDivElement>(null)
   const [appearance] = useState(concept.defaultAppearance)
   const { Model, metadata } = concept
+
+  if (bare) {
+    return (
+      <div className="stage stage-bare">
+        <WatchStage>
+          <Suspense fallback={null}>
+            <Model appearance={appearance} />
+          </Suspense>
+        </WatchStage>
+      </div>
+    )
+  }
 
   return (
     <div className="split-layout">
