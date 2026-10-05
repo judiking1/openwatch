@@ -60,3 +60,9 @@ export type CustomizationField<A extends object = Appearance> = {
 export function defineConcept<A extends object>(concept: WatchConcept<A>): WatchConcept {
   return concept as unknown as WatchConcept
 }
+
+export const ORIGIN_LABEL: Record<ConceptOrigin['type'], string> = {
+  human: 'Human',
+  ai: 'AI',
+  collaborative: 'Collaborative',
+}

@@ -1,4 +1,4 @@
-import type { WatchMetadata } from '../../types/watch'
+import { ORIGIN_LABEL, type WatchMetadata } from '../../types/watch'
 
 const FEASIBILITY_LABEL: Record<WatchMetadata['feasibility'], string> = {
   unknown: 'Unknown',
@@ -15,7 +15,7 @@ export function WatchInfo({ meta }: { meta: WatchMetadata }) {
       <p className="tagline">{meta.tagline}</p>
       <div className="badges">
         <span className="badge">{meta.category}</span>
-        <span className="badge">{meta.origin.type}</span>
+        <span className="badge">{ORIGIN_LABEL[meta.origin.type]}</span>
         <span className="badge">{FEASIBILITY_LABEL[meta.feasibility]}</span>
       </div>
       <p>{meta.description}</p>

@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import type { WatchConcept } from '../../types/watch'
+import { ORIGIN_LABEL, type WatchConcept } from '../../types/watch'
 
 type Props = {
   concepts: WatchConcept[]
@@ -53,7 +53,7 @@ export function Gallery({ concepts }: Props) {
               <p>{m.tagline}</p>
               <div className="badges">
                 <span className="badge">{m.category}</span>
-                <span className="badge">{m.origin.type}</span>
+                <span className="badge">{ORIGIN_LABEL[m.origin.type]}</span>
                 <span className="badge">{m.feasibility}</span>
               </div>
             </div>

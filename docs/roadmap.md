@@ -20,10 +20,15 @@ All MVP criteria are met as of 0.7.x: three selectable concepts, realtime 3D vie
 orbit/zoom, live and manual time, more than three customisable properties per concept, and
 new concepts plug in through the registry. `1.0.0` is reserved for a human review of the MVP.
 
+## 0.8.0 — Reference survey and new concepts
+
+`docs/research/watch-references.md` surveys existing displays, derives difference axes and
+rejects ideas that already exist. From its gaps: 004 Shears, 005 Turntable, 006 Cipher.
+
 ## Next candidates
 
 - Visual review pass with real devices; tune lighting and strap geometry.
-- Concept 004+ (ideas: wandering hours, sliding scales, split orbit, layered transparent discs).
-- Crescent-shaped minute aperture for Eclipse; readability study for Fixed Beam numerals.
+- More concepts from the backlog in `docs/research/watch-references.md` (count encoding,
+  tilting dish, strap display, dual frame).
 - Share links that encode appearance as well as time.
 - Phase 7 — AI-assisted concept pipeline (concept document template, review checklist).
