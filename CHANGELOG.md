@@ -4,6 +4,18 @@ All notable changes to this project are documented here.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the
 project uses [Semantic Versioning](https://semver.org).
 
+## [0.4.0] - 2026-10-05
+
+### Changed
+
+- Viewer is now generic: `#/watch/:id` renders any concept from the registry.
+- three.js and the viewer are lazy-loaded; the main bundle no longer contains them.
+
+### Added
+
+- `WatchConcept` type, `defineConcept` helper and `src/watches/registry.ts`.
+- Registry tests and ADR 0002; "Adding a watch concept" guide in `AGENTS.md`.
+
 ## [0.3.0] - 2026-10-05
 
 ### Added
