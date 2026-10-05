@@ -209,3 +209,63 @@ input[type='range'] {
     border-top: 1px solid var(--panel-border);
   }
 }
+
+.stage canvas {
+  position: absolute !important;
+  inset: 0;
+}
+
+.stage-toolbar {
+  position: absolute;
+  left: 16px;
+  bottom: 16px;
+  display: flex;
+  gap: 8px;
+}
+
+.stage-toolbar button {
+  background: rgba(21, 23, 29, 0.85);
+  backdrop-filter: blur(6px);
+}
+
+.watch-info h2 {
+  margin: 0;
+  font-size: 22px;
+  font-weight: 600;
+}
+
+.watch-info p,
+.watch-info ul {
+  margin: 0;
+  color: var(--text-dim);
+  line-height: 1.55;
+}
+
+.watch-info ul {
+  padding-left: 18px;
+}
+
+.watch-number {
+  color: var(--accent);
+  font-size: 12px;
+  letter-spacing: 0.12em;
+}
+
+.watch-info .tagline {
+  color: var(--text);
+}
+
+.badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.badge {
+  font-size: 11px;
+  text-transform: capitalize;
+  border: 1px solid var(--panel-border);
+  border-radius: 999px;
+  padding: 2px 8px;
+  color: var(--text-dim);
+}
