@@ -32,3 +32,13 @@ npm run lint && npm test && npm run build && npm run format:check
 - Generic viewer code (`src/features/viewer`, `src/three`) must not import a specific concept.
 - Small components, explicit types, no premature plugin frameworks or backends.
 - Exported models are visual models only — never imply manufacturing accuracy.
+
+## Adding a watch concept
+
+1. Create `src/watches/<id>/` with `metadata.ts`, `appearance.ts` (defaults), the R3F model
+   (dial units, reads time from `useTimeStore.getState().now()` in `useFrame`) and `index.ts`
+   exporting `defineConcept({...})` with a lazy `Model`.
+2. Put pure time → geometry math in its own file with unit tests.
+3. Register it in `src/watches/registry.ts`.
+4. Document it in `docs/concepts/<id>.md`.
+5. Reuse `src/three/parts` (case, crystal) unless the concept needs its own body.
