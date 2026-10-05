@@ -4,6 +4,15 @@ All notable changes to this project are documented here.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the
 project uses [Semantic Versioning](https://semver.org).
 
+## [0.7.0] - 2026-10-05
+
+### Added
+
+- "Download GLB" in the viewer: exports the current configuration and time as a binary glTF
+  in metres, with concept metadata and a visual-model disclaimer in the root node extras.
+- App version shown in the top bar.
+- ADR 0003 (GLB export).
+
 ## [0.6.0] - 2026-10-05
 
 ### Added
