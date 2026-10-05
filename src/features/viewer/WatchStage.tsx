@@ -1,6 +1,7 @@
 import { OrbitControls } from '@react-three/drei'
 import { Canvas } from '@react-three/fiber'
 import { useImperativeHandle, useRef, type ComponentRef, type ReactNode, type Ref } from 'react'
+import type { Group } from 'three'
 import { StudioLighting } from '../../three/lighting/StudioLighting'
 
 /** Watch models are authored in dial units (dial radius 100); the scene uses ~1. */
@@ -8,6 +9,8 @@ export const DIAL_UNIT = 0.01
 
 export type WatchStageHandle = {
   resetCamera: () => void
+  /** The watch model root (excludes lights, environment and controls). */
+  getModelRoot: () => Group | null
 }
 
 type Props = {
@@ -17,7 +20,11 @@ type Props = {
 
 export function WatchStage({ children, ref }: Props) {
   const controls = useRef<ComponentRef<typeof OrbitControls>>(null)
-  useImperativeHandle(ref, () => ({ resetCamera: () => controls.current?.reset() }))
+  const modelRoot = useRef<Group>(null)
+  useImperativeHandle(ref, () => ({
+    resetCamera: () => controls.current?.reset(),
+    getModelRoot: () => modelRoot.current,
+  }))
 
   return (
     <Canvas
@@ -28,7 +35,9 @@ export function WatchStage({ children, ref }: Props) {
     >
       <color attach="background" args={['#0e0f13']} />
       <StudioLighting />
-      <group scale={DIAL_UNIT}>{children}</group>
+      <group ref={modelRoot} scale={DIAL_UNIT}>
+        {children}
+      </group>
       <OrbitControls
         ref={controls}
         makeDefault

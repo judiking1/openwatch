@@ -422,3 +422,26 @@ input[type='color'] {
   background: none;
   cursor: pointer;
 }
+
+.note {
+  margin: 0;
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--text-dim);
+}
+
+button:disabled {
+  opacity: 0.6;
+  cursor: progress;
+}
+
+.version {
+  margin-left: 6px;
+  color: var(--text-dim);
+  font-weight: 400;
+  letter-spacing: 0.04em;
+  text-transform: none;
+}
+.note.error {
+  color: var(--danger);
+}

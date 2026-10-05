@@ -11,6 +11,15 @@ unconventional watch concepts.
 - Changes: [`CHANGELOG.md`](./CHANGELOG.md)
 - Agent rules: [`AGENTS.md`](./AGENTS.md)
 
+## What works today
+
+- Exhibition gallery of three experimental watches: **Orbital Hands**, **Fixed Beam**, **Eclipse**.
+- Real-time 3D viewer: orbit, zoom, reset view, fullscreen.
+- Time control: live clock, pause, set time, speed ×1 – ×3600. `?t=HH:MM:SS` freezes a time.
+- Per-concept customization (case metal and finish, dial, indicators, crystal, strap), saved locally.
+- GLB export of the current configuration (visual model only).
+- 2D logic lab for Orbital Hands at `#/lab/orbital-hands-2d`.
+
 ## Stack
 
 Vite · React · TypeScript · Three.js · React Three Fiber · drei · Zustand
