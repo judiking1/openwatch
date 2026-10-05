@@ -5,7 +5,7 @@ Status of the phases defined in `PROJECT_VISION.md` §15.
 | Version | Phase                                                                  | Status  |
 | ------- | ---------------------------------------------------------------------- | ------- |
 | 0.1.0   | Phase 0 — Repository bootstrap                                         | done    |
-| 0.2.0   | Phase 1 — Orbital Hands time math + 2D SVG prototype                   | planned |
+| 0.2.0   | Phase 1 — Orbital Hands time math + 2D SVG prototype                   | done    |
 | 0.3.0   | Phase 2 — First 3D watch (React Three Fiber)                           | planned |
 | 0.4.0   | Phase 3 — Viewer architecture + concept registry                       | planned |
 | 0.5.0   | Additional concepts (Rotating Numeral Ring, Eclipse) + Phase 4 gallery | planned |
