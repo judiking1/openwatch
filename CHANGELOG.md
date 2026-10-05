@@ -4,6 +4,17 @@ All notable changes to this project are documented here.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the
 project uses [Semantic Versioning](https://semver.org).
 
+## [0.7.3] - 2026-10-05
+
+### Fixed
+
+- Fixed Beam and Eclipse misread the hour after half past (7:45 looked like "8"): both now
+  use a jumping hour (`jumpHourAngle`) that frames one whole numeral for the full hour.
+- Fixed Beam seconds disc had no scale; it now carries seconds numerals and ticks under the beam.
+- Eclipse minutes were unreadable through a round hole showing one tick; the minute disc now
+  has a curved window with numerals every five minutes and a centre notch. Seconds get a tick
+  ring around the sun.
+
 ## [0.7.2] - 2026-10-05
 
 ### Added
