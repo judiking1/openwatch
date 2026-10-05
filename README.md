@@ -35,6 +35,12 @@ npm run lint         # oxlint
 npm run format       # prettier
 ```
 
+## Deployment
+
+Every push to `main` is built and deployed to GitHub Pages by
+`.github/workflows/deploy.yml` (lint → test → build → deploy):
+<https://judiking1.github.io/openwatch/>
+
 ## Versioning
 
 The project uses [Semantic Versioning](https://semver.org) (`MAJOR.MINOR.PATCH`).

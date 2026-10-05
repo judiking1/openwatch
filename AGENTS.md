@@ -17,6 +17,12 @@ Before committing run:
 npm run lint && npm test && npm run build && npm run format:check
 ```
 
+## Branching and deployment
+
+- Trunk-based: work lands on `main` only. No long-lived feature branches.
+- Every push to `main` deploys to GitHub Pages (`.github/workflows/deploy.yml`), so `main`
+  must always pass lint, tests and build.
+
 ## Versioning
 
 - SemVer `MAJOR.MINOR.PATCH`. While `0.x`: a roadmap phase = minor bump, fix = patch bump.

@@ -8,6 +8,9 @@ const pkg = JSON.parse(readFileSync(new URL('./package.json', import.meta.url), 
 
 // https://vite.dev/config/
 export default defineConfig({
+  // Relative base: works on GitHub Pages (/openwatch/) and at a domain root alike;
+  // routing is hash-based so no server rewrites are needed.
+  base: './',
   plugins: [react()],
   define: {
     __APP_VERSION__: JSON.stringify(pkg.version),
