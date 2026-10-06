@@ -13,11 +13,13 @@ unconventional watch concepts.
 
 ## What works today
 
-- Exhibition gallery of three experimental watches: **Orbital Hands**, **Fixed Beam**, **Eclipse**.
+- Exhibition of eleven experimental watches, from **Orbital Hands** to a Joseon **Angbuilgu**
+  sundial and a **Jagyeongnu** water clock with GPU-simulated water.
 - Real-time 3D viewer: orbit, zoom, reset view, fullscreen.
 - Time control: live clock, pause, set time, speed ×1 – ×3600. `?t=HH:MM:SS` freezes a time.
 - Per-concept customization (case metal and finish, dial, indicators, crystal, strap), saved locally.
-- GLB export of the current configuration (visual model only).
+- GLB export of the current configuration (visual model only) and GLB import (`#/lab/import`)
+  that drives parts named `hour` / `minute` / `second` with the clock.
 - 2D logic lab for Orbital Hands at `#/lab/orbital-hands-2d`.
 
 ## Stack

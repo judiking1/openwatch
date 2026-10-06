@@ -75,13 +75,29 @@ cell nobody has filled, not when it changes the colour of an occupied one.
 | 005 | **Turntable** | the case itself is the hour hand; reading at the lug; rotated reference frame; quarter-turn of the whole object | none (searched)                                                       |
 | 006 | **Cipher**    | alignment-of-fragments legibility; legible only in the reading window; combination-lock motion                  | cipher _encryption_ watch only (patent US8264910, not a time display) |
 
+### Second round (0.10.0)
+
+| No. | Concept           | Axes it occupies                                                            | Nearest reference                                 |
+| --- | ----------------- | --------------------------------------------------------------------------- | ------------------------------------------------- |
+| 007 | **Marble**        | slope as the encoding; a free indicator obeying gravity                     | Congreve rolling-ball clock, ML Aikon Mercury     |
+| 008 | **Lens**          | size / magnification of the scale itself                                    | Relevo (tactile bumps)                            |
+| 009 | **Optical Lever** | reflection geometry as the gear train; massless hands                       | Aurora / Laser Timing (projected numbers)         |
+| 010 | **Angbuilgu**     | concave sundial on the wrist; one shadow gives time and season; Joseon time | 1434 앙부일구, portable reproductions (not wrist) |
+| 011 | **Jagyeongnu**    | clepsydra level + 시진/각 system; simulated (Navier–Stokes) water           | 1434 자격루, HYT capillary fluid                  |
+
+Rejected in the second round because they already exist:
+
+| Idea                           | Existing reference                                     |
+| ------------------------------ | ------------------------------------------------------ |
+| Count of opening petals = hour | Van Cleef & Arpels Lady Arpels Heures Florales         |
+| Bracelet links show the hour   | 12/24-link hour bracelet patents, LED bracelet designs |
+| Two frames for two time zones  | GMT rotating bezel                                     |
+
 ## 5. Backlog (not yet built)
 
-- **Count**: hour = number of lit petals / polygon vertices; minutes as rotation.
-- **Size encoding**: the current hour numeral is the largest (a fisheye passing round the dial) — check against Relevo before building.
-- **Tilting dish**: the dial plane tilts toward the hour; a marble rolls to the low point.
-- **Strap display**: links of the bracelet flip to show the hour on the wrist's side.
-- **Dual frame**: two time zones read from the same hands against two counter-rotating frames.
+- **Plasma**: a gas-discharge filament whose attachment point wanders to the time.
+- **Phase**: hour and minute as two interfering waves; the time is where they meet.
+- **Night-only**: a watch legible only in the dark (phosphor charge decays from the past hour).
 
 ## Sources
 
@@ -102,3 +118,10 @@ cell nobody has filled, not when it changes the colour of an occupied one.
 - [Revolution — Longines Nonius](https://revolution.watch/the-greatest-watch-youve-never-heard-of-longines-nonius/)
 - [Patent US8264910B2 — cipher watch](https://patents.google.com/patent/US8264910B2/en)
 - [Behrens Rotary](https://www.exquisitetimepieces.com/behrens-rotary-black-bhr022-2blk01.html)
+- [Van Cleef & Arpels Heures Florales (GPHG)](https://gphg.org/en/watches/lady-arpels-heures-florales-cerisier-watch)
+- [Patent US7055342 — hour-of-day bracelet](https://patents.google.com/patent/US7055342)
+- [Worldtempus — Maurice Lacroix Aikon Mercury](https://en.worldtempus.com/article/watches/innovation-and-technology/maurice-lacroix-discovering-the-aikon-mercury-free-hand-display-27985.html)
+- [Amusing Planet — Congreve rolling-ball clock](https://www.amusingplanet.com/2019/01/congreve-rolling-ball-clock.html)
+- [TechCrunch — laser concept watch](https://techcrunch.com/?p=142685)
+- [Asia Society — Angbu-ilgu](https://asiasociety.org/korea/redistribution-power-through-angbu-ilgu-unique-korean-sundial)
+- [HYT — about](https://hytwatches.com/en/about-us.html)
