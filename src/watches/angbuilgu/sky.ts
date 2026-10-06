@@ -53,11 +53,19 @@ export function poleVector(latitudeDeg = LATITUDE): Vec3 {
  * origin) falls on the sphere, for light arriving along −sun. With the gnomon tip at the
  * centre this is simply −R·sun: the defining property of the 앙부일구.
  */
-export function shadowOnSphere(q: Vec3, sun: Vec3, R: number): Vec3 {
+export function shadowOnSphere(
+  q: Vec3,
+  sun: Vec3,
+  R: number,
+  out: Vec3 = { x: 0, y: 0, z: 0 },
+): Vec3 {
   const b = q.x * sun.x + q.y * sun.y + q.z * sun.z
   const c = q.x * q.x + q.y * q.y + q.z * q.z - R * R
   const t = b + Math.sqrt(b * b - c)
-  return { x: q.x - t * sun.x, y: q.y - t * sun.y, z: q.z - t * sun.z }
+  out.x = q.x - t * sun.x
+  out.y = q.y - t * sun.y
+  out.z = q.z - t * sun.z
+  return out
 }
 
 /** The twelve 시진 (double hours) starting with 자시 at 23:00. */

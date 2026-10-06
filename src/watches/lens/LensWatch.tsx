@@ -1,5 +1,13 @@
 import { useRef } from 'react'
-import { CanvasTexture, SRGBColorSpace, type Group, type Mesh } from 'three'
+import {
+  CanvasTexture,
+  Matrix4,
+  Quaternion,
+  SRGBColorSpace,
+  Vector3,
+  type Group,
+  type InstancedMesh,
+} from 'three'
 import { useClockFrame, useDisposable } from '../../three/hooks'
 import { Crystal } from '../../three/parts/Crystal'
 import { WatchCase } from '../../three/parts/WatchCase'
@@ -10,7 +18,7 @@ import {
   HOUR_LABELS,
 } from '../../three/utils/canvas'
 import { DIAL_RADIUS, dialPoint3 } from '../../three/utils/dial'
-import { handAngles, jumpHourAngle } from '../../utils/time'
+import { degToRad, handAngles, jumpHourAngle } from '../../utils/time'
 import type { LensAppearance } from './appearance'
 import { lensScale } from './lens'
 
@@ -18,6 +26,17 @@ const HOURS = { radius: 44, size: 22 }
 const MINUTE_LABELS = { radius: 70, size: 14 }
 const BARS = { inner: 82, length: 2.6, width: 1.3 }
 const DOTS = { radius: 20, size: 1.1 }
+const Z_AXIS = new Vector3(0, 0, 1)
+/** Fixed positions of the 60 bars and 60 dots, computed once. */
+const BAR_POSITIONS = Array.from({ length: 60 }, (_, i) => dialPoint3(BARS.inner + 10, i * 6))
+const DOT_POSITIONS = Array.from({ length: 60 }, (_, i) => dialPoint3(DOTS.radius, i * 6))
+/** Reused every frame: no per-frame allocation for the 120 instances. */
+const scratch = {
+  matrix: new Matrix4(),
+  position: new Vector3(),
+  quaternion: new Quaternion(),
+  scale: new Vector3(),
+}
 
 /** One texture per label, disposed together. */
 function useLabelTextures(labels: string[], weight: number, color: string) {
@@ -35,8 +54,8 @@ function useLabelTextures(labels: string[], weight: number, color: string) {
 export function LensWatch({ appearance }: { appearance: LensAppearance }) {
   const hours = useRef<Array<Group | null>>([])
   const minuteLabels = useRef<Array<Group | null>>([])
-  const bars = useRef<Array<Mesh | null>>([])
-  const dots = useRef<Array<Mesh | null>>([])
+  const bars = useRef<InstancedMesh>(null)
+  const dots = useRef<InstancedMesh>(null)
 
   const hourTextures = useLabelTextures(HOUR_LABELS, 700, appearance.hourColor)
   const minuteTextures = useLabelTextures(FIVE_MINUTE_LABELS, 600, appearance.minuteColor)
@@ -48,12 +67,37 @@ export function LensWatch({ appearance }: { appearance: LensAppearance }) {
     minuteLabels.current.forEach((g, i) =>
       g?.scale.setScalar(lensScale('minuteLabel', i * 30, a.minute)),
     )
-    bars.current.forEach((m, i) => {
-      if (!m) return
-      const s = lensScale('minute', i * 6, a.minute)
-      m.scale.set(1, s, s)
-    })
-    dots.current.forEach((m, i) => m?.scale.setScalar(lensScale('second', i * 6, a.second)))
+    // 60 bars and 60 dots are two instanced meshes; matrices are written in place.
+    const barMesh = bars.current
+    if (barMesh) {
+      for (let i = 0; i < 60; i++) {
+        const angle = i * 6
+        const swell = lensScale('minute', angle, a.minute)
+        const [x, y] = BAR_POSITIONS[i]
+        scratch.position.set(x, y, 0)
+        scratch.quaternion.setFromAxisAngle(Z_AXIS, -degToRad(angle))
+        scratch.scale.set(i % 5 === 0 ? 1.6 : 1, swell, swell)
+        barMesh.setMatrixAt(
+          i,
+          scratch.matrix.compose(scratch.position, scratch.quaternion, scratch.scale),
+        )
+      }
+      barMesh.instanceMatrix.needsUpdate = true
+    }
+    const dotMesh = dots.current
+    if (dotMesh) {
+      for (let i = 0; i < 60; i++) {
+        const [x, y] = DOT_POSITIONS[i]
+        scratch.position.set(x, y, 0.6)
+        scratch.quaternion.identity()
+        scratch.scale.setScalar(lensScale('second', i * 6, a.second))
+        dotMesh.setMatrixAt(
+          i,
+          scratch.matrix.compose(scratch.position, scratch.quaternion, scratch.scale),
+        )
+      }
+      dotMesh.instanceMatrix.needsUpdate = true
+    }
   })
 
   return (
@@ -88,28 +132,14 @@ export function LensWatch({ appearance }: { appearance: LensAppearance }) {
       })}
 
       {/* minute bars grow inward and upward from the outer ring */}
-      {Array.from({ length: 60 }, (_, i) => {
-        const angle = i * 6
-        const [x, y] = dialPoint3(BARS.inner + 10, angle)
-        return (
-          <group key={i} position={[x, y, 0]} rotation={[0, 0, -(angle * Math.PI) / 180]}>
-            <mesh ref={(m) => void (bars.current[i] = m)} position={[0, 0, 0]} castShadow>
-              <boxGeometry args={[i % 5 === 0 ? BARS.width * 1.6 : BARS.width, BARS.length, 1]} />
-              <meshStandardMaterial color={appearance.minuteColor} roughness={0.4} />
-            </mesh>
-          </group>
-        )
-      })}
-
-      {Array.from({ length: 60 }, (_, i) => {
-        const [x, y] = dialPoint3(DOTS.radius, i * 6)
-        return (
-          <mesh key={i} position={[x, y, 0.6]} ref={(m) => void (dots.current[i] = m)}>
-            <sphereGeometry args={[DOTS.size, 12, 8]} />
-            <meshStandardMaterial color={appearance.secondColor} roughness={0.4} />
-          </mesh>
-        )
-      })}
+      <instancedMesh ref={bars} args={[undefined, undefined, 60]} castShadow>
+        <boxGeometry args={[BARS.width, BARS.length, 1]} />
+        <meshStandardMaterial color={appearance.minuteColor} roughness={0.4} />
+      </instancedMesh>
+      <instancedMesh ref={dots} args={[undefined, undefined, 60]}>
+        <sphereGeometry args={[DOTS.size, 12, 8]} />
+        <meshStandardMaterial color={appearance.secondColor} roughness={0.4} />
+      </instancedMesh>
 
       <Crystal {...appearance} />
     </WatchCase>

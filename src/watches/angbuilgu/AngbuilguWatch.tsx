@@ -38,6 +38,9 @@ const LAST_HOUR = 19
 
 type P3 = [number, number, number]
 
+/** Reused by the per-frame shadow cast. */
+const scratch = { q: { x: 0, y: 0, z: 0 }, p: { x: 0, y: 0, z: 0 } }
+
 /** True-sphere point → flattened bowl coordinates, nudged slightly toward the centre. */
 function toBowl(v: Vec3, inset = 0.995): P3 {
   return [v.x * inset, v.y * inset, v.z * inset * SQUASH]
@@ -174,10 +177,14 @@ export function AngbuilguWatch({ appearance }: { appearance: AngbuilguAppearance
       if (day) {
         for (let i = 0; i < SHADOW_SAMPLES; i++) {
           const s = (i / (SHADOW_SAMPLES - 1)) * NEEDLE
-          const p = shadowOnSphere({ x: pole.x * s, y: pole.y * s, z: pole.z * s }, sun, R)
-          const [x, y, z] = toBowl(p, 0.985)
+          scratch.q.x = pole.x * s
+          scratch.q.y = pole.y * s
+          scratch.q.z = pole.z * s
+          const p = shadowOnSphere(scratch.q, sun, R, scratch.p)
           const size = i === 0 ? 1.6 : 1 - (i / SHADOW_SAMPLES) * 0.4
-          matrix.makeScale(size, size, size).setPosition(x, y, z)
+          matrix
+            .makeScale(size, size, size)
+            .setPosition(p.x * 0.985, p.y * 0.985, p.z * 0.985 * SQUASH)
           mesh.setMatrixAt(i, matrix)
         }
         mesh.instanceMatrix.needsUpdate = true

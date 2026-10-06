@@ -1,5 +1,5 @@
 import { useRef } from 'react'
-import { ExtrudeGeometry, Shape, type Group } from 'three'
+import { ExtrudeGeometry, MeshStandardMaterial, Shape, type Group } from 'three'
 import { useClockFrame, useDialTexture, useDisposable } from '../../three/hooks'
 import { Crystal } from '../../three/parts/Crystal'
 import { WatchCase } from '../../three/parts/WatchCase'
@@ -91,6 +91,11 @@ export function OrbitalHandsWatch({ appearance, layout = defaultOrbitalHandsLayo
     [layout, dialColor, numeralColor],
   )
   const groups = useRef<Partial<Record<IndicatorKind, Group | null>>>({})
+  const track = useDisposable(
+    () =>
+      new MeshStandardMaterial({ color: appearance.trackColor, metalness: 0.8, roughness: 0.4 }),
+    [appearance.trackColor],
+  )
 
   useClockFrame((t) => {
     const angles = handAngles(t)
@@ -114,9 +119,8 @@ export function OrbitalHandsWatch({ appearance, layout = defaultOrbitalHandsLayo
       </mesh>
 
       {KINDS.map((kind) => (
-        <mesh key={kind} position={[0, 0, 0.4]}>
+        <mesh key={kind} position={[0, 0, 0.4]} material={track}>
           <torusGeometry args={[orbitRadius(layout, kind), 0.35, 8, 160]} />
-          <meshStandardMaterial color={appearance.trackColor} metalness={0.8} roughness={0.4} />
         </mesh>
       ))}
 
@@ -133,9 +137,8 @@ export function OrbitalHandsWatch({ appearance, layout = defaultOrbitalHandsLayo
         />
       ))}
 
-      <mesh position={[0, 0, 0.2]}>
+      <mesh position={[0, 0, 0.2]} material={track}>
         <circleGeometry args={[2, 32]} />
-        <meshStandardMaterial color={appearance.trackColor} metalness={0.8} roughness={0.3} />
       </mesh>
 
       <Crystal {...appearance} />

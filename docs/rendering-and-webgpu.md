@@ -109,3 +109,67 @@ WebGPU is not yet universally supported across all mobile browsers and legacy sy
    - Introduce `createWatchRenderer` with WebGPU support & WebGL2 fallback.
    - Test R3F v9 compatibility with `WebGPURenderer`.
    - Prototype first TSL shader for brushed metal or sapphire dispersion.
+
+---
+
+## 5. Phase A review (v0.11.0)
+
+Measured with the new `?stats` overlay (`window.__owlStats`): draw calls and triangles of a
+whole frame, including shadow-map, contact-shadow and fluid passes; headless Chromium /
+SwiftShader at `?t=10:08:37`.
+
+| Concept       | Draw calls before | after | Geometries before | after |
+| ------------- | ----------------: | ----: | ----------------: | ----: |
+| Orbital Hands |               120 |    72 |                67 |    35 |
+| Cipher        |               125 |  ~80¹ |                83 |    51 |
+| Lens          |               508 |   106 |               204 |    54 |
+| Angbuilgu     |               127 |    79 |                85 |    53 |
+| Jagyeongnu    |               152 |    99 |                71 |    39 |
+
+¹ Cipher varies between 77 and 98 calls depending on which rings are mid-turn.
+
+### 2.1 Deduplicate geometries and materials — **done**
+
+- `WatchCase`: one shared material per finish (`metal`, `metalInside`, strap); the 30 strap
+  segments are merged into one geometry per side and the 4 lugs into one
+  (`BufferGeometryUtils.mergeGeometries`). Merged rather than instanced so GLB exports stay
+  plain meshes that every viewer understands.
+- Lens: 60 minute bars and 60 second dots are two `InstancedMesh`es (−80 % draw calls).
+  Instancing exports via `EXT_mesh_gpu_instancing` (verified).
+- Orbital Hands: the three tracks and the centre cap share one material.
+
+### 2.2 Per-frame allocations — **done where they scale with a loop**
+
+- Cipher: ring targets are a precomputed `TARGETS[ring][value]` table; the frame callback no
+  longer maps arrays.
+- Lens: 120 instance matrices are composed into reused scratch objects; positions are
+  precomputed.
+- Angbuilgu: `shadowOnSphere` takes an `out` vector; the 24-sample needle shadow is cast into
+  scratch objects.
+- **Kept on purpose:** the handful of small objects per frame from `handAngles`,
+  `clockTimeFromMs` and `shearsPose`. They are constant-size, short-lived (young-generation
+  GC) and keeping the pure time math return-by-value keeps it simple to test. Revisit only if
+  a profile shows GC pauses (PROJECT_VISION.md §22: optimise after measuring).
+
+### 2.4 Tone mapping — **made explicit, ACES kept as default**
+
+R3F already applied `ACESFilmicToneMapping` implicitly, so highlights were not unmapped.
+Side-by-side captures (`?tone=aces|agx|neutral`, kept as a look-development switch) showed:
+
+- **AgX** desaturates the gold cases, Eclipse glow and laser colours into muddy browns with
+  the current palette and exposure; adopting it needs an exposure / palette retune.
+- **Neutral** keeps hues truest and is the most saturated.
+- **ACES** is the balanced choice for now and is set explicitly in `WatchStage`.
+
+### Findings for Phase B / C
+
+- **2.3 masks + tint** is worth doing next: colour pickers fire continuously and every change
+  re-rasterises 2048² canvases (9 × 1024² for Cipher). Dials that combine a background with
+  markings need two layers (background = material colour, markings = alpha mask × tint).
+- **WebGPU blockers** to plan for before a `createWatchRenderer` flag:
+  - `StableFluid` (Jagyeongnu) uses GLSL `RawShaderMaterial` + `WebGLRenderTarget`; it needs a
+    TSL / compute port.
+  - drei `<Line>` (Angbuilgu) uses `LineMaterial` (a `ShaderMaterial`); drei
+    `ContactShadows` and the Lightformer environment must be verified under `WebGPURenderer`.
+  - `prepareForExport` already maps `ShaderMaterial`s to standard PBR for GLB; NodeMaterials
+    will need the same fallback (`isNodeMaterial` → `MeshStandardMaterial`).

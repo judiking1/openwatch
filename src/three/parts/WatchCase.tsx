@@ -1,5 +1,7 @@
 import type { ReactNode, Ref } from 'react'
-import { BackSide, type Group } from 'three'
+import { BackSide, BoxGeometry, Matrix4, MeshStandardMaterial, type Group } from 'three'
+import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js'
+import { useDisposable } from '../hooks'
 import { DIAL_RADIUS } from '../utils/dial'
 
 export type CaseAppearance = {
@@ -52,15 +54,33 @@ function strapSegments(startY: number, startZ: number): StrapSegment[] {
   return segments
 }
 
-function strapMaterial(style: CaseAppearance['strapStyle'], color: string) {
-  switch (style) {
-    case 'metal':
-      return <meshStandardMaterial color={color} metalness={1} roughness={0.25} />
-    case 'fabric':
-      return <meshStandardMaterial color={color} metalness={0} roughness={1} />
-    case 'leather':
-      return <meshStandardMaterial color={color} metalness={0} roughness={0.6} />
+const STRAP_FINISH: Record<CaseAppearance['strapStyle'], { metalness: number; roughness: number }> =
+  {
+    metal: { metalness: 1, roughness: 0.25 },
+    fabric: { metalness: 0, roughness: 1 },
+    leather: { metalness: 0, roughness: 0.6 },
   }
+
+/** One strap side as a single static mesh: all segments merged into one geometry. */
+function strapGeometry(segments: StrapSegment[]) {
+  const parts = segments.map((s) =>
+    new BoxGeometry(62, s.length, 6).applyMatrix4(
+      new Matrix4().makeRotationX(s.tilt).setPosition(0, s.y, s.z),
+    ),
+  )
+  const merged = mergeGeometries(parts)
+  parts.forEach((p) => p.dispose())
+  return merged
+}
+
+/** The four lugs as one geometry. */
+function lugGeometry(outer: number) {
+  const parts = [-1, 1].flatMap((sy) =>
+    [-1, 1].map((sx) => new BoxGeometry(14, 34, 14).translate(sx * 38, sy * (outer + 10), -8)),
+  )
+  const merged = mergeGeometries(parts)
+  parts.forEach((p) => p.dispose())
+  return merged
 }
 
 /**
@@ -77,12 +97,32 @@ export function WatchCase({
   headRef,
   cavityDepth = 0,
 }: Props) {
-  const metal = <meshStandardMaterial color={caseColor} metalness={1} roughness={caseRoughness} />
   const outer = radius + 14
   const seat = radius + 1
   /** Underside of the case middle; the caseback sits below it. */
   const bottom = -Math.max(17, cavityDepth + 5)
-  const strap = strapSegments(outer + 6, -8)
+
+  // One material per finish, shared by every part that uses it.
+  const metal = useDisposable(
+    () => new MeshStandardMaterial({ color: caseColor, metalness: 1, roughness: caseRoughness }),
+    [caseColor, caseRoughness],
+  )
+  const metalInside = useDisposable(
+    () =>
+      new MeshStandardMaterial({
+        color: caseColor,
+        metalness: 1,
+        roughness: caseRoughness,
+        side: BackSide,
+      }),
+    [caseColor, caseRoughness],
+  )
+  const strapMaterial = useDisposable(
+    () => new MeshStandardMaterial({ color: strapColor, ...STRAP_FINISH[strapStyle] }),
+    [strapColor, strapStyle],
+  )
+  const strap = useDisposable(() => strapGeometry(strapSegments(outer + 6, -8)), [outer])
+  const lugs = useDisposable(() => lugGeometry(outer), [outer])
 
   return (
     <group>
@@ -91,73 +131,50 @@ export function WatchCase({
         <mesh
           position={[0, 0, (-1 + bottom) / 2]}
           rotation={[Math.PI / 2, 0, 0]}
+          material={metal}
           castShadow
           receiveShadow
         >
           <cylinderGeometry args={[outer, outer - 3, -1 - bottom, 128, 1, true]} />
-          {metal}
         </mesh>
-        <mesh position={[0, 0, -1]}>
+        <mesh position={[0, 0, -1]} material={metal}>
           <ringGeometry args={[seat, outer, 128]} />
-          {metal}
         </mesh>
         {cavityDepth > 0 && (
-          <mesh position={[0, 0, -1 - cavityDepth / 2]} rotation={[Math.PI / 2, 0, 0]}>
+          <mesh
+            position={[0, 0, -1 - cavityDepth / 2]}
+            rotation={[Math.PI / 2, 0, 0]}
+            material={metalInside}
+          >
             <cylinderGeometry args={[seat, seat, cavityDepth, 128, 1, true]} />
-            <meshStandardMaterial
-              color={caseColor}
-              metalness={1}
-              roughness={caseRoughness}
-              side={BackSide}
-            />
           </mesh>
         )}
-        <mesh position={[0, 0, -1 - cavityDepth]}>
+        <mesh position={[0, 0, -1 - cavityDepth]} material={metal}>
           <circleGeometry args={[seat, 128]} />
-          {metal}
         </mesh>
         {/* bezel */}
-        <mesh position={[0, 0, 3]}>
+        <mesh position={[0, 0, 3]} material={metal}>
           <torusGeometry args={[radius + 6, 7, 32, 128]} />
-          {metal}
         </mesh>
         {/* caseback */}
-        <mesh position={[0, 0, bottom - 1]} rotation={[Math.PI / 2, 0, 0]}>
+        <mesh position={[0, 0, bottom - 1]} rotation={[Math.PI / 2, 0, 0]} material={metal}>
           <cylinderGeometry args={[outer - 8, outer - 4, 4, 96]} />
-          {metal}
         </mesh>
         {/* crown */}
         <group position={[outer + 4, 0, -6]} rotation={[0, 0, Math.PI / 2]}>
-          <mesh>
+          <mesh material={metal}>
             <cylinderGeometry args={[8, 8, 12, 32]} />
-            {metal}
           </mesh>
-          <mesh position={[0, -7, 0]}>
+          <mesh position={[0, -7, 0]} material={metal}>
             <cylinderGeometry args={[4, 4, 4, 24]} />
-            {metal}
           </mesh>
         </group>
         {children}
       </group>
-      {/* lugs */}
-      {[-1, 1].map((sy) =>
-        [-1, 1].map((sx) => (
-          <mesh key={`${sx}${sy}`} position={[sx * 38, sy * (outer + 10), -8]}>
-            <boxGeometry args={[14, 34, 14]} />
-            {metal}
-          </mesh>
-        )),
-      )}
-      {/* strap */}
+      {/* lugs and strap: static, each a single merged mesh */}
+      <mesh geometry={lugs} material={metal} />
       {[-1, 1].map((sy) => (
-        <group key={sy} scale={[1, sy, 1]}>
-          {strap.map((s, i) => (
-            <mesh key={i} position={[0, s.y, s.z]} rotation={[s.tilt, 0, 0]}>
-              <boxGeometry args={[62, s.length, 6]} />
-              {strapMaterial(strapStyle, strapColor)}
-            </mesh>
-          ))}
-        </group>
+        <mesh key={sy} geometry={strap} material={strapMaterial} scale={[1, sy, 1]} />
       ))}
     </group>
   )

@@ -27,6 +27,11 @@ const RINGS: RingSpec[] = CIPHER.flatMap((group) =>
   group.bands.map((band, index) => ({ group, band, index })),
 )
 
+/** TARGETS[ring][value]: the rotation that brings `value` into the window, precomputed. */
+const TARGETS = RINGS.map((spec) =>
+  spec.group.glyphs.map((_, value) => ringTargets(spec.group, value)[spec.index]),
+)
+
 function drawBand(ctx: CanvasRenderingContext2D, spec: RingSpec, glyph: string) {
   const { group, band, index } = spec
   ctx.save()
@@ -105,11 +110,11 @@ export function CipherWatch({ appearance }: { appearance: CipherAppearance }) {
 
   useClockFrame((t, dt) => {
     const values = cipherValues(t)
-    const targets = RINGS.map((spec) => ringTargets(spec.group, values[spec.group.id])[spec.index])
-    const current = (angles.current ??= targets)
+    // First frame: start every ring at its target (one allocation, ever).
+    const current = (angles.current ??= RINGS.map((spec, i) => TARGETS[i][values[spec.group.id]]))
     const step = RING_SPEED * Math.min(dt, 0.25)
-    RINGS.forEach((_, i) => {
-      const delta = shortestDelta(current[i], targets[i])
+    RINGS.forEach((spec, i) => {
+      const delta = shortestDelta(current[i], TARGETS[i][values[spec.group.id]])
       current[i] += Math.abs(delta) <= step ? delta : Math.sign(delta) * step
       const g = groups.current[i]
       if (g) g.rotation.z = dialRotationZ(current[i])
