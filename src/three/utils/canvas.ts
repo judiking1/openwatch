@@ -110,3 +110,16 @@ export const HOUR_LABELS = Array.from({ length: 12 }, (_, i) => String(i === 0 ?
 export const FIVE_MINUTE_LABELS = Array.from({ length: 12 }, (_, i) =>
   String(i * 5).padStart(2, '0'),
 )
+
+/** A single centred label on a transparent canvas, `size` px square. */
+export function createLabelCanvas(text: string, font: string, color: string, size = 128) {
+  const canvas = document.createElement('canvas')
+  canvas.width = canvas.height = size
+  const ctx = canvas.getContext('2d')!
+  ctx.fillStyle = color
+  ctx.font = font
+  ctx.textAlign = 'center'
+  ctx.textBaseline = 'middle'
+  ctx.fillText(text, size / 2, size / 2)
+  return canvas
+}
