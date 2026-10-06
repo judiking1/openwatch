@@ -4,6 +4,28 @@ All notable changes to this project are documented here.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the
 project uses [Semantic Versioning](https://semver.org).
 
+## [0.10.0] - 2026-10-05
+
+### Added
+
+- Watch 007 — Marble: dishes tilt toward the time and marbles roll there under simulated gravity.
+- Watch 008 — Lens: the scale swells where the time is (size encoding).
+- Watch 009 — Optical Lever: reflected laser beams are the hands; mirrors turn at half speed.
+- Watch 010 — Angbuilgu: Joseon concave sundial with a virtual sun over Hanyang — time, 시진,
+  24 solar terms and night watches.
+- Watch 011 — Jagyeongnu: Joseon water clock (시진 / 각) with water solved by a reusable GPU
+  Stable Fluids (Navier–Stokes) solver, `src/three/fluid/StableFluid.ts`.
+- Model Lab (`#/lab/import`): load a GLB, see its stats and metadata, and drive parts named
+  `hour` / `minute` / `second` with the clock (ADR 0004).
+- `WatchCase` `cavityDepth` for recessed dials; `angleDelta` helper; `useClockFrame` passes epoch ms.
+- Research: second round of precedents (rejected: petal count, hour bracelet, dual frame).
+
+### Fixed
+
+- GLB export now succeeds for every concept: shaders fall back to standard materials, fat lines
+  become line segments, back-face-only surfaces export double-sided, liquid levels are baked.
+- Thumbnail capture waits for heavy scenes and can recapture selected watches.
+
 ## [0.9.0] - 2026-10-05
 
 ### Added

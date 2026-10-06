@@ -25,11 +25,17 @@ new concepts plug in through the registry. `1.0.0` is reserved for a human revie
 `docs/research/watch-references.md` surveys existing displays, derives difference axes and
 rejects ideas that already exist. From its gaps: 004 Shears, 005 Turntable, 006 Cipher.
 
+## 0.10.0 — Second concept round and GLB round-trip
+
+007 Marble, 008 Lens, 009 Optical Lever, 010 Angbuilgu, 011 Jagyeongnu (GPU Navier–Stokes
+water). Model Lab (`#/lab/import`) imports GLB and drives `hour` / `minute` / `second` parts;
+every concept exports and re-imports cleanly (ADR 0004).
+
 ## Next candidates
 
 - Visual review pass with real devices; tune lighting and strap geometry.
 - Rendering pipeline refactoring and WebGPU readiness pass (see `docs/rendering-and-webgpu.md`).
-- More concepts from the backlog in `docs/research/watch-references.md` (count encoding,
-  tilting dish, strap display, dual frame).
+- More concepts from the backlog in `docs/research/watch-references.md` (plasma, phase,
+  night-only).
 - Share links that encode appearance as well as time.
 - Phase 7 — AI-assisted concept pipeline (concept document template, review checklist).
