@@ -41,9 +41,14 @@ npm run lint && npm test && npm run build && npm run format:check
 
 ## Adding a watch concept
 
-1. Create `src/watches/<id>/` with `metadata.ts`, `appearance.ts` (defaults), the R3F model
-   (dial units, reads time from `useTimeStore.getState().now()` in `useFrame`) and `index.ts`
-   exporting `defineConcept({...})` with a lazy `Model`.
+1. Create `src/watches/<id>/` with `metadata.ts` (including a one-line `readingHint`),
+   `appearance.ts` (defaults + customization fields), the R3F model and `index.ts` exporting
+   `defineConcept({...})` with a lazy `Model`.
+   - Author in dial units (`DIAL_RADIUS` = 100, dial plane z = 0, facing +z).
+   - Animate in `useClockFrame((time, delta) => …)` so live / paused / scrubbed time all work.
+   - Use `useDialTexture` / `useDisposable` for textures and geometry (auto-disposed) and the
+     `drawTicks` / `drawLabels` helpers in `src/three/utils/canvas.ts` for dial printing.
+   - Name animated groups `hour`, `minute`, `second` where they exist.
 2. Put pure time → geometry math in its own file with unit tests.
 3. Register it in `src/watches/registry.ts`.
 4. Document it in `docs/concepts/<id>.md`.

@@ -7,6 +7,7 @@ export const turntableMetadata: WatchMetadata = {
   tagline: 'The watch is the hour hand.',
   description:
     'The whole head — case, crown, bezel and dial — sits on a bearing between the lugs and turns on the strap. A fixed index on the strap points at the hour engraved on the bezel; on the hour the entire watch makes a short twelfth of a turn. Inside, ordinary hands keep the minutes and seconds against the dial’s own, now tilted, scale.',
+  readingHint: 'The whole watch turns — read the hour at the strap index.',
   howToRead: [
     'Hour: the bezel numeral under the gold index on the strap at twelve.',
     'Minutes: the long hand against the minute numerals printed on the turning dial.',

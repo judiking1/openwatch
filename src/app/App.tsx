@@ -1,22 +1,31 @@
-import { lazy, Suspense, useEffect } from 'react'
+import { lazy, Suspense, useEffect, useRef } from 'react'
 import { Gallery } from '../features/gallery/Gallery'
 import { OrbitalHandsPrototype } from '../features/prototype/OrbitalHandsPrototype'
 import { concepts, getConcept } from '../watches/registry'
 import { useTimeStore } from '../stores/timeStore'
+import { atTimeOfDay, parseClock } from '../utils/time'
 import { parseRoute, useHashRoute } from './useHashRoute'
 
 const WatchViewer = lazy(() => import('../features/viewer/WatchViewer'))
 
-/** `?t=HH:MM:SS` freezes the clock at that time (handy for screenshots and sharing). */
-function applyTimeParam(params: URLSearchParams) {
-  const t = params.get('t')
-  if (!t) return
-  const [h = 0, m = 0, s = 0] = t.split(':').map(Number)
-  const d = new Date()
-  d.setHours(h, m, s, 0)
-  const store = useTimeStore.getState()
-  store.setManualTime(d.getTime())
-  store.setPaused(true)
+/**
+ * `?t=HH:MM:SS` freezes the clock at that time (screenshots, sharing a reading).
+ * Leaving such a link returns the clock to live time.
+ */
+function useTimeParam(route: string) {
+  const frozenByLink = useRef(false)
+  useEffect(() => {
+    const parsed = parseClock(parseRoute(route).params.get('t') ?? '')
+    const store = useTimeStore.getState()
+    if (parsed) {
+      store.setManualTime(atTimeOfDay(Date.now(), parsed.hours, parsed.minutes, parsed.seconds))
+      store.setPaused(true)
+      frozenByLink.current = true
+    } else if (frozenByLink.current) {
+      store.goLive()
+      frozenByLink.current = false
+    }
+  }, [route])
 }
 
 function Page({ hash }: { hash: string }) {
@@ -27,9 +36,16 @@ function Page({ hash }: { hash: string }) {
   if (watchMatch) {
     const concept = getConcept(watchMatch[1])
     if (!concept) return <div className="placeholder">Unknown watch “{watchMatch[1]}”.</div>
+    const index = concepts.indexOf(concept)
     return (
       <Suspense fallback={<div className="placeholder">Loading viewer…</div>}>
-        <WatchViewer key={concept.metadata.id} concept={concept} bare={params.has('bare')} />
+        <WatchViewer
+          key={concept.metadata.id}
+          concept={concept}
+          prev={concepts[index - 1]}
+          next={concepts[index + 1]}
+          bare={params.has('bare')}
+        />
       </Suspense>
     )
   }
@@ -41,7 +57,7 @@ export function App() {
   const route = useHashRoute()
   const bare = parseRoute(route).params.has('bare')
 
-  useEffect(() => applyTimeParam(parseRoute(route).params), [route])
+  useTimeParam(route)
 
   return (
     <div className="app">

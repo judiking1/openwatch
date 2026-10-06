@@ -65,3 +65,25 @@ export function jumpHourAngle(t: ClockTime, jumpMs = 600): number {
   const eased = p * p * (3 - 2 * p)
   return ((t.hours % 12) - 1 + eased) * 30
 }
+
+/** Parses "H:MM" or "HH:MM:SS"; returns null when out of range or malformed. */
+export function parseClock(
+  value: string,
+): { hours: number; minutes: number; seconds: number } | null {
+  const m = /^(\d{1,2}):(\d{2})(?::(\d{2}))?$/.exec(value.trim())
+  if (!m) return null
+  const [hours, minutes, seconds] = [Number(m[1]), Number(m[2]), Number(m[3] ?? 0)]
+  if (hours > 23 || minutes > 59 || seconds > 59) return null
+  return { hours, minutes, seconds }
+}
+
+/** Epoch ms on the same local day as `baseMs`, at the given time of day. */
+export function atTimeOfDay(baseMs: number, hours: number, minutes: number, seconds = 0): number {
+  const d = new Date(baseMs)
+  d.setHours(hours, minutes, seconds, 0)
+  return d.getTime()
+}
+
+export function secondsOfDay(t: ClockTime): number {
+  return t.hours * 3600 + t.minutes * 60 + t.seconds
+}

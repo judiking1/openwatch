@@ -454,3 +454,64 @@ button:disabled {
 .note.error {
   color: var(--danger);
 }
+
+.clock-mode {
+  margin-left: 10px;
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+  vertical-align: middle;
+}
+
+.field-row {
+  display: grid;
+  grid-template-columns: 1fr 90px;
+  gap: 10px;
+}
+
+.reading-hint {
+  position: absolute;
+  top: 16px;
+  left: 16px;
+  right: 16px;
+  max-width: 420px;
+  padding: 8px 12px;
+  border: 1px solid var(--panel-border);
+  border-radius: 8px;
+  background: rgba(21, 23, 29, 0.85);
+  backdrop-filter: blur(6px);
+  font-size: 13px;
+  line-height: 1.45;
+  pointer-events: none;
+}
+
+.reading-hint-label {
+  display: block;
+  margin-bottom: 2px;
+  font-size: 10px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--accent);
+}
+
+.stage-nav {
+  position: absolute;
+  right: 16px;
+  bottom: 16px;
+  display: flex;
+  gap: 8px;
+}
+
+.stage-nav a {
+  padding: 6px 12px;
+  border: 1px solid var(--panel-border);
+  border-radius: 6px;
+  background: rgba(21, 23, 29, 0.85);
+  color: var(--text);
+  font-variant-numeric: tabular-nums;
+}
+
+.stage-nav a:hover {
+  border-color: var(--accent);
+}

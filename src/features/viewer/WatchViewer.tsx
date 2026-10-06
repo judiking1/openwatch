@@ -1,88 +1,97 @@
-import { Suspense, useRef, useState } from 'react'
+import { Suspense, useEffect, useRef } from 'react'
 import { resolveAppearance, useAppearanceStore } from '../../stores/appearanceStore'
 import type { WatchConcept } from '../../types/watch'
-import { downloadBlob, EXPORT_DISCLAIMER, exportWatchGlb } from '../export/exportGlb'
 import { CustomizationPanel } from '../customization/CustomizationPanel'
+import { ExportSection } from '../export/ExportSection'
 import { TimeControls } from '../time/TimeControls'
-import { WatchInfo } from './WatchInfo'
+import { WatchHeader, WatchStory } from './WatchInfo'
 import { WatchStage, type WatchStageHandle } from './WatchStage'
 
 type Props = {
   concept: WatchConcept
+  /** Neighbours in exhibition order, for previous / next navigation. */
+  prev?: WatchConcept
+  next?: WatchConcept
   /** Render only the 3D stage (used for thumbnails / embeds). */
   bare?: boolean
 }
 
+function isTyping(target: EventTarget | null) {
+  return target instanceof HTMLElement && /^(INPUT|SELECT|TEXTAREA)$/.test(target.tagName)
+}
+
+/** ←/→ walk through the exhibition. */
+function useArrowNavigation(prev?: WatchConcept, next?: WatchConcept) {
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (isTyping(e.target) || e.metaKey || e.ctrlKey || e.altKey) return
+      const target = e.key === 'ArrowLeft' ? prev : e.key === 'ArrowRight' ? next : undefined
+      if (target) window.location.hash = `#/watch/${target.metadata.id}`
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [prev, next])
+}
+
 /** Generic exhibition viewer: works for any registered concept. */
-export function WatchViewer({ concept, bare = false }: Props) {
+export function WatchViewer({ concept, prev, next, bare = false }: Props) {
   const stage = useRef<WatchStageHandle>(null)
   const stageBox = useRef<HTMLDivElement>(null)
   const { Model, metadata } = concept
   const overrides = useAppearanceStore((s) => s.overrides[metadata.id])
   const appearance = resolveAppearance(concept.defaultAppearance, overrides)
-  const [exporting, setExporting] = useState(false)
-  const [exportError, setExportError] = useState<string | null>(null)
+  useArrowNavigation(prev, next)
 
-  async function handleExport() {
-    const root = stage.current?.getModelRoot()
-    if (!root) return
-    setExporting(true)
-    setExportError(null)
-    try {
-      const blob = await exportWatchGlb(root, metadata, appearance)
-      downloadBlob(blob, `${metadata.number}-${metadata.id}.glb`)
-    } catch (err) {
-      console.error('GLB export failed', err)
-      setExportError(err instanceof Error ? err.message : String(err))
-    } finally {
-      setExporting(false)
-    }
-  }
+  const model = (
+    <WatchStage ref={stage}>
+      <Suspense fallback={null}>
+        <Model appearance={appearance} />
+      </Suspense>
+    </WatchStage>
+  )
 
-  if (bare) {
-    return (
-      <div className="stage stage-bare">
-        <WatchStage>
-          <Suspense fallback={null}>
-            <Model appearance={appearance} />
-          </Suspense>
-        </WatchStage>
-      </div>
-    )
-  }
+  if (bare) return <div className="stage stage-bare">{model}</div>
 
   return (
     <div className="split-layout">
       <div className="stage" ref={stageBox}>
-        <WatchStage ref={stage}>
-          <Suspense fallback={null}>
-            <Model appearance={appearance} />
-          </Suspense>
-        </WatchStage>
+        {model}
+        <div className="reading-hint" role="note">
+          <span className="reading-hint-label">How to read</span>
+          {metadata.readingHint}
+        </div>
         <div className="stage-toolbar">
-          <button onClick={() => stage.current?.resetCamera()}>Reset view</button>
+          <button onClick={() => stage.current?.resetCamera()}>Front view</button>
           <button onClick={() => stageBox.current?.requestFullscreen?.()}>Fullscreen</button>
         </div>
+        <nav className="stage-nav" aria-label="Exhibition">
+          {prev && (
+            <a href={`#/watch/${prev.metadata.id}`} title="Previous (←)">
+              ← {prev.metadata.number}
+            </a>
+          )}
+          {next && (
+            <a href={`#/watch/${next.metadata.id}`} title="Next (→)">
+              {next.metadata.number} →
+            </a>
+          )}
+        </nav>
       </div>
       <aside className="panel">
-        <WatchInfo meta={metadata} />
+        <WatchHeader meta={metadata} />
         <TimeControls />
+        <WatchStory meta={metadata} />
         <CustomizationPanel
           fields={concept.customization}
           appearance={appearance}
           onChange={(key, value) => useAppearanceStore.getState().set(metadata.id, key, value)}
           onReset={() => useAppearanceStore.getState().reset(metadata.id)}
         />
-        <section className="panel-section">
-          <h3>Export</h3>
-          <button onClick={handleExport} disabled={exporting}>
-            {exporting ? 'Exporting…' : 'Download GLB'}
-          </button>
-          {exportError && <p className="note error">Export failed: {exportError}</p>}
-          <p className="note">
-            Exports the current configuration and time as shown. {EXPORT_DISCLAIMER}
-          </p>
-        </section>
+        <ExportSection
+          meta={metadata}
+          appearance={appearance}
+          getRoot={() => stage.current?.getModelRoot()}
+        />
       </aside>
     </div>
   )

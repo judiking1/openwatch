@@ -7,6 +7,7 @@ export const cipherMetadata: WatchMetadata = {
   tagline: 'Every numeral is on the dial. Only one of them is whole.',
   description:
     'Nine concentric rings each carry slices of numerals in a different, scrambled order, so the dial reads as broken glyphs. Like a combination lock, the rings turn by different amounts until the three slices of the right numeral line up in a single window at twelve — the only place on the dial where anything is legible.',
+  readingHint: 'Only the window at 12 is legible: hour, then minutes.',
   howToRead: [
     'Read the window at twelve from the outside in: hour, then the tens and units of the minute (7 / 4 / 5 = 7:45).',
     'Everywhere else the slices never line up into a whole numeral.',

@@ -7,6 +7,7 @@ export const shearsMetadata: WatchMetadata = {
   tagline: 'One gesture, two values: where it points, and how far it opens.',
   description:
     'A pair of scissors replaces the hands. The direction the closed blades point is the hour; how far the blades have opened is the minute. The pair closes with a snap at the top of every hour and slowly opens again. Seconds are a bead sliding out along the handles.',
+  readingHint: 'Gold tip = hour. Blade tips = minutes on the turning scale.',
   howToRead: [
     'Hour: the gold tip on the bisector of the blades points at the hour on the outer ring.',
     'Minutes: each blade tip points at the same minute value on the scale that turns with the blades (0 closed, 60 fully open).',

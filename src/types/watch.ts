@@ -14,6 +14,8 @@ export type WatchMetadata = {
   name: string
   tagline: string
   description: string
+  /** One line shown on the stage: where to look first. */
+  readingHint: string
   howToRead: string[]
   experimental: string
   category: string

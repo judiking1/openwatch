@@ -1,5 +1,15 @@
 import { describe, expect, it } from 'vitest'
-import { dialPoint, formatClock, handAngles, jumpHourAngle, type ClockTime } from './time'
+import {
+  atTimeOfDay,
+  clockTimeFromMs,
+  dialPoint,
+  formatClock,
+  handAngles,
+  jumpHourAngle,
+  parseClock,
+  secondsOfDay,
+  type ClockTime,
+} from './time'
 
 const t = (hours: number, minutes = 0, seconds = 0, milliseconds = 0): ClockTime => ({
   hours,
@@ -74,5 +84,25 @@ describe('jumpHourAngle', () => {
   it('handles midnight and noon', () => {
     expect(jumpHourAngle(t(0, 30))).toBe(0)
     expect(jumpHourAngle(t(12, 30))).toBe(0)
+  })
+})
+
+describe('parseClock', () => {
+  it('parses H:MM and HH:MM:SS', () => {
+    expect(parseClock('7:45')).toEqual({ hours: 7, minutes: 45, seconds: 0 })
+    expect(parseClock('23:59:59')).toEqual({ hours: 23, minutes: 59, seconds: 59 })
+  })
+
+  it('rejects malformed or out-of-range values', () => {
+    for (const bad of ['', '24:00', '7:60', '7:5', 'noon', '12:00:61']) {
+      expect(parseClock(bad), bad).toBeNull()
+    }
+  })
+})
+
+describe('atTimeOfDay / secondsOfDay', () => {
+  it('round-trips a time of day', () => {
+    const ms = atTimeOfDay(Date.now(), 7, 45, 30)
+    expect(secondsOfDay(clockTimeFromMs(ms))).toBe(7 * 3600 + 45 * 60 + 30)
   })
 })

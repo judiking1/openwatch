@@ -7,6 +7,7 @@ export const numeralRingMetadata: WatchMetadata = {
   tagline: 'The pointer stands still. Time turns beneath it.',
   description:
     'A rotating numeral ring interpretation. Nothing on this dial points at the time: a single luminous beam is fixed at twelve, and the numerals themselves rotate underneath it. An inner ring carries the hours, an outer ring the minutes, and a small central disc the seconds.',
+  readingHint: 'The numbers turn — read them under the beam at 12.',
   howToRead: [
     'Read every value at the beam at twelve o’clock.',
     'Inner ring: the hour numeral centred under the beam.',

@@ -30,7 +30,7 @@ export function WatchStage({ children, ref }: Props) {
     <Canvas
       shadows
       dpr={[1, 2]}
-      camera={{ position: [1.4, -1.8, 7.6], fov: 35, near: 0.05, far: 50 }}
+      camera={{ position: [0.5, -1.1, 7.9], fov: 35, near: 0.05, far: 50 }}
       gl={{ preserveDrawingBuffer: true }}
     >
       <color attach="background" args={['#0e0f13']} />
