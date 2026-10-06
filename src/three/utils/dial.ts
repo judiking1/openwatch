@@ -33,3 +33,6 @@ export function createDialTexture(
   texture.anisotropy = 8
   return texture
 }
+
+/** Every model is authored in dial units: the dial has radius 100, plane z = 0, facing +z. */
+export const DIAL_RADIUS = 100

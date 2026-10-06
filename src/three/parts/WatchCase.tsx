@@ -1,5 +1,6 @@
 import type { ReactNode, Ref } from 'react'
 import type { Group } from 'three'
+import { DIAL_RADIUS } from '../utils/dial'
 
 export type CaseAppearance = {
   caseColor: string
@@ -66,7 +67,7 @@ export function WatchCase({
   caseRoughness,
   strapColor,
   strapStyle,
-  radius = 100,
+  radius = DIAL_RADIUS,
   children,
   headRef,
 }: Props) {

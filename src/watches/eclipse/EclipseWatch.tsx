@@ -1,25 +1,19 @@
-import { useFrame } from '@react-three/fiber'
-import { useEffect, useMemo, useRef } from 'react'
-import { ShapeGeometry, type Group, type Shape } from 'three'
+import { useRef } from 'react'
+import { ShapeGeometry, type Group } from 'three'
+import { useClockFrame, useDialTexture, useDisposable } from '../../three/hooks'
 import { Crystal } from '../../three/parts/Crystal'
 import { WatchCase } from '../../three/parts/WatchCase'
-import { createDialTexture, dialRotationZ } from '../../three/utils/dial'
-import { useTimeStore } from '../../stores/timeStore'
-import { clockTimeFromMs, dialPoint, handAngles, jumpHourAngle } from '../../utils/time'
+import {
+  dialFont,
+  drawLabels,
+  drawTicks,
+  FIVE_MINUTE_LABELS,
+  HOUR_LABELS,
+} from '../../three/utils/canvas'
+import { DIAL_RADIUS, dialRotationZ } from '../../three/utils/dial'
+import { handAngles, jumpHourAngle } from '../../utils/time'
 import type { EclipseAppearance } from './appearance'
 import { apertureDiscShape, circleHole, ECLIPSE, sectorHole } from './geometry'
-
-const DIAL_RADIUS = 100
-
-const buildHourDisc = () => {
-  const d = ECLIPSE.hourDisc
-  return apertureDiscShape(d.inner, d.outer, circleHole(d.apertureRadius, d.apertureSize))
-}
-
-const buildMinuteDisc = () => {
-  const { inner, outer, window: w } = ECLIPSE.minuteDisc
-  return apertureDiscShape(inner, outer, sectorHole(w.inner, w.outer, w.halfAngle))
-}
 
 function drawLightFace(ctx: CanvasRenderingContext2D, glow: string, marker: string) {
   const g = ctx.createRadialGradient(0, 0, 0, 0, 0, DIAL_RADIUS)
@@ -29,49 +23,38 @@ function drawLightFace(ctx: CanvasRenderingContext2D, glow: string, marker: stri
   ctx.fillStyle = g
   ctx.fillRect(-DIAL_RADIUS, -DIAL_RADIUS, DIAL_RADIUS * 2, DIAL_RADIUS * 2)
 
-  ctx.fillStyle = marker
-  ctx.strokeStyle = marker
-  ctx.textAlign = 'center'
-  ctx.textBaseline = 'middle'
-  ctx.font = '700 11px Inter, system-ui, sans-serif'
-  for (let i = 0; i < 12; i++) {
-    const p = dialPoint(ECLIPSE.hourDisc.apertureRadius, i * 30)
-    ctx.fillText(String(i === 0 ? 12 : i), p.x, p.y)
-  }
+  drawLabels(ctx, HOUR_LABELS, {
+    radius: ECLIPSE.hourDisc.apertureRadius,
+    font: dialFont(700, 11),
+    color: marker,
+  })
   const m = ECLIPSE.minuteScale
-  ctx.font = '700 7px Inter, system-ui, sans-serif'
-  for (let i = 0; i < 60; i++) {
-    const major = i % 5 === 0
-    const a = dialPoint(major ? m.tickInner - 2 : m.tickInner, i * 6)
-    const b = dialPoint(m.tickOuter, i * 6)
-    ctx.lineWidth = major ? 1.2 : 0.6
-    ctx.beginPath()
-    ctx.moveTo(a.x, a.y)
-    ctx.lineTo(b.x, b.y)
-    ctx.stroke()
-    if (major) {
-      const p = dialPoint(m.numeralRadius, i * 6)
-      ctx.fillText(String(i).padStart(2, '0'), p.x, p.y)
-    }
-  }
-
+  drawTicks(ctx, {
+    count: 60,
+    inner: m.tickInner,
+    outer: m.tickOuter,
+    majorEvery: 5,
+    majorInner: m.tickInner - 2,
+    width: 0.6,
+    majorWidth: 1.2,
+    color: marker,
+  })
+  drawLabels(ctx, FIVE_MINUTE_LABELS, {
+    radius: m.numeralRadius,
+    font: dialFont(700, 7),
+    color: marker,
+  })
   // Seconds scale around the sun, read against the moon's direction.
-  for (let i = 0; i < 60; i++) {
-    const major = i % 5 === 0
-    const a = dialPoint(major ? 15.5 : 17, i * 6)
-    const b = dialPoint(19, i * 6)
-    ctx.lineWidth = major ? 0.6 : 0.3
-    ctx.beginPath()
-    ctx.moveTo(a.x, a.y)
-    ctx.lineTo(b.x, b.y)
-    ctx.stroke()
-  }
-}
-
-function useDiscGeometry(build: () => Shape) {
-  const geometry = useMemo(() => new ShapeGeometry(build(), 64), [build])
-  useEffect(() => () => geometry.dispose(), [geometry])
-  return geometry
+  drawTicks(ctx, {
+    count: 60,
+    inner: 17,
+    outer: 19,
+    majorEvery: 5,
+    majorInner: 15.5,
+    width: 0.3,
+    majorWidth: 0.6,
+    color: marker,
+  })
 }
 
 /** Watch 003 — Eclipse: time read through apertures in rotating dark discs. */
@@ -81,17 +64,22 @@ export function EclipseWatch({ appearance }: { appearance: EclipseAppearance }) 
   const moon = useRef<Group>(null)
 
   const { glowColor, markerColor } = appearance
-  const face = useMemo(
-    () => createDialTexture(DIAL_RADIUS, (ctx) => drawLightFace(ctx, glowColor, markerColor)),
-    [glowColor, markerColor],
-  )
-  useEffect(() => () => face.dispose(), [face])
+  const face = useDialTexture(DIAL_RADIUS, (ctx) => drawLightFace(ctx, glowColor, markerColor), [
+    glowColor,
+    markerColor,
+  ])
+  const hourGeometry = useDisposable(() => {
+    const d = ECLIPSE.hourDisc
+    const shape = apertureDiscShape(d.inner, d.outer, circleHole(d.apertureRadius, d.apertureSize))
+    return new ShapeGeometry(shape, 64)
+  }, [])
+  const minuteGeometry = useDisposable(() => {
+    const { inner, outer, window: w } = ECLIPSE.minuteDisc
+    const shape = apertureDiscShape(inner, outer, sectorHole(w.inner, w.outer, w.halfAngle))
+    return new ShapeGeometry(shape, 64)
+  }, [])
 
-  const hourGeometry = useDiscGeometry(buildHourDisc)
-  const minuteGeometry = useDiscGeometry(buildMinuteDisc)
-
-  useFrame(() => {
-    const t = clockTimeFromMs(useTimeStore.getState().now())
+  useClockFrame((t) => {
     const a = handAngles(t)
     // Jumping hour: the aperture frames one whole numeral for the full hour.
     if (hourDisc.current) hourDisc.current.rotation.z = dialRotationZ(jumpHourAngle(t))
@@ -104,7 +92,7 @@ export function EclipseWatch({ appearance }: { appearance: EclipseAppearance }) 
   )
 
   return (
-    <WatchCase {...appearance} radius={DIAL_RADIUS}>
+    <WatchCase {...appearance}>
       <mesh>
         <circleGeometry args={[DIAL_RADIUS + 1, 128]} />
         <meshStandardMaterial
@@ -116,7 +104,7 @@ export function EclipseWatch({ appearance }: { appearance: EclipseAppearance }) 
         />
       </mesh>
 
-      <group ref={minuteDisc} position={[0, 0, 1]}>
+      <group ref={minuteDisc} name="minute" position={[0, 0, 1]}>
         <mesh geometry={minuteGeometry}>{disc}</mesh>
         {/* index notch at the centre of the window */}
         <mesh
@@ -127,7 +115,7 @@ export function EclipseWatch({ appearance }: { appearance: EclipseAppearance }) 
           <meshBasicMaterial color={glowColor} />
         </mesh>
       </group>
-      <group ref={hourDisc} position={[0, 0, 1.6]}>
+      <group ref={hourDisc} name="hour" position={[0, 0, 1.6]}>
         <mesh geometry={hourGeometry}>{disc}</mesh>
       </group>
 
@@ -136,14 +124,14 @@ export function EclipseWatch({ appearance }: { appearance: EclipseAppearance }) 
         <circleGeometry args={[ECLIPSE.sun, 64]} />
         <meshStandardMaterial color="#fff6e6" emissive={glowColor} emissiveIntensity={1.4} />
       </mesh>
-      <group ref={moon} position={[0, 0, 2.2]}>
+      <group ref={moon} name="second" position={[0, 0, 2.2]}>
         <mesh position={[0, ECLIPSE.moon.orbit, 0]}>
           <circleGeometry args={[ECLIPSE.moon.radius, 64]} />
           <meshStandardMaterial color={appearance.moonColor} metalness={0.5} roughness={0.5} />
         </mesh>
       </group>
 
-      <Crystal crystalTint={appearance.crystalTint} crystalOpacity={appearance.crystalOpacity} />
+      <Crystal {...appearance} />
     </WatchCase>
   )
 }

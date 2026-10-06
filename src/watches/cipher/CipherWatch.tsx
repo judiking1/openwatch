@@ -1,11 +1,11 @@
-import { useFrame } from '@react-three/fiber'
-import { useEffect, useMemo, useRef } from 'react'
-import { Path, Shape, ShapeGeometry, type CanvasTexture, type Group } from 'three'
+import { useRef } from 'react'
+import { Path, Shape, ShapeGeometry, type Group } from 'three'
 import { Crystal } from '../../three/parts/Crystal'
 import { WatchCase } from '../../three/parts/WatchCase'
-import { createDialTexture, dialRotationZ } from '../../three/utils/dial'
-import { useTimeStore } from '../../stores/timeStore'
-import { clockTimeFromMs, degToRad, dialPoint } from '../../utils/time'
+import { useClockFrame, useDialTexture, useDisposable } from '../../three/hooks'
+import { dialFont } from '../../three/utils/canvas'
+import { DIAL_RADIUS, dialRotationZ } from '../../three/utils/dial'
+import { degToRad, dialPoint } from '../../utils/time'
 import type { CipherAppearance } from './appearance'
 import {
   CIPHER,
@@ -17,7 +17,6 @@ import {
   type CipherGroup,
 } from './cipher'
 
-const DIAL_RADIUS = 100
 const WINDOW = { halfWidth: 13.5, inner: 18, outer: 98 }
 /** Ring travel speed while re-aligning, degrees per second. */
 const RING_SPEED = 220
@@ -38,7 +37,7 @@ function drawBand(ctx: CanvasRenderingContext2D, spec: RingSpec, glyph: string) 
   ctx.fillStyle = glyph
   ctx.textAlign = 'center'
   ctx.textBaseline = 'middle'
-  ctx.font = `700 ${group.fontSize}px Inter, system-ui, sans-serif`
+  ctx.font = dialFont(700, group.fontSize)
   group.permutations[index].forEach((value, slot) => {
     const angle = slotAngle(group, slot)
     const p = dialPoint(group.centre, angle)
@@ -67,15 +66,21 @@ function maskShape(): Shape {
 
 function Ring({
   spec,
-  texture,
+  glyphColor,
   color,
   groupRef,
 }: {
   spec: RingSpec
-  texture: CanvasTexture
+  glyphColor: string
   color: string
   groupRef: (g: Group | null) => void
 }) {
+  const texture = useDialTexture(
+    spec.band.outer,
+    (ctx) => drawBand(ctx, spec, glyphColor),
+    [spec, glyphColor],
+    1024,
+  )
   return (
     <group ref={groupRef} position={[0, 0, 0.5]}>
       <mesh>
@@ -93,29 +98,21 @@ function Ring({
 /** Watch 006 — Cipher: numerals become legible only where nine rings line up. */
 export function CipherWatch({ appearance }: { appearance: CipherAppearance }) {
   const groups = useRef<Array<Group | null>>([])
-  const angles = useRef<number[]>(RINGS.map(() => 0))
+  // null until the first frame, which snaps straight to the current time.
+  const angles = useRef<number[] | null>(null)
 
-  const { glyphColor } = appearance
-  const textures = useMemo(
-    () =>
-      RINGS.map((spec) =>
-        createDialTexture(spec.band.outer, (ctx) => drawBand(ctx, spec, glyphColor), 1024),
-      ),
-    [glyphColor],
-  )
-  useEffect(() => () => textures.forEach((t) => t.dispose()), [textures])
-  const mask = useMemo(() => new ShapeGeometry(maskShape(), 96), [])
-  useEffect(() => () => mask.dispose(), [mask])
+  const mask = useDisposable(() => new ShapeGeometry(maskShape(), 96), [])
 
-  useFrame((_, dt) => {
-    const values = cipherValues(clockTimeFromMs(useTimeStore.getState().now()))
-    const step = RING_SPEED * Math.min(dt, 0.1)
-    RINGS.forEach((spec, i) => {
-      const target = ringTargets(spec.group, values[spec.group.id])[spec.index]
-      const delta = shortestDelta(angles.current[i], target)
-      angles.current[i] += Math.abs(delta) <= step ? delta : Math.sign(delta) * step
+  useClockFrame((t, dt) => {
+    const values = cipherValues(t)
+    const targets = RINGS.map((spec) => ringTargets(spec.group, values[spec.group.id])[spec.index])
+    const current = (angles.current ??= targets)
+    const step = RING_SPEED * Math.min(dt, 0.25)
+    RINGS.forEach((_, i) => {
+      const delta = shortestDelta(current[i], targets[i])
+      current[i] += Math.abs(delta) <= step ? delta : Math.sign(delta) * step
       const g = groups.current[i]
-      if (g) g.rotation.z = dialRotationZ(angles.current[i])
+      if (g) g.rotation.z = dialRotationZ(current[i])
     })
   })
 
@@ -129,7 +126,7 @@ export function CipherWatch({ appearance }: { appearance: CipherAppearance }) {
   const w = WINDOW.halfWidth
 
   return (
-    <WatchCase {...appearance} radius={DIAL_RADIUS}>
+    <WatchCase {...appearance}>
       <mesh>
         <circleGeometry args={[DIAL_RADIUS + 1, 128]} />
         <meshStandardMaterial color={appearance.ringColor} roughness={0.8} />
@@ -139,7 +136,7 @@ export function CipherWatch({ appearance }: { appearance: CipherAppearance }) {
         <Ring
           key={`${spec.group.id}-${spec.index}`}
           spec={spec}
-          texture={textures[i]}
+          glyphColor={appearance.glyphColor}
           color={appearance.ringColor}
           groupRef={(g) => {
             groups.current[i] = g
@@ -171,7 +168,7 @@ export function CipherWatch({ appearance }: { appearance: CipherAppearance }) {
         </mesh>
       ))}
 
-      <Crystal crystalTint={appearance.crystalTint} crystalOpacity={appearance.crystalOpacity} />
+      <Crystal {...appearance} />
     </WatchCase>
   )
 }

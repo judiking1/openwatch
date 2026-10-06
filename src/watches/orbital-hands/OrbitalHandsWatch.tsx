@@ -1,78 +1,62 @@
-import { useFrame } from '@react-three/fiber'
-import { useEffect, useMemo, useRef } from 'react'
+import { useRef } from 'react'
 import { ExtrudeGeometry, Shape, type Group } from 'three'
+import { useClockFrame, useDialTexture, useDisposable } from '../../three/hooks'
 import { Crystal } from '../../three/parts/Crystal'
 import { WatchCase } from '../../three/parts/WatchCase'
-import { createDialTexture, dialRotationZ } from '../../three/utils/dial'
-import { useTimeStore } from '../../stores/timeStore'
-import { clockTimeFromMs, dialPoint, handAngles } from '../../utils/time'
+import { dialFont, drawLabels, drawTicks, fillDisc, HOUR_LABELS } from '../../three/utils/canvas'
+import { DIAL_RADIUS, dialRotationZ } from '../../three/utils/dial'
+import { handAngles } from '../../utils/time'
 import type { OrbitalHandsAppearance } from './appearance'
 import { defaultOrbitalHandsLayout, type IndicatorKind, type OrbitalHandsLayout } from './config'
 import { indicatorOutline, indicatorSize, orbitRadius } from './geometry'
 
 const KINDS: IndicatorKind[] = ['hour', 'minute', 'second']
-const DIAL_RADIUS = 100
 
 type Props = {
   appearance: OrbitalHandsAppearance
   layout?: OrbitalHandsLayout
 }
 
-function useDialTexture(layout: OrbitalHandsLayout, dial: string, numerals: string) {
-  const texture = useMemo(
-    () =>
-      createDialTexture(DIAL_RADIUS, (ctx) => {
-        ctx.fillStyle = dial
-        ctx.fillRect(-DIAL_RADIUS, -DIAL_RADIUS, DIAL_RADIUS * 2, DIAL_RADIUS * 2)
-
-        ctx.strokeStyle = numerals
-        for (let i = 0; i < 60; i++) {
-          const major = i % 5 === 0
-          const r0 = layout.numeralRadius + 9
-          const a = dialPoint(r0, i * 6)
-          const b = dialPoint(r0 + (major ? 4 : 2), i * 6)
-          ctx.globalAlpha = major ? 0.7 : 0.35
-          ctx.lineWidth = major ? 0.9 : 0.5
-          ctx.beginPath()
-          ctx.moveTo(a.x, a.y)
-          ctx.lineTo(b.x, b.y)
-          ctx.stroke()
-        }
-
-        ctx.globalAlpha = 1
-        ctx.fillStyle = numerals
-        ctx.font = '500 10px Inter, system-ui, sans-serif'
-        ctx.textAlign = 'center'
-        ctx.textBaseline = 'middle'
-        for (let i = 0; i < 12; i++) {
-          const p = dialPoint(layout.numeralRadius, i * 30)
-          ctx.fillText(String(i === 0 ? 12 : i), p.x, p.y)
-        }
-      }),
-    [layout.numeralRadius, dial, numerals],
-  )
-  useEffect(() => () => texture.dispose(), [texture])
-  return texture
+function drawDial(
+  ctx: CanvasRenderingContext2D,
+  layout: OrbitalHandsLayout,
+  dial: string,
+  numerals: string,
+) {
+  fillDisc(ctx, dial, DIAL_RADIUS)
+  const r0 = layout.numeralRadius + 9
+  drawTicks(ctx, {
+    count: 60,
+    inner: r0,
+    outer: r0 + 2,
+    majorOuter: r0 + 4,
+    majorEvery: 5,
+    color: numerals,
+    alpha: 0.35,
+    majorAlpha: 0.7,
+    majorWidth: 0.9,
+  })
+  drawLabels(ctx, HOUR_LABELS, {
+    radius: layout.numeralRadius,
+    font: dialFont(500, 10),
+    color: numerals,
+  })
 }
 
-function useIndicatorGeometry(layout: OrbitalHandsLayout, kind: IndicatorKind) {
-  const geometry = useMemo(() => {
-    const { length, width } = indicatorSize(layout, kind)
-    // indicatorOutline is y-down; flip to the y-up scene.
-    const pts = indicatorOutline(orbitRadius(layout, kind), length, width)
-    const shape = new Shape()
-    pts.forEach(([x, y], i) => (i === 0 ? shape.moveTo(x, -y) : shape.lineTo(x, -y)))
-    shape.closePath()
-    return new ExtrudeGeometry(shape, {
-      depth: kind === 'second' ? 1.2 : 2,
-      bevelEnabled: true,
-      bevelSize: 0.3,
-      bevelThickness: 0.3,
-      bevelSegments: 2,
-    })
-  }, [layout, kind])
-  useEffect(() => () => geometry.dispose(), [geometry])
-  return geometry
+function indicatorGeometry(layout: OrbitalHandsLayout, kind: IndicatorKind) {
+  const { length, width } = indicatorSize(layout, kind)
+  // indicatorOutline is y-down; flip to the y-up scene.
+  const pts = indicatorOutline(orbitRadius(layout, kind), length, width)
+  const shape = new Shape()
+  pts.forEach(([x, y], i) => (i === 0 ? shape.moveTo(x, -y) : shape.lineTo(x, -y)))
+  shape.closePath()
+  return new ExtrudeGeometry(shape, {
+    depth: kind === 'second' ? 1.2 : 2,
+    bevelEnabled: true,
+    bevelSize: 0.3,
+    bevelThickness: 0.3,
+    bevelSegments: 2,
+  })
 }
 
 function Indicator({
@@ -88,9 +72,9 @@ function Indicator({
   z: number
   groupRef: (g: Group | null) => void
 }) {
-  const geometry = useIndicatorGeometry(layout, kind)
+  const geometry = useDisposable(() => indicatorGeometry(layout, kind), [layout, kind])
   return (
-    <group ref={groupRef}>
+    <group ref={groupRef} name={kind}>
       <mesh geometry={geometry} position={[0, 0, z]} castShadow>
         <meshStandardMaterial color={color} metalness={0.6} roughness={0.3} />
       </mesh>
@@ -100,11 +84,16 @@ function Indicator({
 
 /** Watch 001 — Orbital Hands, procedural 3D model in dial units. */
 export function OrbitalHandsWatch({ appearance, layout = defaultOrbitalHandsLayout }: Props) {
-  const texture = useDialTexture(layout, appearance.dialColor, appearance.numeralColor)
+  const { dialColor, numeralColor } = appearance
+  const texture = useDialTexture(
+    DIAL_RADIUS,
+    (ctx) => drawDial(ctx, layout, dialColor, numeralColor),
+    [layout, dialColor, numeralColor],
+  )
   const groups = useRef<Partial<Record<IndicatorKind, Group | null>>>({})
 
-  useFrame(() => {
-    const angles = handAngles(clockTimeFromMs(useTimeStore.getState().now()))
+  useClockFrame((t) => {
+    const angles = handAngles(t)
     for (const kind of KINDS) {
       const g = groups.current[kind]
       if (g) g.rotation.z = dialRotationZ(angles[kind])
@@ -118,8 +107,8 @@ export function OrbitalHandsWatch({ appearance, layout = defaultOrbitalHandsLayo
   }
 
   return (
-    <WatchCase {...appearance} radius={DIAL_RADIUS}>
-      <mesh position={[0, 0, 0]} receiveShadow>
+    <WatchCase {...appearance}>
+      <mesh receiveShadow>
         <circleGeometry args={[DIAL_RADIUS + 1, 128]} />
         <meshStandardMaterial map={texture} roughness={0.7} metalness={0.1} />
       </mesh>
@@ -149,7 +138,7 @@ export function OrbitalHandsWatch({ appearance, layout = defaultOrbitalHandsLayo
         <meshStandardMaterial color={appearance.trackColor} metalness={0.8} roughness={0.3} />
       </mesh>
 
-      <Crystal crystalTint={appearance.crystalTint} crystalOpacity={appearance.crystalOpacity} />
+      <Crystal {...appearance} />
     </WatchCase>
   )
 }

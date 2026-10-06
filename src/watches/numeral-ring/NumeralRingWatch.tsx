@@ -1,92 +1,71 @@
-import { useFrame } from '@react-three/fiber'
-import { useEffect, useMemo, useRef } from 'react'
+import { useRef } from 'react'
 import type { Group } from 'three'
+import { useClockFrame, useDialTexture } from '../../three/hooks'
 import { Crystal } from '../../three/parts/Crystal'
 import { WatchCase } from '../../three/parts/WatchCase'
-import { createDialTexture, dialRotationZ } from '../../three/utils/dial'
-import { useTimeStore } from '../../stores/timeStore'
-import { clockTimeFromMs, degToRad, dialPoint } from '../../utils/time'
+import {
+  dialFont,
+  drawLabels,
+  drawTicks,
+  FIVE_MINUTE_LABELS,
+  HOUR_LABELS,
+} from '../../three/utils/canvas'
+import { DIAL_RADIUS, dialRotationZ } from '../../three/utils/dial'
 import type { NumeralRingAppearance } from './appearance'
 import { ringRotations } from './rings'
 
-const DIAL_RADIUS = 100
 const HOUR_RING = { inner: 26, outer: 60, text: 46 }
 const MINUTE_RING = { inner: 62, outer: 99, text: 82 }
 const SECOND_DISC = { outer: 24, text: 15 }
+const SECOND_LABELS = ['00', '10', '20', '30', '40', '50']
 
-/** Numerals drawn tangentially so the one at 12 o'clock reads upright. */
-function drawRingLabels(
-  ctx: CanvasRenderingContext2D,
-  labels: string[],
-  radius: number,
-  font: string,
-  color: string,
-) {
-  ctx.fillStyle = color
-  ctx.font = font
-  ctx.textAlign = 'center'
-  ctx.textBaseline = 'middle'
-  labels.forEach((label, i) => {
-    const angle = (360 / labels.length) * i
-    const p = dialPoint(radius, angle)
-    ctx.save()
-    ctx.translate(p.x, p.y)
-    ctx.rotate(degToRad(angle))
-    ctx.fillText(label, 0, 0)
-    ctx.restore()
+// Ring textures are drawn with extent = the ring's outer radius because RingGeometry
+// UVs span the outer radius.
+
+function drawHourRing(ctx: CanvasRenderingContext2D, color: string) {
+  drawLabels(ctx, HOUR_LABELS, {
+    radius: HOUR_RING.text,
+    font: dialFont(600, 12),
+    color,
+    tangential: true,
   })
 }
 
-function drawHourRing(ctx: CanvasRenderingContext2D, color: string) {
-  const labels = Array.from({ length: 12 }, (_, i) => String(i === 0 ? 12 : i))
-  drawRingLabels(ctx, labels, HOUR_RING.text, '600 12px Inter, system-ui, sans-serif', color)
-}
-
 function drawMinuteRing(ctx: CanvasRenderingContext2D, color: string) {
-  const labels = Array.from({ length: 12 }, (_, i) => String(i * 5).padStart(2, '0'))
-  drawRingLabels(ctx, labels, MINUTE_RING.text, '500 9px Inter, system-ui, sans-serif', color)
-  ctx.strokeStyle = color
-  ctx.lineWidth = 0.6
-  for (let i = 0; i < 60; i++) {
-    if (i % 5 === 0) continue
-    const a = dialPoint(MINUTE_RING.outer - 7, i * 6)
-    const b = dialPoint(MINUTE_RING.outer - 3, i * 6)
-    ctx.beginPath()
-    ctx.moveTo(a.x, a.y)
-    ctx.lineTo(b.x, b.y)
-    ctx.stroke()
-  }
+  drawLabels(ctx, FIVE_MINUTE_LABELS, {
+    radius: MINUTE_RING.text,
+    font: dialFont(500, 9),
+    color,
+    tangential: true,
+  })
+  drawTicks(ctx, {
+    count: 60,
+    inner: MINUTE_RING.outer - 7,
+    outer: MINUTE_RING.outer - 3,
+    color,
+    width: 0.6,
+    skip: (i) => i % 5 === 0,
+  })
 }
 
-/** RingGeometry UVs span the ring's outer radius, so the texture extent must match it. */
 function drawSecondDisc(ctx: CanvasRenderingContext2D, color: string) {
-  const labels = Array.from({ length: 6 }, (_, i) => String(i * 10).padStart(2, '0'))
-  drawRingLabels(ctx, labels, SECOND_DISC.text, '600 5px Inter, system-ui, sans-serif', color)
-  ctx.strokeStyle = color
-  for (let i = 0; i < 60; i++) {
-    if (i % 10 === 0) continue
-    const major = i % 5 === 0
-    const a = dialPoint(SECOND_DISC.outer - (major ? 4 : 2.5), i * 6)
-    const b = dialPoint(SECOND_DISC.outer - 0.8, i * 6)
-    ctx.lineWidth = major ? 0.7 : 0.4
-    ctx.beginPath()
-    ctx.moveTo(a.x, a.y)
-    ctx.lineTo(b.x, b.y)
-    ctx.stroke()
-  }
-}
-
-function useRingTexture(
-  draw: (ctx: CanvasRenderingContext2D, color: string) => void,
-  color: string,
-  extent: number,
-) {
-  const texture = useMemo(
-    () => createDialTexture(extent, (ctx) => draw(ctx, color)),
-    [draw, color, extent],
-  )
-  useEffect(() => () => texture.dispose(), [texture])
-  return texture
+  drawLabels(ctx, SECOND_LABELS, {
+    radius: SECOND_DISC.text,
+    font: dialFont(600, 5),
+    color,
+    tangential: true,
+  })
+  drawTicks(ctx, {
+    count: 60,
+    inner: SECOND_DISC.outer - 2.5,
+    outer: SECOND_DISC.outer - 0.8,
+    majorEvery: 5,
+    majorInner: SECOND_DISC.outer - 4,
+    width: 0.4,
+    majorWidth: 0.7,
+    color,
+    skip: (i) => i % 10 === 0,
+  })
 }
 
 /** Watch 002 — Fixed Beam: numerals rotate under a fixed index. */
@@ -95,30 +74,36 @@ export function NumeralRingWatch({ appearance }: { appearance: NumeralRingAppear
   const minuteRing = useRef<Group>(null)
   const secondDisc = useRef<Group>(null)
 
-  const hourTexture = useRingTexture(drawHourRing, appearance.hourRingColor, HOUR_RING.outer)
-  const minuteTexture = useRingTexture(
-    drawMinuteRing,
-    appearance.minuteRingColor,
+  const { hourRingColor, minuteRingColor, secondColor } = appearance
+  const hourTexture = useDialTexture(HOUR_RING.outer, (ctx) => drawHourRing(ctx, hourRingColor), [
+    hourRingColor,
+  ])
+  const minuteTexture = useDialTexture(
     MINUTE_RING.outer,
+    (ctx) => drawMinuteRing(ctx, minuteRingColor),
+    [minuteRingColor],
   )
-  const secondTexture = useRingTexture(drawSecondDisc, appearance.secondColor, SECOND_DISC.outer)
+  const secondTexture = useDialTexture(
+    SECOND_DISC.outer,
+    (ctx) => drawSecondDisc(ctx, secondColor),
+    [secondColor],
+  )
 
-  useFrame(() => {
-    const r = ringRotations(clockTimeFromMs(useTimeStore.getState().now()))
+  useClockFrame((t) => {
+    const r = ringRotations(t)
     if (hourRing.current) hourRing.current.rotation.z = dialRotationZ(r.hour)
     if (minuteRing.current) minuteRing.current.rotation.z = dialRotationZ(r.minute)
     if (secondDisc.current) secondDisc.current.rotation.z = dialRotationZ(r.second)
   })
 
   return (
-    <WatchCase {...appearance} radius={DIAL_RADIUS}>
+    <WatchCase {...appearance}>
       <mesh receiveShadow>
         <circleGeometry args={[DIAL_RADIUS + 1, 128]} />
         <meshStandardMaterial color={appearance.dialColor} roughness={0.8} />
       </mesh>
 
-      {/* minute ring */}
-      <group ref={minuteRing} position={[0, 0, 0.6]}>
+      <group ref={minuteRing} name="minute" position={[0, 0, 0.6]}>
         <mesh>
           <ringGeometry args={[MINUTE_RING.inner, MINUTE_RING.outer, 128]} />
           <meshStandardMaterial map={minuteTexture} transparent roughness={0.6} />
@@ -130,7 +115,7 @@ export function NumeralRingWatch({ appearance }: { appearance: NumeralRingAppear
       </mesh>
 
       {/* hour ring, slightly raised */}
-      <group ref={hourRing} position={[0, 0, 2]}>
+      <group ref={hourRing} name="hour" position={[0, 0, 2]}>
         <mesh>
           <ringGeometry args={[HOUR_RING.inner, HOUR_RING.outer, 128]} />
           <meshStandardMaterial color={appearance.dialColor} roughness={0.7} />
@@ -141,8 +126,7 @@ export function NumeralRingWatch({ appearance }: { appearance: NumeralRingAppear
         </mesh>
       </group>
 
-      {/* seconds disc */}
-      <group ref={secondDisc} position={[0, 0, 2.5]}>
+      <group ref={secondDisc} name="second" position={[0, 0, 2.5]}>
         <mesh>
           <circleGeometry args={[SECOND_DISC.outer, 64]} />
           <meshStandardMaterial color={appearance.caseColor} metalness={0.9} roughness={0.35} />
@@ -170,7 +154,7 @@ export function NumeralRingWatch({ appearance }: { appearance: NumeralRingAppear
         </mesh>
       ))}
 
-      <Crystal crystalTint={appearance.crystalTint} crystalOpacity={appearance.crystalOpacity} />
+      <Crystal {...appearance} />
     </WatchCase>
   )
 }

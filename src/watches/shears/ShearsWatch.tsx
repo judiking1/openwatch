@@ -1,40 +1,29 @@
-import { useFrame } from '@react-three/fiber'
-import { useEffect, useMemo, useRef } from 'react'
+import { useRef } from 'react'
 import { ExtrudeGeometry, Shape, type Group } from 'three'
+import { useClockFrame, useDialTexture, useDisposable } from '../../three/hooks'
 import { Crystal } from '../../three/parts/Crystal'
 import { WatchCase } from '../../three/parts/WatchCase'
-import { createDialTexture, dialRotationZ } from '../../three/utils/dial'
-import { useTimeStore } from '../../stores/timeStore'
-import { clockTimeFromMs, dialPoint } from '../../utils/time'
+import { dialFont, drawLabels, drawTicks, fillDisc, HOUR_LABELS } from '../../three/utils/canvas'
+import { DIAL_RADIUS, dialRotationZ } from '../../three/utils/dial'
+import { dialPoint } from '../../utils/time'
 import type { ShearsAppearance } from './appearance'
 import { OPENING_PER_MINUTE, SECONDS_TRACK, shearsPose } from './shears'
 
-const DIAL_RADIUS = 100
 const HOUR_NUMERALS = 90
 const BLADE_LENGTH = 68
 const SCALE = { tickInner: 72, tickOuter: 76, labels: 81, extent: 86 }
 
 function drawDial(ctx: CanvasRenderingContext2D, dial: string, numerals: string) {
-  ctx.fillStyle = dial
-  ctx.fillRect(-DIAL_RADIUS, -DIAL_RADIUS, DIAL_RADIUS * 2, DIAL_RADIUS * 2)
-  ctx.fillStyle = numerals
-  ctx.strokeStyle = numerals
-  ctx.textAlign = 'center'
-  ctx.textBaseline = 'middle'
-  ctx.font = '600 9px Inter, system-ui, sans-serif'
-  for (let i = 0; i < 12; i++) {
-    const p = dialPoint(HOUR_NUMERALS, i * 30)
-    ctx.fillText(String(i === 0 ? 12 : i), p.x, p.y)
-    for (let q = 1; q < 4; q++) {
-      const a = dialPoint(HOUR_NUMERALS - 1, i * 30 + q * 7.5)
-      const b = dialPoint(HOUR_NUMERALS + 1, i * 30 + q * 7.5)
-      ctx.lineWidth = 0.5
-      ctx.beginPath()
-      ctx.moveTo(a.x, a.y)
-      ctx.lineTo(b.x, b.y)
-      ctx.stroke()
-    }
-  }
+  fillDisc(ctx, dial, DIAL_RADIUS)
+  drawLabels(ctx, HOUR_LABELS, { radius: HOUR_NUMERALS, font: dialFont(600, 9), color: numerals })
+  // Quarter-hour ticks between the numerals.
+  drawTicks(ctx, {
+    count: 48,
+    inner: HOUR_NUMERALS - 1,
+    outer: HOUR_NUMERALS + 1,
+    color: numerals,
+    skip: (i) => i % 4 === 0,
+  })
 }
 
 /** Minute scale carried by the blade pair: value m sits at ±1.5·m° from the bisector. */
@@ -147,21 +136,19 @@ export function ShearsWatch({ appearance }: { appearance: ShearsAppearance }) {
   const bead = useRef<Group>(null)
 
   const { dialColor, numeralColor, scaleColor, hourTipColor } = appearance
-  const dial = useMemo(
-    () => createDialTexture(DIAL_RADIUS, (ctx) => drawDial(ctx, dialColor, numeralColor)),
-    [dialColor, numeralColor],
-  )
-  const carrierTexture = useMemo(
-    () => createDialTexture(SCALE.extent, (ctx) => drawCarrier(ctx, scaleColor, hourTipColor)),
+  const dial = useDialTexture(DIAL_RADIUS, (ctx) => drawDial(ctx, dialColor, numeralColor), [
+    dialColor,
+    numeralColor,
+  ])
+  const carrierTexture = useDialTexture(
+    SCALE.extent,
+    (ctx) => drawCarrier(ctx, scaleColor, hourTipColor),
     [scaleColor, hourTipColor],
   )
-  const blade = useMemo(() => bladeGeometry(), [])
-  useEffect(() => () => dial.dispose(), [dial])
-  useEffect(() => () => carrierTexture.dispose(), [carrierTexture])
-  useEffect(() => () => blade.dispose(), [blade])
+  const blade = useDisposable(() => bladeGeometry(), [])
 
-  useFrame(() => {
-    const p = shearsPose(clockTimeFromMs(useTimeStore.getState().now()))
+  useClockFrame((t) => {
+    const p = shearsPose(t)
     if (carrier.current) carrier.current.rotation.z = dialRotationZ(p.bisector)
     if (bladeA.current) bladeA.current.rotation.z = dialRotationZ(p.bladeA)
     if (bladeB.current) bladeB.current.rotation.z = dialRotationZ(p.bladeB)
@@ -169,7 +156,7 @@ export function ShearsWatch({ appearance }: { appearance: ShearsAppearance }) {
   })
 
   return (
-    <WatchCase {...appearance} radius={DIAL_RADIUS}>
+    <WatchCase {...appearance}>
       <mesh receiveShadow>
         <circleGeometry args={[DIAL_RADIUS + 1, 128]} />
         <meshStandardMaterial map={dial} roughness={0.85} />
@@ -197,7 +184,7 @@ export function ShearsWatch({ appearance }: { appearance: ShearsAppearance }) {
         <meshStandardMaterial color={appearance.caseColor} metalness={1} roughness={0.2} />
       </mesh>
 
-      <Crystal crystalTint={appearance.crystalTint} crystalOpacity={appearance.crystalOpacity} />
+      <Crystal {...appearance} />
     </WatchCase>
   )
 }

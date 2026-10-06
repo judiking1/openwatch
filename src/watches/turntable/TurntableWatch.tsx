@@ -1,15 +1,20 @@
-import { useFrame } from '@react-three/fiber'
-import { useEffect, useMemo, useRef } from 'react'
+import { useRef } from 'react'
 import type { Group } from 'three'
+import { useClockFrame, useDialTexture } from '../../three/hooks'
 import { Crystal } from '../../three/parts/Crystal'
 import { WatchCase } from '../../three/parts/WatchCase'
-import { createDialTexture, dialRotationZ } from '../../three/utils/dial'
-import { useTimeStore } from '../../stores/timeStore'
-import { clockTimeFromMs, degToRad, dialPoint } from '../../utils/time'
+import {
+  dialFont,
+  drawLabels,
+  drawTicks,
+  fillDisc,
+  FIVE_MINUTE_LABELS,
+  HOUR_LABELS,
+} from '../../three/utils/canvas'
+import { DIAL_RADIUS, dialRotationZ } from '../../three/utils/dial'
 import type { TurntableAppearance } from './appearance'
 import { turntablePose } from './turntable'
 
-const DIAL_RADIUS = 100
 const BEZEL = { inner: 100, outer: 115, numerals: 107.5 }
 const CRADLE_RADIUS = 120
 
@@ -19,42 +24,27 @@ function drawBezel(ctx: CanvasRenderingContext2D, bezel: string, numerals: strin
   ctx.arc(0, 0, BEZEL.outer, 0, Math.PI * 2)
   ctx.arc(0, 0, BEZEL.inner, 0, Math.PI * 2, true)
   ctx.fill()
-  ctx.fillStyle = numerals
-  ctx.textAlign = 'center'
-  ctx.textBaseline = 'middle'
-  ctx.font = '700 9px Inter, system-ui, sans-serif'
-  for (let i = 0; i < 12; i++) {
-    const p = dialPoint(BEZEL.numerals, i * 30)
-    ctx.save()
-    ctx.translate(p.x, p.y)
-    ctx.rotate(degToRad(i * 30))
-    ctx.fillText(String(i === 0 ? 12 : i), 0, 0)
-    ctx.restore()
-  }
+  drawLabels(ctx, HOUR_LABELS, {
+    radius: BEZEL.numerals,
+    font: dialFont(700, 9),
+    color: numerals,
+    tangential: true,
+  })
 }
 
 function drawDial(ctx: CanvasRenderingContext2D, dial: string, scale: string) {
-  ctx.fillStyle = dial
-  ctx.fillRect(-DIAL_RADIUS, -DIAL_RADIUS, DIAL_RADIUS * 2, DIAL_RADIUS * 2)
-  ctx.strokeStyle = scale
-  ctx.fillStyle = scale
-  ctx.textAlign = 'center'
-  ctx.textBaseline = 'middle'
-  ctx.font = '600 8px Inter, system-ui, sans-serif'
-  for (let i = 0; i < 60; i++) {
-    const major = i % 5 === 0
-    const a = dialPoint(major ? 84 : 88, i * 6)
-    const b = dialPoint(94, i * 6)
-    ctx.lineWidth = major ? 1.2 : 0.5
-    ctx.beginPath()
-    ctx.moveTo(a.x, a.y)
-    ctx.lineTo(b.x, b.y)
-    ctx.stroke()
-    if (major) {
-      const p = dialPoint(75, i * 6)
-      ctx.fillText(String(i).padStart(2, '0'), p.x, p.y)
-    }
-  }
+  fillDisc(ctx, dial, DIAL_RADIUS)
+  drawTicks(ctx, {
+    count: 60,
+    inner: 88,
+    outer: 94,
+    majorEvery: 5,
+    majorInner: 84,
+    width: 0.5,
+    majorWidth: 1.2,
+    color: scale,
+  })
+  drawLabels(ctx, FIVE_MINUTE_LABELS, { radius: 75, font: dialFont(600, 8), color: scale })
 }
 
 function Hand({
@@ -89,19 +79,18 @@ export function TurntableWatch({ appearance }: { appearance: TurntableAppearance
   const second = useRef<Group>(null)
 
   const { bezelColor, bezelNumeralColor, dialColor, scaleColor } = appearance
-  const bezel = useMemo(
-    () => createDialTexture(BEZEL.outer, (ctx) => drawBezel(ctx, bezelColor, bezelNumeralColor)),
+  const bezel = useDialTexture(
+    BEZEL.outer,
+    (ctx) => drawBezel(ctx, bezelColor, bezelNumeralColor),
     [bezelColor, bezelNumeralColor],
   )
-  const dial = useMemo(
-    () => createDialTexture(DIAL_RADIUS, (ctx) => drawDial(ctx, dialColor, scaleColor)),
-    [dialColor, scaleColor],
-  )
-  useEffect(() => () => bezel.dispose(), [bezel])
-  useEffect(() => () => dial.dispose(), [dial])
+  const dial = useDialTexture(DIAL_RADIUS, (ctx) => drawDial(ctx, dialColor, scaleColor), [
+    dialColor,
+    scaleColor,
+  ])
 
-  useFrame(() => {
-    const p = turntablePose(clockTimeFromMs(useTimeStore.getState().now()))
+  useClockFrame((t) => {
+    const p = turntablePose(t)
     if (head.current) head.current.rotation.z = dialRotationZ(p.head)
     if (minute.current) minute.current.rotation.z = dialRotationZ(p.minute)
     if (second.current) second.current.rotation.z = dialRotationZ(p.second)
@@ -109,7 +98,7 @@ export function TurntableWatch({ appearance }: { appearance: TurntableAppearance
 
   return (
     <group>
-      <WatchCase {...appearance} radius={DIAL_RADIUS} headRef={head}>
+      <WatchCase {...appearance} headRef={head}>
         <mesh>
           <circleGeometry args={[DIAL_RADIUS + 1, 128]} />
           <meshStandardMaterial map={dial} roughness={0.75} />
@@ -138,7 +127,7 @@ export function TurntableWatch({ appearance }: { appearance: TurntableAppearance
           <cylinderGeometry args={[3.2, 3.2, 1.4, 32]} />
           <meshStandardMaterial color={appearance.caseColor} metalness={1} roughness={0.2} />
         </mesh>
-        <Crystal crystalTint={appearance.crystalTint} crystalOpacity={appearance.crystalOpacity} />
+        <Crystal {...appearance} />
       </WatchCase>
 
       {/* fixed cradle the head turns in, carried by the lugs */}
