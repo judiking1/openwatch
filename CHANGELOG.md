@@ -4,6 +4,25 @@ All notable changes to this project are documented here.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the
 project uses [Semantic Versioning](https://semver.org).
 
+## [0.11.0] - 2026-10-05
+
+### Changed (Phase A of docs/rendering-and-webgpu.md)
+
+- `WatchCase`: shared materials; strap and lugs merged into single meshes. Draw calls per
+  frame drop ~40 % on every watch (Orbital Hands 120 → 72).
+- Lens: minute bars and second dots instanced (508 → 106 draw calls).
+- Cipher, Lens, Angbuilgu: per-frame work no longer allocates in loops (precomputed tables,
+  scratch objects, `shadowOnSphere` out-parameter).
+- Tone mapping set explicitly (ACES, which R3F applied implicitly); AgX / Neutral compared and
+  documented.
+
+### Added
+
+- `?stats` renderer overlay (draw calls, triangles, geometries, textures, fps) and
+  `window.__owlStats` for scripted measurement.
+- `?tone=aces|agx|neutral` look-development switch.
+- Phase A review with measurements and WebGPU blockers in `docs/rendering-and-webgpu.md`.
+
 ## [0.10.0] - 2026-10-05
 
 ### Added
