@@ -28,6 +28,7 @@ rejects ideas that already exist. From its gaps: 004 Shears, 005 Turntable, 006 
 ## Next candidates
 
 - Visual review pass with real devices; tune lighting and strap geometry.
+- Rendering pipeline refactoring and WebGPU readiness pass (see `docs/rendering-and-webgpu.md`).
 - More concepts from the backlog in `docs/research/watch-references.md` (count encoding,
   tilting dish, strap display, dual frame).
 - Share links that encode appearance as well as time.

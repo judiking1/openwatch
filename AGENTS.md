@@ -5,7 +5,8 @@ Read before working on this repository.
 1. `PROJECT_VISION.md` — the why and the long-term direction.
 2. `docs/roadmap.md` — current phase and the next bounded task.
 3. `docs/concepts/*.md` — the concept you are touching.
-4. `git log --oneline -20` — recent work.
+4. `docs/rendering-and-webgpu.md` — rendering architecture and WebGPU readiness.
+5. `git log --oneline -20` — recent work.
 
 ## Workflow
 
