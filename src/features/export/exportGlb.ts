@@ -1,6 +1,7 @@
 import type { Object3D } from 'three'
 import { GLTFExporter } from 'three/examples/jsm/exporters/GLTFExporter.js'
 import type { Appearance, WatchMetadata } from '../../types/watch'
+import { prepareForExport } from './prepareForExport'
 
 /** Models are authored in dial units (dial radius 100); export a ~40 mm watch in metres. */
 const METRES_PER_DIAL_UNIT = 0.0002
@@ -13,7 +14,7 @@ export async function exportWatchGlb(
   meta: WatchMetadata,
   appearance: Appearance,
 ): Promise<Blob> {
-  const copy = root.clone(true)
+  const copy = prepareForExport(root)
   copy.position.set(0, 0, 0)
   copy.rotation.set(0, 0, 0)
   copy.scale.setScalar(METRES_PER_DIAL_UNIT)

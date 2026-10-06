@@ -185,8 +185,9 @@ export function JagyeongnuWatch({ appearance }: { appearance: JagyeongnuAppearan
       u.impactAge.value = impactAge.current
       u.deep.value.set(appearance.waterDeep)
       u.shallow.value.set(appearance.waterShallow)
-      // GLB export cannot carry a shader; it falls back to this colour.
+      // GLB export cannot carry a shader; it falls back to this colour, cut at the level.
       shader.userData.exportColor = appearance.waterShallow
+      water.current!.userData.exportFillFraction = state.level
     }
     impactAge.current += step
 
@@ -227,7 +228,7 @@ export function JagyeongnuWatch({ appearance }: { appearance: JagyeongnuAppearan
       {/* inflow vessel (수수호): simulated water behind a glass front */}
       <mesh
         ref={water}
-        name="minute"
+        name="water"
         position={[VESSEL_CX, (VESSEL.y0 + VESSEL.y1) / 2, 1]}
         material={material}
       >
@@ -273,7 +274,7 @@ function Plaque({ sijin, half, color }: { sijin: number; half: string; color: st
     512,
   )
   return (
-    <mesh name="hour">
+    <mesh name="sijin-plaque">
       <planeGeometry args={[PLAQUE.h, PLAQUE.h]} />
       <meshStandardMaterial map={texture} transparent roughness={0.5} />
     </mesh>

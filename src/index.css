@@ -515,3 +515,78 @@ button:disabled {
 .stage-nav a:hover {
   border-color: var(--accent);
 }
+
+.stage-drop {
+  outline: 2px dashed var(--accent);
+  outline-offset: -12px;
+}
+
+.drop-hint {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-content: center;
+  text-align: center;
+  gap: 6px;
+  padding: 24px;
+  pointer-events: none;
+  color: var(--text-dim);
+}
+
+.drop-hint p:first-child {
+  margin: 0;
+  font-size: 18px;
+  color: var(--text);
+}
+
+.panel-title {
+  margin: 0;
+  font-size: 22px;
+  font-weight: 600;
+}
+
+.file-button {
+  display: inline-block;
+  align-self: flex-start;
+  padding: 6px 12px;
+  border: 1px solid var(--panel-border);
+  border-radius: 6px;
+  background: #20232c;
+  cursor: pointer;
+}
+
+.file-button:hover {
+  border-color: var(--accent);
+}
+
+.file-button input {
+  display: none;
+}
+
+.stats {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 4px 12px;
+  margin: 0;
+  font-size: 12px;
+}
+
+.stats dt {
+  color: var(--text-dim);
+}
+
+.stats dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.hand-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  color: var(--text-dim);
+}
+
+.hand-list .found {
+  color: var(--text);
+}

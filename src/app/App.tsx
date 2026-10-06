@@ -7,6 +7,7 @@ import { atTimeOfDay, parseClock } from '../utils/time'
 import { parseRoute, useHashRoute } from './useHashRoute'
 
 const WatchViewer = lazy(() => import('../features/viewer/WatchViewer'))
+const ModelLab = lazy(() => import('../features/import/ModelLab'))
 
 /**
  * `?t=HH:MM:SS` freezes the clock at that time (screenshots, sharing a reading).
@@ -31,6 +32,12 @@ function useTimeParam(route: string) {
 function Page({ hash }: { hash: string }) {
   const { path, params } = parseRoute(hash)
   if (path === '/lab/orbital-hands-2d') return <OrbitalHandsPrototype />
+  if (path === '/lab/import')
+    return (
+      <Suspense fallback={<div className="placeholder">Loading model lab…</div>}>
+        <ModelLab />
+      </Suspense>
+    )
 
   const watchMatch = path.match(/^\/watch\/([\w-]+)$/)
   if (watchMatch) {
@@ -68,6 +75,7 @@ export function App() {
           </a>
           <nav>
             <a href="#/">Exhibition</a>
+            <a href="#/lab/import">Import</a>
             <a href="#/lab/orbital-hands-2d">2D Lab</a>
           </nav>
         </header>

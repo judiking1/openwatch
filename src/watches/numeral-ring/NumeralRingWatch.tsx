@@ -103,7 +103,7 @@ export function NumeralRingWatch({ appearance }: { appearance: NumeralRingAppear
         <meshStandardMaterial color={appearance.dialColor} roughness={0.8} />
       </mesh>
 
-      <group ref={minuteRing} name="minute" position={[0, 0, 0.6]}>
+      <group ref={minuteRing} name="minute-ring" position={[0, 0, 0.6]}>
         <mesh>
           <ringGeometry args={[MINUTE_RING.inner, MINUTE_RING.outer, 128]} />
           <meshStandardMaterial map={minuteTexture} transparent roughness={0.6} />
@@ -115,7 +115,7 @@ export function NumeralRingWatch({ appearance }: { appearance: NumeralRingAppear
       </mesh>
 
       {/* hour ring, slightly raised */}
-      <group ref={hourRing} name="hour" position={[0, 0, 2]}>
+      <group ref={hourRing} name="hour-ring" position={[0, 0, 2]}>
         <mesh>
           <ringGeometry args={[HOUR_RING.inner, HOUR_RING.outer, 128]} />
           <meshStandardMaterial color={appearance.dialColor} roughness={0.7} />
@@ -126,7 +126,7 @@ export function NumeralRingWatch({ appearance }: { appearance: NumeralRingAppear
         </mesh>
       </group>
 
-      <group ref={secondDisc} name="second" position={[0, 0, 2.5]}>
+      <group ref={secondDisc} name="second-disc" position={[0, 0, 2.5]}>
         <mesh>
           <circleGeometry args={[SECOND_DISC.outer, 64]} />
           <meshStandardMaterial color={appearance.caseColor} metalness={0.9} roughness={0.35} />

@@ -252,7 +252,11 @@ export function AngbuilguWatch({ appearance }: { appearance: AngbuilguAppearance
         <meshStandardMaterial color={appearance.caseColor} metalness={1} roughness={0.3} />
       </mesh>
 
-      <instancedMesh ref={shadow} args={[undefined, undefined, SHADOW_SAMPLES]} name="hour">
+      <instancedMesh
+        ref={shadow}
+        args={[undefined, undefined, SHADOW_SAMPLES]}
+        name="needle-shadow"
+      >
         <sphereGeometry args={[1.3, 10, 8]} />
         <meshBasicMaterial color={appearance.shadowColor} transparent opacity={0.85} />
       </instancedMesh>
