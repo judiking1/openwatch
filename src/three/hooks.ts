@@ -30,10 +30,13 @@ export function useDialTexture(
  * Runs every frame with the displayed clock time (live, paused or simulated).
  * Concepts animate here so time control works for all of them without wiring.
  */
-export function useClockFrame(update: (time: ClockTime, delta: number) => void) {
+export function useClockFrame(update: (time: ClockTime, delta: number, epochMs: number) => void) {
   const latest = useRef(update)
   useEffect(() => {
     latest.current = update
   })
-  useFrame((_, delta) => latest.current(clockTimeFromMs(useTimeStore.getState().now()), delta))
+  useFrame((_, delta) => {
+    const ms = useTimeStore.getState().now()
+    latest.current(clockTimeFromMs(ms), delta, ms)
+  })
 }

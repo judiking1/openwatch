@@ -1,4 +1,5 @@
 import type { WatchConcept } from '../types/watch'
+import { angbuilgu } from './angbuilgu'
 import { cipher } from './cipher'
 import { eclipse } from './eclipse'
 import { lens } from './lens'
@@ -20,6 +21,7 @@ export const concepts: WatchConcept[] = [
   marble,
   lens,
   opticalLever,
+  angbuilgu,
 ]
 
 export function getConcept(id: string): WatchConcept | undefined {
