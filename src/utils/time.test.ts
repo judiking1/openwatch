@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import {
+  angleDelta,
   atTimeOfDay,
   clockTimeFromMs,
   dialPoint,
@@ -104,5 +105,13 @@ describe('atTimeOfDay / secondsOfDay', () => {
   it('round-trips a time of day', () => {
     const ms = atTimeOfDay(Date.now(), 7, 45, 30)
     expect(secondsOfDay(clockTimeFromMs(ms))).toBe(7 * 3600 + 45 * 60 + 30)
+  })
+})
+
+describe('angleDelta', () => {
+  it('wraps to the short way round', () => {
+    expect(angleDelta(10, 350)).toBe(20)
+    expect(angleDelta(350, 10)).toBe(-20)
+    expect(angleDelta(180, 0)).toBe(180)
   })
 })

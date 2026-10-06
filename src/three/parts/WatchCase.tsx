@@ -1,5 +1,5 @@
 import type { ReactNode, Ref } from 'react'
-import type { Group } from 'three'
+import { BackSide, type Group } from 'three'
 import { DIAL_RADIUS } from '../utils/dial'
 
 export type CaseAppearance = {
@@ -18,6 +18,11 @@ type Props = CaseAppearance & {
    * separate from the lugs and strap, so a concept can move the head itself.
    */
   headRef?: Ref<Group>
+  /**
+   * Depth of a recess below the dial plane (dial units). 0 = the usual flat dial seat.
+   * Concepts with bowls or tilting parts use it; the case grows thicker to fit.
+   */
+  cavityDepth?: number
 }
 
 type StrapSegment = { y: number; z: number; tilt: number; length: number }
@@ -70,17 +75,45 @@ export function WatchCase({
   radius = DIAL_RADIUS,
   children,
   headRef,
+  cavityDepth = 0,
 }: Props) {
   const metal = <meshStandardMaterial color={caseColor} metalness={1} roughness={caseRoughness} />
   const outer = radius + 14
+  const seat = radius + 1
+  /** Underside of the case middle; the caseback sits below it. */
+  const bottom = -Math.max(17, cavityDepth + 5)
   const strap = strapSegments(outer + 6, -8)
 
   return (
     <group>
       <group ref={headRef}>
-        {/* case middle */}
-        <mesh position={[0, 0, -9]} rotation={[Math.PI / 2, 0, 0]} castShadow receiveShadow>
-          <cylinderGeometry args={[outer, outer - 3, 16, 128]} />
+        {/* case middle: outer wall, top ring and the seat (or recess) for the dial */}
+        <mesh
+          position={[0, 0, (-1 + bottom) / 2]}
+          rotation={[Math.PI / 2, 0, 0]}
+          castShadow
+          receiveShadow
+        >
+          <cylinderGeometry args={[outer, outer - 3, -1 - bottom, 128, 1, true]} />
+          {metal}
+        </mesh>
+        <mesh position={[0, 0, -1]}>
+          <ringGeometry args={[seat, outer, 128]} />
+          {metal}
+        </mesh>
+        {cavityDepth > 0 && (
+          <mesh position={[0, 0, -1 - cavityDepth / 2]} rotation={[Math.PI / 2, 0, 0]}>
+            <cylinderGeometry args={[seat, seat, cavityDepth, 128, 1, true]} />
+            <meshStandardMaterial
+              color={caseColor}
+              metalness={1}
+              roughness={caseRoughness}
+              side={BackSide}
+            />
+          </mesh>
+        )}
+        <mesh position={[0, 0, -1 - cavityDepth]}>
+          <circleGeometry args={[seat, 128]} />
           {metal}
         </mesh>
         {/* bezel */}
@@ -89,7 +122,7 @@ export function WatchCase({
           {metal}
         </mesh>
         {/* caseback */}
-        <mesh position={[0, 0, -18]} rotation={[Math.PI / 2, 0, 0]}>
+        <mesh position={[0, 0, bottom - 1]} rotation={[Math.PI / 2, 0, 0]}>
           <cylinderGeometry args={[outer - 8, outer - 4, 4, 96]} />
           {metal}
         </mesh>

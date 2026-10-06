@@ -87,3 +87,9 @@ export function atTimeOfDay(baseMs: number, hours: number, minutes: number, seco
 export function secondsOfDay(t: ClockTime): number {
   return t.hours * 3600 + t.minutes * 60 + t.seconds
 }
+
+/** Smallest signed difference a − b in degrees, in (−180, 180]. */
+export function angleDelta(a: number, b: number): number {
+  const d = (((a - b) % 360) + 360) % 360
+  return d > 180 ? d - 360 : d
+}

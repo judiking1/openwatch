@@ -1,7 +1,10 @@
 import type { WatchConcept } from '../types/watch'
 import { cipher } from './cipher'
 import { eclipse } from './eclipse'
+import { lens } from './lens'
+import { marble } from './marble'
 import { numeralRing } from './numeral-ring'
+import { opticalLever } from './optical-lever'
 import { orbitalHands } from './orbital-hands'
 import { shears } from './shears'
 import { turntable } from './turntable'
@@ -14,6 +17,9 @@ export const concepts: WatchConcept[] = [
   shears,
   turntable,
   cipher,
+  marble,
+  lens,
+  opticalLever,
 ]
 
 export function getConcept(id: string): WatchConcept | undefined {
