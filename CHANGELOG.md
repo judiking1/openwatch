@@ -4,6 +4,30 @@ All notable changes to this project are documented here.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the
 project uses [Semantic Versioning](https://semver.org).
 
+## [0.9.0] - 2026-10-05
+
+### Added
+
+- Stage "How to read" hint per concept (`readingHint` metadata), so rotating-scale watches
+  (Fixed Beam, Turntable, Cipher) do not look broken when 12 is not at the top.
+- Previous / next navigation on the stage and with the ← / → keys.
+- Time panel: scrub-the-day slider, mode badge (live / paused / ×speed), compact time + speed row.
+- `parseClock`, `atTimeOfDay`, `secondsOfDay` time helpers with tests.
+
+### Changed
+
+- Refactor: `useClockFrame`, `useDialTexture`, `useDisposable` and canvas `drawTicks` /
+  `drawLabels` helpers replace per-concept boilerplate; shared `DIAL_RADIUS`.
+- Viewer panel order: title → time → how to read → about → customize → export.
+- More frontal default camera; "Reset view" renamed "Front view".
+
+### Fixed
+
+- Opening a `?t=` link froze the clock for the rest of the session; leaving the link now
+  returns to live time.
+- Cipher rings could be captured mid-spin on load and show mixed glyphs; they now snap to the
+  current time on the first frame.
+
 ## [0.8.0] - 2026-10-05
 
 ### Added
