@@ -590,3 +590,20 @@ button:disabled {
 .hand-list .found {
   color: var(--text);
 }
+
+.render-stats {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  margin: 0;
+  padding: 6px 10px;
+  border-radius: 6px;
+  background: rgba(0, 0, 0, 0.6);
+  color: #9fe6b8;
+  font:
+    11px/1.4 ui-monospace,
+    SFMono-Regular,
+    Menlo,
+    monospace;
+  pointer-events: none;
+}
