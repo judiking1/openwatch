@@ -4,6 +4,22 @@ All notable changes to this project are documented here.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the
 project uses [Semantic Versioning](https://semver.org).
 
+## [0.12.0] - 2026-10-05
+
+### Added
+
+- Live exhibition: every card renders its watch in real time (current time, customised
+  appearance) through a single shared WebGL canvas with scissored drei `<View>`s; views
+  scrolled out of sight are skipped. A Live / Stills toggle is remembered; touch devices and
+  reduced-motion users start on stills.
+- `StudioLighting` `contactShadows` option; `useLabelMasks` (white label textures tinted by material).
+
+### Fixed
+
+- Turntable minute numerals were upside down for half the day; they now ride on the turning
+  dial but stay upright.
+- Stable Fluids no longer inherits a view's scissor test.
+
 ## [0.11.0] - 2026-10-05
 
 ### Changed (Phase A of docs/rendering-and-webgpu.md)
