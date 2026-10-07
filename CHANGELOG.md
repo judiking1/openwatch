@@ -4,7 +4,27 @@ All notable changes to this project are documented here.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the
 project uses [Semantic Versioning](https://semver.org).
 
-## [0.13.0] - 2026-10-05
+## [0.14.0] - 2026-10-07
+
+### Added (Phase C of docs/rendering-and-webgpu.md)
+
+- Experimental `?renderer=webgpu` (and `webgpu-gl` for testing): `WebGPURenderer` through
+  `createWatchRenderer`, lazily loaded so the default WebGL build is unchanged. The stats
+  overlay names the backend.
+- First TSL materials on that renderer: brushed-metal case (stretched noise grain) and a
+  Fresnel sapphire crystal.
+- `StableFluidTSL`: the Jagyeongnu Navier–Stokes solver and water shader ported to TSL.
+- `Lines` part (fat lines on WebGL, line segments on the node renderer); GLB export falls back
+  from node materials to standard ones (with tests).
+
+### Changed
+
+- Studio lighting no longer uses drei `Environment` / `ContactShadows`: the light boxes are
+  baked once with PMREM (`StudioEnvironment`) and the contact shadow is a static blob
+  (`GroundShadow`). Same look on WebGL with roughly half the draw calls per frame.
+- Shadow maps use `PCFShadowMap` explicitly (three r186 dropped the soft variant).
+
+- 2026-10-05
 
 ### Changed (Phase B of docs/rendering-and-webgpu.md)
 
