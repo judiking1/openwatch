@@ -1,0 +1,132 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/judiking1/openwatch/docs/concept-generator/concept-spec.schema.json",
+  "title": "Orbital Watch Lab concept spec",
+  "description": "What a new watch concept needs before any code is written. `npm run new-concept <spec.json>` scaffolds a concept from it.",
+  "type": "object",
+  "required": [
+    "id",
+    "number",
+    "name",
+    "tagline",
+    "description",
+    "readingHint",
+    "howToRead",
+    "encoding",
+    "axes",
+    "precedents",
+    "category",
+    "origin",
+    "feasibility",
+    "appearance"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "id": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9-]*$",
+      "description": "Folder name under src/watches/."
+    },
+    "number": { "type": "string", "pattern": "^\\d{3}$" },
+    "name": { "type": "string", "maxLength": 24 },
+    "tagline": { "type": "string", "maxLength": 90 },
+    "description": { "type": "string" },
+    "readingHint": {
+      "type": "string",
+      "maxLength": 110,
+      "description": "One line shown over the stage."
+    },
+    "howToRead": { "type": "array", "items": { "type": "string" }, "minItems": 2 },
+    "experimental": {
+      "type": "string",
+      "description": "What is speculative and how it might be built."
+    },
+    "encoding": {
+      "type": "object",
+      "description": "How each unit of time is shown: which element, and what about it changes.",
+      "required": ["hour", "minute"],
+      "additionalProperties": false,
+      "properties": {
+        "hour": { "$ref": "#/$defs/encoding" },
+        "minute": { "$ref": "#/$defs/encoding" },
+        "second": { "$ref": "#/$defs/encoding" }
+      }
+    },
+    "axes": {
+      "type": "array",
+      "minItems": 1,
+      "description": "Difference axes from docs/research/watch-references.md §2 that the concept occupies.",
+      "items": { "type": "string" }
+    },
+    "precedents": {
+      "type": "array",
+      "minItems": 1,
+      "description": "Nearest existing watches/clocks found by searching (PROJECT_VISION.md §21).",
+      "items": {
+        "type": "object",
+        "required": ["name", "verdict"],
+        "additionalProperties": false,
+        "properties": {
+          "name": { "type": "string" },
+          "url": { "type": "string" },
+          "verdict": { "enum": ["different", "overlaps", "same"] }
+        }
+      }
+    },
+    "category": { "type": "string" },
+    "origin": {
+      "type": "object",
+      "required": ["type", "note"],
+      "additionalProperties": false,
+      "properties": {
+        "type": { "enum": ["human", "ai", "collaborative"] },
+        "note": { "type": "string" }
+      }
+    },
+    "feasibility": { "enum": ["plausible", "conceptual", "speculative"] },
+    "appearance": {
+      "type": "array",
+      "description": "Concept-specific customisation fields; case, crystal and strap fields are added automatically.",
+      "items": {
+        "type": "object",
+        "required": ["key", "label", "group", "default"],
+        "additionalProperties": false,
+        "properties": {
+          "key": { "type": "string", "pattern": "^[a-z][A-Za-z0-9]*$" },
+          "label": { "type": "string" },
+          "group": { "enum": ["Dial", "Indicators"] },
+          "default": { "type": "string", "pattern": "^#[0-9a-fA-F]{6}$" }
+        }
+      }
+    },
+    "sound": {
+      "description": "Sound profile (see SoundProfile in src/types/watch.ts). Defaults to an escapement.",
+      "enum": ["escapement", "drop", "ratchet", "quiet"]
+    }
+  },
+  "$defs": {
+    "encoding": {
+      "type": "object",
+      "required": ["element", "variable"],
+      "additionalProperties": false,
+      "properties": {
+        "element": { "type": "string", "description": "e.g. 'blade carrier', 'sand circle'" },
+        "variable": {
+          "enum": [
+            "angle",
+            "relative angle",
+            "radius",
+            "size",
+            "position",
+            "count",
+            "alignment",
+            "colour",
+            "shape",
+            "other"
+          ]
+        },
+        "note": { "type": "string" }
+      }
+    }
+  }
+}

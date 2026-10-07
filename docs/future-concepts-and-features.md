@@ -173,21 +173,21 @@ shaders if its encoding is reworked. Sources: [Valbray × Leica](https://petapix
 
 ## 6. Implementation Task Roadmap for AI Agents
 
-Status as of v0.16.0. The rendering groundwork these features need now exists: bloom on
+Status as of v0.17.0: every task below is done. The rendering groundwork these features need now exists: bloom on
 both renderers, compute shaders on the WebGPU backend, and the reading-aid pattern (Angbuilgu
 guide).
 
 ```
 [Phase 1: Viewer Polish & Showcase]
-├── Task 1.1: Exploded View slider in WatchStage & WatchCase
-├── Task 1.2: Lume Check (Night Mode) toggle — can reuse StageBloom
-└── Task 1.3: Web Audio API procedural mechanical tick-tock engine
+├── Task 1.1: Exploded View slider in WatchStage & WatchCase — done
+├── Task 1.2: Lume Check (Night Mode) toggle — done
+└── Task 1.3: Web Audio API procedural mechanical tick-tock engine — done
 
 [Phase 2: Next Novel Concepts]
 ├── Task 2.1: Concept 012 — Iris — built
 └── Task 2.2: Concept 013 — reworked and built as Chladni
 
 [Phase 3: AI Lab & Sharing]
-├── Task 3.1: Deep-link URL encoding for appearance customization
-└── Task 3.2: Concept generator schema and prompt template
+├── Task 3.1: Deep-link URL encoding for appearance customization — done (`?a=`, Copy link)
+└── Task 3.2: Concept generator schema and prompt template — done (`docs/concept-generator/`)
 ```

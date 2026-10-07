@@ -11,7 +11,8 @@
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "test": "vitest run --passWithNoTests",
-    "typecheck": "tsc -b"
+    "typecheck": "tsc -b",
+    "new-concept": "node scripts/new-concept.mjs"
   },
   "dependencies": {
     "@react-three/drei": "^10.7.9",

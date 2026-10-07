@@ -1,0 +1,43 @@
+{
+  "id": "iris",
+  "number": "012",
+  "name": "Iris",
+  "tagline": "The minute is how far the eye has closed.",
+  "description": "A nine-blade diaphragm covers the dial and closes from wide open to a pinhole over each hour; the blade carrier turns once in twelve hours.",
+  "readingHint": "Minutes: the ring the blade edges touch. Hour: the gold tip on the outer ring.",
+  "howToRead": [
+    "Minutes: read the minute ring the straight blade edges just touch.",
+    "Hour: the gold tip on the blades points at the hour numeral outside them."
+  ],
+  "experimental": "A cam closes the blades over the hour and a spring release opens them.",
+  "encoding": {
+    "hour": { "element": "blade carrier", "variable": "angle" },
+    "minute": {
+      "element": "aperture",
+      "variable": "size",
+      "note": "inradius 78 → 10 over the hour"
+    },
+    "second": { "element": "pinhole hand", "variable": "angle" }
+  },
+  "axes": ["one element, two values", "size as encoding", "retrograde snap"],
+  "precedents": [
+    {
+      "name": "Valbray EL1 (Leica Oculus diaphragm)",
+      "url": "https://petapixel.com/2014/05/22/leica-teams-swiss-watch-maker-valbray-insanely-unique-timepiece",
+      "verdict": "overlaps"
+    },
+    {
+      "name": "Tokyoflash iris concept",
+      "url": "https://blog.tokyoflash.com/2013/07/26/watch-design-inspired-by-a-camera-iris/",
+      "verdict": "different"
+    }
+  ],
+  "category": "Linkage",
+  "origin": { "type": "collaborative", "note": "Example spec mirroring watch 012." },
+  "feasibility": "plausible",
+  "appearance": [
+    { "key": "dialColor", "label": "Background", "group": "Dial", "default": "#ece6d8" },
+    { "key": "bladeColor", "label": "Blades", "group": "Indicators", "default": "#3a3e46" }
+  ],
+  "sound": "escapement"
+}
