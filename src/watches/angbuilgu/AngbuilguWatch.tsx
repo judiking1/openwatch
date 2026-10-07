@@ -34,6 +34,8 @@ const R = 86
 const SQUASH = 0.24
 const NEEDLE = 40
 const SHADOW_SAMPLES = 24
+/** Dots of the reading guide from the shadow tip down to the hour numbers. */
+const GUIDE_SAMPLES = 22
 const SOLSTICE = 23.44
 const FIRST_HOUR = 5
 const LAST_HOUR = 19
@@ -186,6 +188,7 @@ export function AngbuilguWatch({ appearance }: { appearance: AngbuilguAppearance
   const grid = useGrid()
   const labels = useLabels()
   const shadow = useRef<InstancedMesh>(null)
+  const guide = useRef<InstancedMesh>(null)
   const sunBead = useRef<Group>(null)
   const moonBead = useRef<Group>(null)
   const matrix = useMemo(() => new Matrix4(), [])
@@ -221,6 +224,24 @@ export function AngbuilguWatch({ appearance }: { appearance: AngbuilguAppearance
           mesh.setMatrixAt(i, matrix)
         }
         mesh.instanceMatrix.needsUpdate = true
+      }
+    }
+    // Reading guide: the current hour line (a meridian of the bowl) from the shadow tip down
+    // to the row of hour numbers, ending in a marker between them.
+    const dots = guide.current
+    if (dots) {
+      dots.visible = day
+      if (day) {
+        const end = SOLSTICE + 5
+        for (let i = 0; i < GUIDE_SAMPLES; i++) {
+          const f = i / (GUIDE_SAMPLES - 1)
+          const p = tipShadow(hours, declination + (end - declination) * f)
+          const size = !p ? 0 : i === GUIDE_SAMPLES - 1 ? 3 : i % 2 ? 0 : 1.1
+          matrix.makeScale(size, size, size)
+          if (p) matrix.setPosition(p.x * 0.98, p.y * 0.98, p.z * 0.98 * SQUASH)
+          dots.setMatrixAt(i, matrix)
+        }
+        dots.instanceMatrix.needsUpdate = true
       }
     }
     if (sunBead.current) {
@@ -305,6 +326,11 @@ export function AngbuilguWatch({ appearance }: { appearance: AngbuilguAppearance
       >
         <sphereGeometry args={[1.3, 10, 8]} />
         <meshBasicMaterial color={appearance.shadowColor} transparent opacity={0.85} />
+      </instancedMesh>
+
+      <instancedMesh ref={guide} args={[undefined, undefined, GUIDE_SAMPLES]} name="time-guide">
+        <sphereGeometry args={[1, 12, 8]} />
+        <meshBasicMaterial color={appearance.sunColor} toneMapped={false} />
       </instancedMesh>
 
       <group ref={sunBead}>

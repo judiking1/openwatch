@@ -22,6 +22,11 @@ and one shadow shows the time **and** the season.
 - Night — the sun is below the horizon; a moon bead crosses the north rim through the five
   watches, each labelled with its hours (初更 19–21 … 五更 3–5).
 - Labels sit on small bowl-coloured backings so they stay legible over the engraved grid.
+- **Reading guide:** the hour line under the shadow tip is the current time, but it converges
+  toward the rim where the shadow usually falls. A dotted gold guide follows that same line
+  (constant hour angle, varying declination) from the tip down to the number row and ends in
+  a marker, so the time reads directly — also at 600× speed. It is a modern aid computed from
+  the same geometry, not part of the 1434 instrument.
 
 ## Math (`sky.ts`, tested)
 
