@@ -53,8 +53,22 @@ export function getNodeLibrary(gl: unknown): NodeLibrary | null {
   return rendererKind(gl).nodes ? nodeLibrary : null
 }
 
-export function createWatchRenderer(mode: RendererMode, options: RendererOptions) {
+type GPUNavigator = { gpu?: { requestAdapter: () => Promise<unknown> } }
+
+/** True when the browser exposes WebGPU and actually returns an adapter. */
+async function hasWebGPUAdapter() {
+  try {
+    const gpu = (navigator as unknown as GPUNavigator).gpu
+    return Boolean(gpu && (await gpu.requestAdapter()))
+  } catch {
+    return false
+  }
+}
+
+export function createWatchRenderer(requested: RendererMode, options: RendererOptions) {
   return async (props: CanvasProps) => {
+    const mode =
+      requested === 'auto' ? ((await hasWebGPUAdapter()) ? 'webgpu' : 'webgl') : requested
     if (mode === 'webgpu' || mode === 'webgpu-gl') {
       installSwizzleShim()
       const [{ WebGPURenderer }, library] = await Promise.all([

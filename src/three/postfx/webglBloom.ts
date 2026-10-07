@@ -8,8 +8,7 @@ import type { BloomSettings } from '../../types/watch'
 /**
  * Bloom on WebGLRenderer: the scene into a half-float target (no tone mapping yet), an
  * Unreal bloom of everything above `threshold` in linear HDR, then tone mapping and sRGB in
- * the output pass. There is no per-mesh selection here: the threshold alone keeps ordinary
- * lit surfaces out, which works because emitters are unlit and over-bright.
+ * the output pass — the same threshold logic as the TSL pipeline on WebGPURenderer.
  */
 export function createWebGLBloom(
   renderer: unknown,

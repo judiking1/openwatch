@@ -8,9 +8,9 @@ type WebGLBloomModule = typeof import('./webglBloom')
 
 /**
  * Bloom for the stage on either renderer. Takes over R3F's render with a frame callback of
- * positive priority. WebGPURenderer: the TSL pipeline from the lazy node library, glowing
- * only meshes marked `userData.glow` (MRT). WebGLRenderer: an EffectComposer with
- * UnrealBloomPass, loaded on demand, selecting by threshold alone.
+ * positive priority. WebGPURenderer: the TSL pipeline from the lazy node library.
+ * WebGLRenderer: an EffectComposer with UnrealBloomPass, loaded on demand. Both select by a
+ * linear-HDR threshold, which only unlit, over-bright emitters exceed.
  */
 export function StageBloom({ settings }: { settings: BloomSettings }) {
   const library = getNodeLibrary(useThree((s) => s.gl))

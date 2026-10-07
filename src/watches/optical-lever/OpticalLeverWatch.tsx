@@ -55,19 +55,16 @@ function drawDial(ctx: CanvasRenderingContext2D) {
   })
 }
 
-/** Marks emitters for selective bloom (the stage's post effects; renderer-agnostic data). */
-const GLOW = { glow: true }
-
 /** A beam of light from the origin along local +y. */
 function Beam({ length, width, color }: { length: number; width: number; color: string }) {
   return (
     <group>
-      <mesh position={[0, length / 2, 0]} userData={GLOW}>
+      <mesh position={[0, length / 2, 0]}>
         <boxGeometry args={[width * 0.45, length, width * 0.45]} />
         <meshBasicMaterial color="#ffffff" toneMapped={false} />
       </mesh>
       {[1.2, 3].map((scale, i) => (
-        <mesh key={scale} position={[0, length / 2, 0]} userData={GLOW}>
+        <mesh key={scale} position={[0, length / 2, 0]}>
           <boxGeometry args={[width * scale, length, width * scale]} />
           <meshBasicMaterial
             color={color}
@@ -130,7 +127,7 @@ export function OpticalLeverWatch({ appearance }: { appearance: OpticalLeverAppe
             {/* reflected beam: the hand */}
             <group ref={(g) => void (beams.current[kind] = g)} name={kind}>
               <Beam length={l.reach} width={l.width} color={color[kind]} />
-              <mesh position={[0, l.reach, 0]} userData={GLOW}>
+              <mesh position={[0, l.reach, 0]}>
                 <sphereGeometry args={[l.width * 1.6, 16, 12]} />
                 <meshBasicMaterial color={color[kind]} toneMapped={false} />
               </mesh>
