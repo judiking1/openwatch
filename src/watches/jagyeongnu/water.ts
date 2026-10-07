@@ -100,15 +100,22 @@ export function createGlslWater(): WaterSim {
 
 /**
  * The water for the current renderer: GLSL on WebGLRenderer, TSL (loaded on demand with
- * `three/webgpu`) on the node-based WebGPURenderer, where GLSL materials cannot run.
+ * `three/webgpu`) on the node-based WebGPURenderer, where GLSL materials cannot run — with
+ * compute shaders when it has the WebGPU backend.
  */
-export function useWaterSim(nodes: boolean): WaterSim | null {
+export function useWaterSim({
+  nodes,
+  compute,
+}: {
+  nodes: boolean
+  compute: boolean
+}): WaterSim | null {
   const [sim, setSim] = useState<WaterSim | null>(null)
   useEffect(() => {
     let live = true
     let made: WaterSim | undefined
     const load = nodes
-      ? import('./waterTSL').then((m) => m.createTslWater())
+      ? import('./waterTSL').then((m) => m.createTslWater(compute))
       : Promise.resolve(createGlslWater())
     void load.then((s) => {
       if (live) {
@@ -120,6 +127,6 @@ export function useWaterSim(nodes: boolean): WaterSim | null {
       live = false
       made?.dispose()
     }
-  }, [nodes])
+  }, [nodes, compute])
   return sim
 }

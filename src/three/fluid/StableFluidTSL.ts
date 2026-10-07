@@ -87,7 +87,8 @@ export class StableFluidTSL implements FluidSolver {
 
   private u = {
     dt: uniform(0),
-    dissipation: uniform(1),
+    velocityDissipation: uniform(1),
+    dyeDissipation: uniform(1),
     liquidHeight: uniform(1),
     point: uniform(new Vector2()),
     value: uniform(new Vector3()),
@@ -116,11 +117,17 @@ export class StableFluidTSL implements FluidSolver {
     const u = this.u
 
     const p = uv()
-    this.passes = {
-      advect: new Pass((sample) => {
+    // Velocity and dye each get their own advection material: re-binding one material's
+    // textures for a second draw in the same frame did not take effect on WebGPURenderer
+    // (the dye was advected by a stale binding and never moved).
+    const advect = (dissipation: typeof u.dyeDissipation) =>
+      new Pass((sample) => {
         const back = p.sub(sample('velocity').xy.mul(u.dt).mul(texel))
-        return sample('source', back).mul(u.dissipation)
-      }),
+        return sample('source', back).mul(dissipation)
+      })
+    this.passes = {
+      advectVelocity: advect(u.velocityDissipation),
+      advectDye: advect(u.dyeDissipation),
       splat: new Pass((sample) => {
         const d = vec2(p.x.sub(u.point.x).mul(aspect), p.y.sub(u.point.y))
         const base = sample('target').xyz
@@ -198,8 +205,8 @@ export class StableFluidTSL implements FluidSolver {
 
     const v = this.velocity
     u.dt.value = dt
-    u.dissipation.value = this.velocityDissipation
-    p.advect.run(gl, { velocity: v.read.texture, source: v.read.texture }, v.write)
+    u.velocityDissipation.value = this.velocityDissipation
+    p.advectVelocity.run(gl, { velocity: v.read.texture, source: v.read.texture }, v.write)
     v.swap()
     p.boundary.run(gl, { velocity: v.read.texture }, v.write)
     v.swap()
@@ -221,8 +228,8 @@ export class StableFluidTSL implements FluidSolver {
     p.boundary.run(gl, { velocity: v.read.texture }, v.write)
     v.swap()
 
-    u.dissipation.value = this.dyeDissipation
-    p.advect.run(gl, { velocity: v.read.texture, source: this.dye.read.texture }, this.dye.write)
+    u.dyeDissipation.value = this.dyeDissipation
+    p.advectDye.run(gl, { velocity: v.read.texture, source: this.dye.read.texture }, this.dye.write)
     this.dye.swap()
 
     gl.setRenderTarget(previous)

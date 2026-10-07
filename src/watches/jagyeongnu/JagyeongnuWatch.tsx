@@ -78,8 +78,8 @@ function drawPlaque(ctx: CanvasRenderingContext2D, sijin: number, half: string) 
 /** Watch 011 — Jagyeongnu: a self-striking water clock with simulated water. */
 export function JagyeongnuWatch({ appearance }: { appearance: JagyeongnuAppearance }) {
   const gl = useThree((s) => s.gl)
-  const { nodes } = rendererKind(gl)
-  const sim = useWaterSim(nodes)
+  const { nodes, compute } = rendererKind(gl)
+  const sim = useWaterSim({ nodes, compute })
   const water = useRef<Mesh>(null)
   const drop = useRef<Group>(null)
   const lastImpact = useRef(-1)

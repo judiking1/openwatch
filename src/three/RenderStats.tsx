@@ -5,6 +5,8 @@ export type RenderSample = {
   fps: number
   /** Draw calls and triangles of one whole frame, including off-screen passes. */
   calls: number
+  /** `compute()` submissions of one frame (WebGPU backend only). */
+  dispatches: number
   triangles: number
   geometries: number
   textures: number
@@ -38,9 +40,16 @@ export function RenderStatsProbe({ onSample }: { onSample: (s: RenderSample) => 
     a.time += delta
     a.frames++
     if (a.time >= 0.5) {
+      // WebGLRenderer counts draws in `render.calls`; WebGPURenderer counts `render()`
+      // invocations there (cumulative) and the frame's draws in `drawCalls`.
+      const info = gl.info as typeof gl.info & {
+        render: { drawCalls?: number }
+        compute?: { frameCalls: number }
+      }
       const sample: RenderSample = {
         fps: Math.round(a.frames / a.time),
-        calls: gl.info.render.calls,
+        calls: info.render.drawCalls ?? info.render.calls,
+        dispatches: info.compute?.frameCalls ?? 0,
         triangles: gl.info.render.triangles,
         geometries: gl.info.memory.geometries,
         textures: gl.info.memory.textures,

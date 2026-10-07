@@ -95,7 +95,7 @@ export function WatchStage({
       </Canvas>
       {stats && sample && (
         <pre className="render-stats">
-          {`${backend}\n${sample.fps} fps · ${sample.calls} calls · ${sample.triangles.toLocaleString()} tris\n${sample.geometries} geometries · ${sample.textures} textures`}
+          {`${backend}\n${sample.fps} fps · ${sample.calls} calls${sample.dispatches ? ` · ${sample.dispatches} compute` : ''} · ${sample.triangles.toLocaleString()} tris\n${sample.geometries} geometries · ${sample.textures} textures`}
         </pre>
       )}
     </>

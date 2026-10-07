@@ -20,12 +20,16 @@ import {
   vec3,
   vec4,
 } from 'three/tsl'
+import { StableFluidCompute } from '../../three/fluid/StableFluidCompute'
 import { StableFluidTSL } from '../../three/fluid/StableFluidTSL'
 import { FLUID_OPTIONS, type WaterSim } from './water'
 
-/** WebGPURenderer: the TSL solver and the GLSL water shader rewritten as a node material. */
-export function createTslWater(): WaterSim {
-  const solver = new StableFluidTSL(FLUID_OPTIONS)
+/**
+ * WebGPURenderer: the water shader rewritten as a node material, over the compute-shader
+ * solver on the WebGPU backend or the TSL full-screen-pass solver on its WebGL2 fallback.
+ */
+export function createTslWater(compute: boolean): WaterSim {
+  const solver = compute ? new StableFluidCompute(FLUID_OPTIONS) : new StableFluidTSL(FLUID_OPTIONS)
   const level = uniform(0)
   const time = uniform(0)
   const impactAge = uniform(10)
