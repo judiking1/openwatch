@@ -46,6 +46,7 @@ Jagyeongnu and Angbuilgu gained Arabic clock times next to their Hanja.
 
 ## Next candidates
 
+- Feature & concept proposals backlog: see `docs/future-concepts-and-features.md` (Exploded view, Lume mode, Audio tick engine, Concepts 012 Iris & 013 Magnetic Sand).
 - Visual review pass with real devices; tune lighting and strap geometry.
 - WebGPU Phase E: real-device checks before making `webgpu` the default, fat lines with
   `Line2NodeMaterial`, selective (MRT) bloom (`docs/rendering-and-webgpu.md` §8).

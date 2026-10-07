@@ -6,7 +6,8 @@ Read before working on this repository.
 2. `docs/roadmap.md` — current phase and the next bounded task.
 3. `docs/concepts/*.md` — the concept you are touching.
 4. `docs/rendering-and-webgpu.md` — rendering architecture and WebGPU readiness.
-5. `git log --oneline -20` — recent work.
+5. `docs/future-concepts-and-features.md` — backlog of future concepts, showcase features and proposals.
+6. `git log --oneline -20` — recent work.
 
 ## Workflow
 
