@@ -23,7 +23,9 @@ import { ExplodeController } from '../../three/stage/ExplodeController'
 import { LUME_BLOOM } from '../../three/stage/lume'
 import { LumeController } from '../../three/stage/LumeController'
 import { useStageStore } from '../../stores/stageStore'
-import type { PostEffects } from '../../types/watch'
+import type { PostEffects, SoundProfile } from '../../types/watch'
+import { AudioDriver } from '../audio/AudioDriver'
+import { DEFAULT_SOUND } from '../audio/schedule'
 import { RenderStatsProbe, type RenderSample } from '../../three/RenderStats'
 import type { RendererMode } from './rendererMode'
 import type { ToneMappingName } from './toneMapping'
@@ -52,8 +54,10 @@ type Props = {
   toneMapping?: ToneMappingName
   /** `webgpu` opts into the experimental WebGPURenderer (`?renderer=webgpu`). */
   renderer?: RendererMode
-  /** Post effects requested by the concept (applied on WebGPURenderer only). */
+  /** Post effects requested by the concept. */
   postFx?: PostEffects
+  /** How the concept sounds when the visitor turns sound on. */
+  sound?: SoundProfile
 }
 
 export function WatchStage({
@@ -63,6 +67,7 @@ export function WatchStage({
   toneMapping = 'aces',
   renderer = 'webgl',
   postFx,
+  sound = DEFAULT_SOUND,
 }: Props) {
   const [sample, setSample] = useState<RenderSample | null>(null)
   // The lume (night) view needs bloom even for concepts that do not request it.
@@ -122,6 +127,7 @@ export function WatchStage({
         />
         <ExplodeController root={modelRoot} />
         <LumeController root={modelRoot} />
+        <AudioDriver profile={sound} root={modelRoot} />
         {bloom && <StageBloom settings={bloom} />}
         {stats && <RenderStatsProbe onSample={setSample} />}
       </Canvas>

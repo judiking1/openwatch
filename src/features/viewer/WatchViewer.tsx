@@ -9,6 +9,7 @@ import type { RendererMode } from './rendererMode'
 import type { ToneMappingName } from './toneMapping'
 import { WatchStage, type WatchStageHandle } from './WatchStage'
 import { useStageStore } from '../../stores/stageStore'
+import { watchAudio } from '../audio/engine'
 
 type Props = {
   concept: WatchConcept
@@ -75,13 +76,26 @@ export function WatchViewer({
   const setExplode = useStageStore((s) => s.setExplode)
   const lume = useStageStore((s) => s.lume)
   const setLume = useStageStore((s) => s.setLume)
+  const sound = useStageStore((s) => s.sound)
+  const setSound = useStageStore((s) => s.setSound)
+  const toggleSound = async () => {
+    if (sound) {
+      watchAudio.stop()
+      setSound(false)
+    } else {
+      await watchAudio.start()
+      setSound(true)
+    }
+  }
   // Presentation modes belong to the viewer visit: reset them when leaving.
   useEffect(
     () => () => {
       setExplode(0)
       setLume(false)
+      setSound(false)
+      watchAudio.stop()
     },
-    [setExplode, setLume],
+    [setExplode, setLume, setSound],
   )
 
   const model = (
@@ -91,6 +105,7 @@ export function WatchViewer({
       toneMapping={tone}
       renderer={renderer}
       postFx={concept.postFx}
+      sound={concept.sound}
     >
       <Suspense fallback={null}>
         <Model appearance={appearance} />
@@ -136,6 +151,13 @@ export function WatchViewer({
             aria-pressed={lume}
           >
             🌙 Lume
+          </button>
+          <button
+            onClick={() => void toggleSound()}
+            title="Procedural watch sounds, following the watch's own time"
+            aria-pressed={sound}
+          >
+            {sound ? '🔊 Sound' : '🔈 Sound'}
           </button>
           <button
             onClick={() => updateQueryParam('stats', stats ? null : '')}

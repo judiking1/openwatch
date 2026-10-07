@@ -50,6 +50,17 @@ export type PostEffects = {
   bloom?: BloomSettings
 }
 
+/** How a concept sounds. Every sound is synthesised; there are no audio files. */
+export type SoundProfile =
+  /** Lever escapement: alternating tick / tock at `beatsPerHour` (28 800 = 8 beats/s). */
+  | { kind: 'escapement'; beatsPerHour?: number }
+  /** A water drop once per second, `offset` seconds after the second begins. */
+  | { kind: 'drop'; offset: number }
+  /** A ratchet each time the minute changes (combination-lock rings). */
+  | { kind: 'ratchet' }
+  /** Silent instruments (sundials, light). */
+  | { kind: 'quiet' }
+
 export type WatchConcept<A extends object = Appearance> = {
   metadata: WatchMetadata
   defaultAppearance: A
@@ -57,6 +68,8 @@ export type WatchConcept<A extends object = Appearance> = {
   customization: CustomizationField<A>[]
   Model: ComponentType<WatchModelProps<A>>
   postFx?: PostEffects
+  /** Defaults to a 28 800 bph escapement. */
+  sound?: SoundProfile
 }
 
 export type CustomizationGroup = 'Case' | 'Dial' | 'Indicators' | 'Crystal' | 'Strap'

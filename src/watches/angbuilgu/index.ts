@@ -8,4 +8,6 @@ export const angbuilgu = defineConcept({
   defaultAppearance: defaultAngbuilguAppearance,
   customization: angbuilguFields,
   Model: lazy(() => import('./AngbuilguWatch').then((m) => ({ default: m.AngbuilguWatch }))),
+  // A sundial makes no sound.
+  sound: { kind: 'quiet' },
 })

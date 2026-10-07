@@ -8,4 +8,5 @@ export const cipher = defineConcept({
   defaultAppearance: defaultCipherAppearance,
   customization: cipherFields,
   Model: lazy(() => import('./CipherWatch').then((m) => ({ default: m.CipherWatch }))),
+  sound: { kind: 'ratchet' },
 })
