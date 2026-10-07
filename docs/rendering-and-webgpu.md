@@ -173,3 +173,41 @@ Side-by-side captures (`?tone=aces|agx|neutral`, kept as a look-development swit
     `ContactShadows` and the Lightformer environment must be verified under `WebGPURenderer`.
   - `prepareForExport` already maps `ShaderMaterial`s to standard PBR for GLB; NodeMaterials
     will need the same fallback (`isNodeMaterial` → `MeshStandardMaterial`).
+
+---
+
+## 6. Phase B review (v0.13.0)
+
+### 2.3 Dial markings as masks, colour as material — **done**
+
+Every dial now separates **pattern** from **colour**:
+
+- Markings are drawn once as white-on-transparent masks (`useDialTexture(extent, draw, [])`,
+  `useLabelMasks`) and shown with `PrintLayer` (`src/three/parts/PrintLayer.tsx`), whose
+  material colour is the tint. Backgrounds are plain material colours on the base mesh.
+- Multi-colour prints are split into layers (Shears scale + gold tip; Eclipse glow face +
+  hot-centre mask + markers). Fixed-colour art (Jagyeongnu plaque border and characters) stays
+  in its own texture keyed only by content (시진), with the plaque colour as the base.
+- Measured by simulating ten picks on every colour field of every watch
+  (`window.__owlRaster` counts canvas rasterisations):
+
+| Watch      | Rasterisations before | Megapixels before | after |
+| ---------- | --------------------: | ----------------: | ----: |
+| Shears     |                    40 |             167.8 |     0 |
+| Turntable  |                    40 |             167.8 |     0 |
+| Cipher     |                    90 |              94.4 |     0 |
+| Lens       |                   240 |               3.9 |     0 |
+| Angbuilgu  |                   150 |              44.2 |     0 |
+| all others |                 20–30 |            84–126 |     0 |
+
+### Consolidate Cipher ring textures — **done**
+
+Nine 1024² band textures became one 2048² atlas drawn in dial space; each ring uses a
+`planarUV` ring geometry into it and all nine share one material. The nine per-ring
+background meshes were dropped (the dial base already has that colour): Cipher went from
+17 to 9 live textures and fewer draw calls.
+
+### Notes
+
+- Tints multiply the mask, so masks are pure white; anti-aliased edges keep their alpha.
+- GLB export is unchanged: masks are ordinary textures with a material colour factor.

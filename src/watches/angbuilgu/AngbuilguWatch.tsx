@@ -14,6 +14,7 @@ import { Crystal } from '../../three/parts/Crystal'
 import { WatchCase } from '../../three/parts/WatchCase'
 import { createLabelCanvas, dialFont, drawLabels } from '../../three/utils/canvas'
 import { DIAL_RADIUS, dialRotationZ } from '../../three/utils/dial'
+import { PrintLayer } from '../../three/parts/PrintLayer'
 import type { AngbuilguAppearance } from './appearance'
 import {
   dayOfYear,
@@ -110,26 +111,24 @@ function useLabels(): Label[] {
 }
 
 function LabelPlane({ label, color }: { label: Label; color: string }) {
+  // White mask per label; the engraving colour is a material tint.
   const texture = useDisposable(() => {
-    const t = new CanvasTexture(createLabelCanvas(label.text, dialFont(700, 40), color))
+    const t = new CanvasTexture(createLabelCanvas(label.text, dialFont(700, 40), '#ffffff'))
     t.colorSpace = SRGBColorSpace
     return t
-  }, [label.text, color])
+  }, [label.text])
   const [x, y, z] = label.position
   return (
     <mesh position={[x, y, z + 0.4]}>
       <planeGeometry args={[label.size * 1.6, label.size * 1.6]} />
-      <meshBasicMaterial map={texture} transparent depthWrite={false} />
+      <meshBasicMaterial map={texture} color={color} transparent depthWrite={false} />
     </mesh>
   )
 }
 
-function drawRim(ctx: CanvasRenderingContext2D, color: string, text: string) {
-  ctx.fillStyle = color
-  ctx.beginPath()
-  ctx.arc(0, 0, DIAL_RADIUS + 1, 0, Math.PI * 2)
-  ctx.arc(0, 0, R, 0, Math.PI * 2, true)
-  ctx.fill()
+/** Directions and night watches engraved on the rim (white mask). */
+function drawRim(ctx: CanvasRenderingContext2D) {
+  const text = '#ffffff'
   drawLabels(ctx, ['北', '東', '南', '西'], {
     radius: R + 7.5,
     font: dialFont(700, 7),
@@ -159,10 +158,8 @@ export function AngbuilguWatch({ appearance }: { appearance: AngbuilguAppearance
     // Lower hemisphere, opening toward +z after the mesh rotation below.
     return new SphereGeometry(R, 128, 48, 0, Math.PI * 2, Math.PI / 2, Math.PI / 2)
   }, [])
-  const { rimColor, lineColor } = appearance
-  const rim = useDialTexture(DIAL_RADIUS + 1, (ctx) => drawRim(ctx, rimColor, '#f2e3c4'), [
-    rimColor,
-  ])
+  const { lineColor } = appearance
+  const rim = useDialTexture(DIAL_RADIUS + 1, drawRim, [])
 
   const pole = poleVector()
 
@@ -220,8 +217,9 @@ export function AngbuilguWatch({ appearance }: { appearance: AngbuilguAppearance
       </group>
       <mesh position={[0, 0, 0.2]}>
         <ringGeometry args={[R, DIAL_RADIUS + 1, 128]} />
-        <meshStandardMaterial map={rim} metalness={0.5} roughness={0.5} />
+        <meshStandardMaterial color={appearance.rimColor} metalness={0.5} roughness={0.5} />
       </mesh>
+      <PrintLayer mask={rim} color="#f2e3c4" radius={DIAL_RADIUS + 1} inner={R} z={0.25} />
 
       <Line points={grid.terms} segments color={lineColor} lineWidth={1.4} />
       <Line

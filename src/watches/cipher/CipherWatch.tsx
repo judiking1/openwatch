@@ -1,10 +1,19 @@
 import { useRef } from 'react'
-import { Path, Shape, ShapeGeometry, type Group } from 'three'
+import {
+  MeshStandardMaterial,
+  Path,
+  RingGeometry,
+  Shape,
+  ShapeGeometry,
+  type Group,
+  type Material,
+} from 'three'
 import { Crystal } from '../../three/parts/Crystal'
 import { WatchCase } from '../../three/parts/WatchCase'
 import { useClockFrame, useDialTexture, useDisposable } from '../../three/hooks'
 import { dialFont } from '../../three/utils/canvas'
 import { DIAL_RADIUS, dialRotationZ } from '../../three/utils/dial'
+import { planarUV } from '../../three/utils/uv'
 import { degToRad, dialPoint } from '../../utils/time'
 import type { CipherAppearance } from './appearance'
 import {
@@ -69,35 +78,30 @@ function maskShape(): Shape {
   return s
 }
 
+/** One band's ring: shares the atlas material; its UVs map straight into dial space. */
 function Ring({
   spec,
-  glyphColor,
-  color,
+  material,
   groupRef,
 }: {
   spec: RingSpec
-  glyphColor: string
-  color: string
+  material: Material
   groupRef: (g: Group | null) => void
 }) {
-  const texture = useDialTexture(
-    spec.band.outer,
-    (ctx) => drawBand(ctx, spec, glyphColor),
-    [spec, glyphColor],
-    1024,
+  const geometry = useDisposable(
+    () => planarUV(new RingGeometry(spec.band.inner, spec.band.outer, 128), DIAL_RADIUS),
+    [spec],
   )
   return (
     <group ref={groupRef} position={[0, 0, 0.5]}>
-      <mesh>
-        <ringGeometry args={[spec.band.inner, spec.band.outer, 128]} />
-        <meshStandardMaterial color={color} roughness={0.7} metalness={0.2} />
-      </mesh>
-      <mesh position={[0, 0, 0.05]}>
-        <ringGeometry args={[spec.band.inner, spec.band.outer, 128]} />
-        <meshStandardMaterial map={texture} transparent roughness={0.6} />
-      </mesh>
+      <mesh geometry={geometry} material={material} />
     </group>
   )
+}
+
+/** All nine bands' glyph slices in one white mask, each in its own annulus. */
+function drawAtlas(ctx: CanvasRenderingContext2D) {
+  for (const spec of RINGS) drawBand(ctx, spec, '#ffffff')
 }
 
 /** Watch 006 — Cipher: numerals become legible only where nine rings line up. */
@@ -106,6 +110,19 @@ export function CipherWatch({ appearance }: { appearance: CipherAppearance }) {
   // null until the first frame, which snaps straight to the current time.
   const angles = useRef<number[] | null>(null)
 
+  // One 2048² atlas and one material for all nine rings (was nine 1024² textures).
+  const atlas = useDialTexture(DIAL_RADIUS, drawAtlas, [])
+  const glyphs = useDisposable(
+    () =>
+      new MeshStandardMaterial({
+        map: atlas,
+        color: appearance.glyphColor,
+        transparent: true,
+        depthWrite: false,
+        roughness: 0.6,
+      }),
+    [atlas, appearance.glyphColor],
+  )
   const mask = useDisposable(() => new ShapeGeometry(maskShape(), 96), [])
 
   useClockFrame((t, dt) => {
@@ -139,10 +156,9 @@ export function CipherWatch({ appearance }: { appearance: CipherAppearance }) {
 
       {RINGS.map((spec, i) => (
         <Ring
+          material={glyphs}
           key={`${spec.group.id}-${spec.index}`}
           spec={spec}
-          glyphColor={appearance.glyphColor}
-          color={appearance.ringColor}
           groupRef={(g) => {
             groups.current[i] = g
           }}

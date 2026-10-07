@@ -38,6 +38,7 @@ function Dish({
   color,
   marbleColor,
   texture,
+  printColor,
 }: {
   dishRef: React.RefObject<Group | null>
   marbleRef: React.RefObject<Group | null>
@@ -50,6 +51,7 @@ function Dish({
   color: string
   marbleColor: string
   texture: Texture
+  printColor: string
 }) {
   return (
     <group position={[0, 0, z]}>
@@ -64,7 +66,13 @@ function Dish({
         </mesh>
         <mesh position={[0, 0, 0.05]}>
           <ringGeometry args={[Math.max(inner, 0.01), outer, 128]} />
-          <meshStandardMaterial map={texture} transparent roughness={0.6} />
+          <meshStandardMaterial
+            map={texture}
+            color={printColor}
+            transparent
+            depthWrite={false}
+            roughness={0.6}
+          />
         </mesh>
         {/* rim lip and groove */}
         <mesh position={[0, 0, 0.6]}>
@@ -107,7 +115,8 @@ export function MarbleWatch({ appearance }: { appearance: MarbleAppearance }) {
   const states = useRef<{ hour: MarbleState; minute: MarbleState } | null>(null)
   const q = useRef(new Quaternion())
 
-  const { printColor } = appearance
+  // White masks drawn once; the print colour is a material tint.
+  const printColor = '#ffffff'
   const hourTexture = useDialTexture(
     HOUR_DISH.outer,
     (ctx) => {
@@ -126,7 +135,7 @@ export function MarbleWatch({ appearance }: { appearance: MarbleAppearance }) {
         majorWidth: 1,
       })
     },
-    [printColor],
+    [],
   )
   const minuteTexture = useDialTexture(
     MINUTE_DISH.outer,
@@ -146,7 +155,7 @@ export function MarbleWatch({ appearance }: { appearance: MarbleAppearance }) {
         majorWidth: 0.8,
       })
     },
-    [printColor],
+    [],
   )
 
   useClockFrame((t, dt) => {
@@ -187,6 +196,7 @@ export function MarbleWatch({ appearance }: { appearance: MarbleAppearance }) {
         color={appearance.dishColor}
         marbleColor={appearance.hourMarbleColor}
         texture={hourTexture}
+        printColor={appearance.printColor}
       />
       <Dish
         dishRef={minuteDish}
@@ -200,6 +210,7 @@ export function MarbleWatch({ appearance }: { appearance: MarbleAppearance }) {
         color={appearance.innerDishColor}
         marbleColor={appearance.minuteMarbleColor}
         texture={minuteTexture}
+        printColor={appearance.printColor}
       />
       {/* gimbal pivots */}
       {[0, 180].map((angle) => {

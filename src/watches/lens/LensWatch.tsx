@@ -1,22 +1,10 @@
 import { useRef } from 'react'
-import {
-  CanvasTexture,
-  Matrix4,
-  Quaternion,
-  SRGBColorSpace,
-  Vector3,
-  type Group,
-  type InstancedMesh,
-} from 'three'
-import { useClockFrame, useDisposable } from '../../three/hooks'
+import { Matrix4, Quaternion, Vector3, type Group, type InstancedMesh } from 'three'
+import { useClockFrame } from '../../three/hooks'
+import { useLabelMasks } from '../../three/labels'
 import { Crystal } from '../../three/parts/Crystal'
 import { WatchCase } from '../../three/parts/WatchCase'
-import {
-  createLabelCanvas,
-  dialFont,
-  FIVE_MINUTE_LABELS,
-  HOUR_LABELS,
-} from '../../three/utils/canvas'
+import { FIVE_MINUTE_LABELS, HOUR_LABELS } from '../../three/utils/canvas'
 import { DIAL_RADIUS, dialPoint3 } from '../../three/utils/dial'
 import { degToRad, handAngles, jumpHourAngle } from '../../utils/time'
 import type { LensAppearance } from './appearance'
@@ -38,18 +26,6 @@ const scratch = {
   scale: new Vector3(),
 }
 
-/** One texture per label, disposed together. */
-function useLabelTextures(labels: string[], weight: number, color: string) {
-  return useDisposable(() => {
-    const textures = labels.map((text) => {
-      const t = new CanvasTexture(createLabelCanvas(text, dialFont(weight, 64), color))
-      t.colorSpace = SRGBColorSpace
-      return t
-    })
-    return { textures, dispose: () => textures.forEach((t) => t.dispose()) }
-  }, [labels, weight, color]).textures
-}
-
 /** Watch 008 — Lens: the scale swells where the time is. */
 export function LensWatch({ appearance }: { appearance: LensAppearance }) {
   const hours = useRef<Array<Group | null>>([])
@@ -57,8 +33,8 @@ export function LensWatch({ appearance }: { appearance: LensAppearance }) {
   const bars = useRef<InstancedMesh>(null)
   const dots = useRef<InstancedMesh>(null)
 
-  const hourTextures = useLabelTextures(HOUR_LABELS, 700, appearance.hourColor)
-  const minuteTextures = useLabelTextures(FIVE_MINUTE_LABELS, 600, appearance.minuteColor)
+  const hourTextures = useLabelMasks(HOUR_LABELS, 700)
+  const minuteTextures = useLabelMasks(FIVE_MINUTE_LABELS, 600)
 
   useClockFrame((t) => {
     const a = handAngles(t)
@@ -113,7 +89,12 @@ export function LensWatch({ appearance }: { appearance: LensAppearance }) {
           <group key={i} position={[x, y, 0.3]} ref={(g) => void (hours.current[i] = g)}>
             <mesh>
               <planeGeometry args={[HOURS.size, HOURS.size]} />
-              <meshStandardMaterial map={hourTextures[i]} transparent roughness={0.6} />
+              <meshStandardMaterial
+                map={hourTextures[i]}
+                color={appearance.hourColor}
+                transparent
+                roughness={0.6}
+              />
             </mesh>
           </group>
         )
@@ -125,7 +106,12 @@ export function LensWatch({ appearance }: { appearance: LensAppearance }) {
           <group key={i} position={[x, y, 0.3]} ref={(g) => void (minuteLabels.current[i] = g)}>
             <mesh>
               <planeGeometry args={[MINUTE_LABELS.size, MINUTE_LABELS.size]} />
-              <meshStandardMaterial map={minuteTextures[i]} transparent roughness={0.6} />
+              <meshStandardMaterial
+                map={minuteTextures[i]}
+                color={appearance.minuteColor}
+                transparent
+                roughness={0.6}
+              />
             </mesh>
           </group>
         )

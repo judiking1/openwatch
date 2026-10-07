@@ -1,4 +1,5 @@
 import { degToRad, dialPoint } from '../../utils/time'
+import { countRaster } from './dial'
 
 /** Canvas font shorthand used by every dial. */
 export function dialFont(weight: number, size: number): string {
@@ -113,6 +114,7 @@ export const FIVE_MINUTE_LABELS = Array.from({ length: 12 }, (_, i) =>
 
 /** A single centred label on a transparent canvas, `size` px square. */
 export function createLabelCanvas(text: string, font: string, color: string, size = 128) {
+  countRaster(size)
   const canvas = document.createElement('canvas')
   canvas.width = canvas.height = size
   const ctx = canvas.getContext('2d')!

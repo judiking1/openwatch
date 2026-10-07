@@ -18,6 +18,7 @@ const HOUR_RING = { inner: 26, outer: 60, text: 46 }
 const MINUTE_RING = { inner: 62, outer: 99, text: 82 }
 const SECOND_DISC = { outer: 24, text: 15 }
 const SECOND_LABELS = ['00', '10', '20', '30', '40', '50']
+const WHITE = '#ffffff'
 
 // Ring textures are drawn with extent = the ring's outer radius because RingGeometry
 // UVs span the outer radius.
@@ -74,20 +75,10 @@ export function NumeralRingWatch({ appearance }: { appearance: NumeralRingAppear
   const minuteRing = useRef<Group>(null)
   const secondDisc = useRef<Group>(null)
 
-  const { hourRingColor, minuteRingColor, secondColor } = appearance
-  const hourTexture = useDialTexture(HOUR_RING.outer, (ctx) => drawHourRing(ctx, hourRingColor), [
-    hourRingColor,
-  ])
-  const minuteTexture = useDialTexture(
-    MINUTE_RING.outer,
-    (ctx) => drawMinuteRing(ctx, minuteRingColor),
-    [minuteRingColor],
-  )
-  const secondTexture = useDialTexture(
-    SECOND_DISC.outer,
-    (ctx) => drawSecondDisc(ctx, secondColor),
-    [secondColor],
-  )
+  // White masks drawn once; colours are material tints.
+  const hourTexture = useDialTexture(HOUR_RING.outer, (ctx) => drawHourRing(ctx, WHITE), [])
+  const minuteTexture = useDialTexture(MINUTE_RING.outer, (ctx) => drawMinuteRing(ctx, WHITE), [])
+  const secondTexture = useDialTexture(SECOND_DISC.outer, (ctx) => drawSecondDisc(ctx, WHITE), [])
 
   useClockFrame((t) => {
     const r = ringRotations(t)
@@ -106,7 +97,12 @@ export function NumeralRingWatch({ appearance }: { appearance: NumeralRingAppear
       <group ref={minuteRing} name="minute-ring" position={[0, 0, 0.6]}>
         <mesh>
           <ringGeometry args={[MINUTE_RING.inner, MINUTE_RING.outer, 128]} />
-          <meshStandardMaterial map={minuteTexture} transparent roughness={0.6} />
+          <meshStandardMaterial
+            map={minuteTexture}
+            color={appearance.minuteRingColor}
+            transparent
+            roughness={0.6}
+          />
         </mesh>
       </group>
       <mesh position={[0, 0, 0.9]}>
@@ -122,7 +118,12 @@ export function NumeralRingWatch({ appearance }: { appearance: NumeralRingAppear
         </mesh>
         <mesh position={[0, 0, 0.05]}>
           <ringGeometry args={[HOUR_RING.inner, HOUR_RING.outer, 128]} />
-          <meshStandardMaterial map={hourTexture} transparent roughness={0.6} />
+          <meshStandardMaterial
+            map={hourTexture}
+            color={appearance.hourRingColor}
+            transparent
+            roughness={0.6}
+          />
         </mesh>
       </group>
 
@@ -133,7 +134,12 @@ export function NumeralRingWatch({ appearance }: { appearance: NumeralRingAppear
         </mesh>
         <mesh position={[0, 0, 0.1]}>
           <circleGeometry args={[SECOND_DISC.outer, 64]} />
-          <meshStandardMaterial map={secondTexture} transparent roughness={0.6} />
+          <meshStandardMaterial
+            map={secondTexture}
+            color={appearance.secondColor}
+            transparent
+            roughness={0.6}
+          />
         </mesh>
       </group>
 

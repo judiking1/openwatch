@@ -12,6 +12,20 @@ export function dialPoint3(radius: number, angleDeg: number): [number, number] {
   return [radius * Math.sin(a), radius * Math.cos(a)]
 }
 
+declare global {
+  interface Window {
+    /** Canvas rasterisations so far (count and megapixels), for measuring texture churn. */
+    __owlRaster?: { count: number; megapixels: number }
+  }
+}
+
+/** Records one canvas rasterisation of `size`² pixels (see `window.__owlRaster`). */
+export function countRaster(size: number) {
+  const r = (window.__owlRaster ??= { count: 0, megapixels: 0 })
+  r.count++
+  r.megapixels += (size * size) / 1e6
+}
+
 /**
  * Creates a square canvas texture covering a disc of `extent` dial units.
  * The draw callback receives a context already translated to the centre and
@@ -22,6 +36,7 @@ export function createDialTexture(
   draw: (ctx: CanvasRenderingContext2D) => void,
   size = 2048,
 ): CanvasTexture {
+  countRaster(size)
   const canvas = document.createElement('canvas')
   canvas.width = canvas.height = size
   const ctx = canvas.getContext('2d')!

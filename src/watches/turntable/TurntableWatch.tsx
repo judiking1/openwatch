@@ -7,12 +7,12 @@ import {
   dialFont,
   drawLabels,
   drawTicks,
-  fillDisc,
   FIVE_MINUTE_LABELS,
   HOUR_LABELS,
 } from '../../three/utils/canvas'
 import { DIAL_RADIUS, dialPoint3, dialRotationZ } from '../../three/utils/dial'
 import { useLabelMasks } from '../../three/labels'
+import { PrintLayer } from '../../three/parts/PrintLayer'
 import type { TurntableAppearance } from './appearance'
 import { turntablePose } from './turntable'
 
@@ -20,12 +20,9 @@ const BEZEL = { inner: 100, outer: 115, numerals: 107.5 }
 const CRADLE_RADIUS = 120
 const MINUTE_LABEL_RADIUS = 75
 
-function drawBezel(ctx: CanvasRenderingContext2D, bezel: string, numerals: string) {
-  ctx.fillStyle = bezel
-  ctx.beginPath()
-  ctx.arc(0, 0, BEZEL.outer, 0, Math.PI * 2)
-  ctx.arc(0, 0, BEZEL.inner, 0, Math.PI * 2, true)
-  ctx.fill()
+/** Bezel hour numerals (white mask). */
+function drawBezel(ctx: CanvasRenderingContext2D) {
+  const numerals = '#ffffff'
   drawLabels(ctx, HOUR_LABELS, {
     radius: BEZEL.numerals,
     font: dialFont(700, 9),
@@ -34,8 +31,9 @@ function drawBezel(ctx: CanvasRenderingContext2D, bezel: string, numerals: strin
   })
 }
 
-function drawDial(ctx: CanvasRenderingContext2D, dial: string, scale: string) {
-  fillDisc(ctx, dial, DIAL_RADIUS)
+/** Minute ticks (white mask). */
+function drawDial(ctx: CanvasRenderingContext2D) {
+  const scale = '#ffffff'
   drawTicks(ctx, {
     count: 60,
     inner: 88,
@@ -79,16 +77,8 @@ export function TurntableWatch({ appearance }: { appearance: TurntableAppearance
   const minute = useRef<Group>(null)
   const second = useRef<Group>(null)
 
-  const { bezelColor, bezelNumeralColor, dialColor, scaleColor } = appearance
-  const bezel = useDialTexture(
-    BEZEL.outer,
-    (ctx) => drawBezel(ctx, bezelColor, bezelNumeralColor),
-    [bezelColor, bezelNumeralColor],
-  )
-  const dial = useDialTexture(DIAL_RADIUS, (ctx) => drawDial(ctx, dialColor, scaleColor), [
-    dialColor,
-    scaleColor,
-  ])
+  const bezel = useDialTexture(BEZEL.outer, drawBezel, [])
+  const dial = useDialTexture(DIAL_RADIUS, drawDial, [])
 
   const labelMasks = useLabelMasks(FIVE_MINUTE_LABELS)
   const labels = useRef<Array<Group | null>>([])
@@ -107,12 +97,27 @@ export function TurntableWatch({ appearance }: { appearance: TurntableAppearance
       <WatchCase {...appearance} headRef={head}>
         <mesh>
           <circleGeometry args={[DIAL_RADIUS + 1, 128]} />
-          <meshStandardMaterial map={dial} roughness={0.75} />
+          <meshStandardMaterial color={appearance.dialColor} roughness={0.75} />
         </mesh>
+        <PrintLayer
+          mask={dial}
+          color={appearance.scaleColor}
+          radius={DIAL_RADIUS}
+          roughness={0.75}
+        />
         <mesh position={[0, 0, 10.6]}>
           <ringGeometry args={[BEZEL.inner, BEZEL.outer, 128]} />
-          <meshStandardMaterial map={bezel} transparent metalness={0.3} roughness={0.5} />
+          <meshStandardMaterial color={appearance.bezelColor} metalness={0.3} roughness={0.5} />
         </mesh>
+        <PrintLayer
+          mask={bezel}
+          color={appearance.bezelNumeralColor}
+          radius={BEZEL.outer}
+          inner={BEZEL.inner}
+          z={10.65}
+          metalness={0.3}
+          roughness={0.5}
+        />
         {FIVE_MINUTE_LABELS.map((_, i) => {
           const [x, y] = dialPoint3(MINUTE_LABEL_RADIUS, i * 30)
           return (

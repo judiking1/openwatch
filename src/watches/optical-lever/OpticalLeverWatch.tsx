@@ -7,11 +7,11 @@ import {
   dialFont,
   drawLabels,
   drawTicks,
-  fillDisc,
   FIVE_MINUTE_LABELS,
   HOUR_LABELS,
 } from '../../three/utils/canvas'
 import { DIAL_RADIUS, dialRotationZ } from '../../three/utils/dial'
+import { PrintLayer } from '../../three/parts/PrintLayer'
 import { handAngles, type HandAngles } from '../../utils/time'
 import type { OpticalLeverAppearance } from './appearance'
 import { mirrorNormalAngle } from './optics'
@@ -27,8 +27,9 @@ const LASERS: Record<Kind, { reach: number; z: number; mirror: number; width: nu
 }
 const EMITTER_Y = -88
 
-function drawDial(ctx: CanvasRenderingContext2D, dial: string, print: string) {
-  fillDisc(ctx, dial, DIAL_RADIUS)
+/** Hour numerals, minute and seconds scales (white mask). */
+function drawDial(ctx: CanvasRenderingContext2D) {
+  const print = '#ffffff'
   drawLabels(ctx, HOUR_LABELS, { radius: 91, font: dialFont(600, 8), color: print })
   drawTicks(ctx, {
     count: 60,
@@ -83,11 +84,7 @@ function Beam({ length, width, color }: { length: number; width: number; color: 
 export function OpticalLeverWatch({ appearance }: { appearance: OpticalLeverAppearance }) {
   const beams = useRef<Partial<Record<Kind, Group | null>>>({})
   const mirrors = useRef<Partial<Record<Kind, Group | null>>>({})
-  const { dialColor, printColor } = appearance
-  const dial = useDialTexture(DIAL_RADIUS, (ctx) => drawDial(ctx, dialColor, printColor), [
-    dialColor,
-    printColor,
-  ])
+  const dial = useDialTexture(DIAL_RADIUS, drawDial, [])
 
   useClockFrame((t) => {
     const a = handAngles(t)
@@ -109,8 +106,9 @@ export function OpticalLeverWatch({ appearance }: { appearance: OpticalLeverAppe
     <WatchCase {...appearance}>
       <mesh receiveShadow>
         <circleGeometry args={[DIAL_RADIUS + 1, 128]} />
-        <meshStandardMaterial map={dial} roughness={0.6} metalness={0.2} />
+        <meshStandardMaterial color={appearance.dialColor} roughness={0.6} metalness={0.2} />
       </mesh>
+      <PrintLayer mask={dial} color={appearance.printColor} radius={DIAL_RADIUS} roughness={0.6} />
 
       {/* emitter block at six o'clock */}
       <mesh position={[0, EMITTER_Y - 2, 3.5]}>

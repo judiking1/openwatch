@@ -11,17 +11,23 @@ import {
   HOUR_LABELS,
 } from '../../three/utils/canvas'
 import { DIAL_RADIUS, dialRotationZ } from '../../three/utils/dial'
+import { PrintLayer } from '../../three/parts/PrintLayer'
 import { handAngles, jumpHourAngle } from '../../utils/time'
 import type { EclipseAppearance } from './appearance'
 import { apertureDiscShape, circleHole, ECLIPSE, sectorHole } from './geometry'
 
-function drawLightFace(ctx: CanvasRenderingContext2D, glow: string, marker: string) {
-  const g = ctx.createRadialGradient(0, 0, 0, 0, 0, DIAL_RADIUS)
-  g.addColorStop(0, '#fff6e6')
-  g.addColorStop(0.35, glow)
-  g.addColorStop(1, glow)
+/** Hot centre of the glowing face: white fading to transparent (mask). */
+function drawGlow(ctx: CanvasRenderingContext2D) {
+  const g = ctx.createRadialGradient(0, 0, 0, 0, 0, DIAL_RADIUS * 0.45)
+  g.addColorStop(0, 'rgba(255,255,255,1)')
+  g.addColorStop(1, 'rgba(255,255,255,0)')
   ctx.fillStyle = g
   ctx.fillRect(-DIAL_RADIUS, -DIAL_RADIUS, DIAL_RADIUS * 2, DIAL_RADIUS * 2)
+}
+
+/** Hour numerals, minute and seconds scales printed on the face (white mask). */
+function drawMarkers(ctx: CanvasRenderingContext2D) {
+  const marker = '#ffffff'
 
   drawLabels(ctx, HOUR_LABELS, {
     radius: ECLIPSE.hourDisc.apertureRadius,
@@ -63,11 +69,9 @@ export function EclipseWatch({ appearance }: { appearance: EclipseAppearance }) 
   const minuteDisc = useRef<Group>(null)
   const moon = useRef<Group>(null)
 
-  const { glowColor, markerColor } = appearance
-  const face = useDialTexture(DIAL_RADIUS, (ctx) => drawLightFace(ctx, glowColor, markerColor), [
-    glowColor,
-    markerColor,
-  ])
+  const { glowColor } = appearance
+  const glow = useDialTexture(DIAL_RADIUS, drawGlow, [], 512)
+  const markers = useDialTexture(DIAL_RADIUS, drawMarkers, [])
   const hourGeometry = useDisposable(() => {
     const d = ECLIPSE.hourDisc
     const shape = apertureDiscShape(d.inner, d.outer, circleHole(d.apertureRadius, d.apertureSize))
@@ -96,13 +100,14 @@ export function EclipseWatch({ appearance }: { appearance: EclipseAppearance }) 
       <mesh>
         <circleGeometry args={[DIAL_RADIUS + 1, 128]} />
         <meshStandardMaterial
-          map={face}
-          emissiveMap={face}
-          emissive="#ffffff"
+          color={glowColor}
+          emissive={glowColor}
           emissiveIntensity={0.9}
           roughness={0.9}
         />
       </mesh>
+      <PrintLayer mask={glow} color="#fff6e6" radius={DIAL_RADIUS} emissive={1} />
+      <PrintLayer mask={markers} color={appearance.markerColor} radius={DIAL_RADIUS} z={0.1} />
 
       <group ref={minuteDisc} name="minute" position={[0, 0, 1]}>
         <mesh geometry={minuteGeometry}>{disc}</mesh>

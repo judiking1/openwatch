@@ -5,7 +5,8 @@ import { StableFluid } from '../../three/fluid/StableFluid'
 import { useClockFrame, useDialTexture, useDisposable } from '../../three/hooks'
 import { Crystal } from '../../three/parts/Crystal'
 import { WatchCase } from '../../three/parts/WatchCase'
-import { dialFont, fillDisc } from '../../three/utils/canvas'
+import { dialFont } from '../../three/utils/canvas'
+import { PrintLayer } from '../../three/parts/PrintLayer'
 import { DIAL_RADIUS } from '../../three/utils/dial'
 import { SIJIN, SIJIN_HANJA } from '../angbuilgu/sky'
 import type { JagyeongnuAppearance } from './appearance'
@@ -52,8 +53,9 @@ void main() {
   gl_FragColor = vec4(color, 0.82 + 0.15 * meniscus);
 }`
 
-function drawDial(ctx: CanvasRenderingContext2D, dial: string, print: string) {
-  fillDisc(ctx, dial, DIAL_RADIUS)
+/** Minute and 각 scales beside the vessel (white mask). */
+function drawDial(ctx: CanvasRenderingContext2D) {
+  const print = '#ffffff'
   ctx.save()
   ctx.strokeStyle = print
   ctx.fillStyle = print
@@ -85,10 +87,9 @@ function drawDial(ctx: CanvasRenderingContext2D, dial: string, print: string) {
   ctx.restore()
 }
 
-function drawPlaque(ctx: CanvasRenderingContext2D, sijin: number, half: string, color: string) {
+/** Border and characters in their fixed lacquer-gold colours; the plaque colour is the base. */
+function drawPlaque(ctx: CanvasRenderingContext2D, sijin: number, half: string) {
   const { w, h } = PLAQUE
-  ctx.fillStyle = color
-  ctx.fillRect(-w / 2, -h / 2, w, h)
   ctx.strokeStyle = '#e8c87a'
   ctx.lineWidth = 1.2
   ctx.strokeRect(-w / 2 + 2, -h / 2 + 2, w - 4, h - 4)
@@ -133,11 +134,7 @@ export function JagyeongnuWatch({ appearance }: { appearance: JagyeongnuAppearan
   const elapsed = useRef(0)
   const impactAge = useRef(10)
 
-  const { dialColor, printColor, plaqueColor } = appearance
-  const dial = useDialTexture(DIAL_RADIUS, (ctx) => drawDial(ctx, dialColor, printColor), [
-    dialColor,
-    printColor,
-  ])
+  const dial = useDialTexture(DIAL_RADIUS, drawDial, [])
   const [plaque, setPlaque] = useState<{ sijin: number; half: string } | null>(null)
   const plaqueGroup = useRef<Group>(null)
 
@@ -202,8 +199,9 @@ export function JagyeongnuWatch({ appearance }: { appearance: JagyeongnuAppearan
     <WatchCase {...appearance}>
       <mesh>
         <circleGeometry args={[DIAL_RADIUS + 1, 128]} />
-        <meshStandardMaterial map={dial} roughness={0.8} />
+        <meshStandardMaterial color={appearance.dialColor} roughness={0.8} />
       </mesh>
+      <PrintLayer mask={dial} color={appearance.printColor} radius={DIAL_RADIUS} roughness={0.8} />
 
       {/* reservoir (파수호) and spout */}
       <mesh position={[VESSEL_CX, 74, 2]}>
@@ -257,7 +255,9 @@ export function JagyeongnuWatch({ appearance }: { appearance: JagyeongnuAppearan
       </mesh>
 
       <group ref={plaqueGroup} position={[PLAQUE.x, PLAQUE.y, 3]}>
-        {plaque && <Plaque sijin={plaque.sijin} half={plaque.half} color={plaqueColor} />}
+        {plaque && (
+          <Plaque sijin={plaque.sijin} half={plaque.half} color={appearance.plaqueColor} />
+        )}
       </group>
 
       <Crystal {...appearance} />
@@ -269,14 +269,20 @@ export function JagyeongnuWatch({ appearance }: { appearance: JagyeongnuAppearan
 function Plaque({ sijin, half, color }: { sijin: number; half: string; color: string }) {
   const texture = useDialTexture(
     PLAQUE.h / 2,
-    (ctx) => drawPlaque(ctx, sijin, half, color),
-    [sijin, half, color],
+    (ctx) => drawPlaque(ctx, sijin, half),
+    [sijin, half],
     512,
   )
   return (
-    <mesh name="sijin-plaque">
-      <planeGeometry args={[PLAQUE.h, PLAQUE.h]} />
-      <meshStandardMaterial map={texture} transparent roughness={0.5} />
-    </mesh>
+    <group name="sijin-plaque">
+      <mesh>
+        <planeGeometry args={[PLAQUE.w, PLAQUE.h]} />
+        <meshStandardMaterial color={color} roughness={0.5} />
+      </mesh>
+      <mesh position={[0, 0, 0.05]}>
+        <planeGeometry args={[PLAQUE.h, PLAQUE.h]} />
+        <meshStandardMaterial map={texture} transparent depthWrite={false} roughness={0.5} />
+      </mesh>
+    </group>
   )
 }

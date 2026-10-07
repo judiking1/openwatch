@@ -3,7 +3,8 @@ import { ExtrudeGeometry, MeshStandardMaterial, Shape, type Group } from 'three'
 import { useClockFrame, useDialTexture, useDisposable } from '../../three/hooks'
 import { Crystal } from '../../three/parts/Crystal'
 import { WatchCase } from '../../three/parts/WatchCase'
-import { dialFont, drawLabels, drawTicks, fillDisc, HOUR_LABELS } from '../../three/utils/canvas'
+import { dialFont, drawLabels, drawTicks, HOUR_LABELS } from '../../three/utils/canvas'
+import { PrintLayer } from '../../three/parts/PrintLayer'
 import { DIAL_RADIUS, dialRotationZ } from '../../three/utils/dial'
 import { handAngles } from '../../utils/time'
 import type { OrbitalHandsAppearance } from './appearance'
@@ -17,13 +18,9 @@ type Props = {
   layout?: OrbitalHandsLayout
 }
 
-function drawDial(
-  ctx: CanvasRenderingContext2D,
-  layout: OrbitalHandsLayout,
-  dial: string,
-  numerals: string,
-) {
-  fillDisc(ctx, dial, DIAL_RADIUS)
+/** Markings mask (white): ticks and numerals, tinted by the material. */
+function drawMarkings(ctx: CanvasRenderingContext2D, layout: OrbitalHandsLayout) {
+  const numerals = '#ffffff'
   const r0 = layout.numeralRadius + 9
   drawTicks(ctx, {
     count: 60,
@@ -84,12 +81,7 @@ function Indicator({
 
 /** Watch 001 — Orbital Hands, procedural 3D model in dial units. */
 export function OrbitalHandsWatch({ appearance, layout = defaultOrbitalHandsLayout }: Props) {
-  const { dialColor, numeralColor } = appearance
-  const texture = useDialTexture(
-    DIAL_RADIUS,
-    (ctx) => drawDial(ctx, layout, dialColor, numeralColor),
-    [layout, dialColor, numeralColor],
-  )
+  const markings = useDialTexture(DIAL_RADIUS, (ctx) => drawMarkings(ctx, layout), [layout])
   const groups = useRef<Partial<Record<IndicatorKind, Group | null>>>({})
   const track = useDisposable(
     () =>
@@ -115,8 +107,9 @@ export function OrbitalHandsWatch({ appearance, layout = defaultOrbitalHandsLayo
     <WatchCase {...appearance}>
       <mesh receiveShadow>
         <circleGeometry args={[DIAL_RADIUS + 1, 128]} />
-        <meshStandardMaterial map={texture} roughness={0.7} metalness={0.1} />
+        <meshStandardMaterial color={appearance.dialColor} roughness={0.7} metalness={0.1} />
       </mesh>
+      <PrintLayer mask={markings} color={appearance.numeralColor} radius={DIAL_RADIUS} />
 
       {KINDS.map((kind) => (
         <mesh key={kind} position={[0, 0, 0.4]} material={track}>

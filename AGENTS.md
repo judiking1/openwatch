@@ -49,6 +49,8 @@ npm run lint && npm test && npm run build && npm run format:check
    - Animate in `useClockFrame((time, delta) => …)` so live / paused / scrubbed time all work.
    - Use `useDialTexture` / `useDisposable` for textures and geometry (auto-disposed) and the
      `drawTicks` / `drawLabels` helpers in `src/three/utils/canvas.ts` for dial printing.
+   - Draw markings **white** and tint them (`PrintLayer`, `useLabelMasks`); never put an
+     appearance colour in a texture's dependencies, so colour pickers stay free.
    - Name animated groups `hour`, `minute`, `second` where they exist.
 2. Put pure time → geometry math in its own file with unit tests.
 3. Register it in `src/watches/registry.ts`.

@@ -3,7 +3,8 @@ import { ExtrudeGeometry, Shape, type Group } from 'three'
 import { useClockFrame, useDialTexture, useDisposable } from '../../three/hooks'
 import { Crystal } from '../../three/parts/Crystal'
 import { WatchCase } from '../../three/parts/WatchCase'
-import { dialFont, drawLabels, drawTicks, fillDisc, HOUR_LABELS } from '../../three/utils/canvas'
+import { dialFont, drawLabels, drawTicks, HOUR_LABELS } from '../../three/utils/canvas'
+import { PrintLayer } from '../../three/parts/PrintLayer'
 import { DIAL_RADIUS, dialRotationZ } from '../../three/utils/dial'
 import { dialPoint } from '../../utils/time'
 import type { ShearsAppearance } from './appearance'
@@ -13,8 +14,9 @@ const HOUR_NUMERALS = 90
 const BLADE_LENGTH = 68
 const SCALE = { tickInner: 72, tickOuter: 76, labels: 81, extent: 86 }
 
-function drawDial(ctx: CanvasRenderingContext2D, dial: string, numerals: string) {
-  fillDisc(ctx, dial, DIAL_RADIUS)
+/** Hour numerals and quarter ticks (white mask). */
+function drawDial(ctx: CanvasRenderingContext2D) {
+  const numerals = '#ffffff'
   drawLabels(ctx, HOUR_LABELS, { radius: HOUR_NUMERALS, font: dialFont(600, 9), color: numerals })
   // Quarter-hour ticks between the numerals.
   drawTicks(ctx, {
@@ -27,7 +29,9 @@ function drawDial(ctx: CanvasRenderingContext2D, dial: string, numerals: string)
 }
 
 /** Minute scale carried by the blade pair: value m sits at ±1.5·m° from the bisector. */
-function drawCarrier(ctx: CanvasRenderingContext2D, color: string, tip: string) {
+/** Minute scale and seconds track (white mask). */
+function drawCarrier(ctx: CanvasRenderingContext2D) {
+  const color = '#ffffff'
   ctx.strokeStyle = color
   ctx.fillStyle = color
   ctx.textAlign = 'center'
@@ -55,19 +59,6 @@ function drawCarrier(ctx: CanvasRenderingContext2D, color: string, tip: string) 
       }
     }
   }
-  // Hour tip on the bisector.
-  ctx.fillStyle = tip
-  ctx.beginPath()
-  ctx.moveTo(0, -(SCALE.extent - 0.3))
-  ctx.lineTo(-2.6, -(SCALE.labels + 0.5))
-  ctx.lineTo(-1.1, -(SCALE.labels + 0.5))
-  ctx.lineTo(-1.1, -50)
-  ctx.lineTo(1.1, -50)
-  ctx.lineTo(1.1, -(SCALE.labels + 0.5))
-  ctx.lineTo(2.6, -(SCALE.labels + 0.5))
-  ctx.closePath()
-  ctx.fill()
-
   // Seconds track along the handles (opposite the blades).
   ctx.strokeStyle = color
   ctx.lineWidth = 0.35
@@ -83,6 +74,22 @@ function drawCarrier(ctx: CanvasRenderingContext2D, color: string, tip: string) 
     ctx.lineTo(1.6, y)
     ctx.stroke()
   }
+}
+
+/** Gold hour tip on the bisector (white mask). */
+function drawTip(ctx: CanvasRenderingContext2D) {
+  // Hour tip on the bisector.
+  ctx.fillStyle = '#ffffff'
+  ctx.beginPath()
+  ctx.moveTo(0, -(SCALE.extent - 0.3))
+  ctx.lineTo(-2.6, -(SCALE.labels + 0.5))
+  ctx.lineTo(-1.1, -(SCALE.labels + 0.5))
+  ctx.lineTo(-1.1, -50)
+  ctx.lineTo(1.1, -50)
+  ctx.lineTo(1.1, -(SCALE.labels + 0.5))
+  ctx.lineTo(2.6, -(SCALE.labels + 0.5))
+  ctx.closePath()
+  ctx.fill()
 }
 
 function bladeGeometry(): ExtrudeGeometry {
@@ -135,16 +142,9 @@ export function ShearsWatch({ appearance }: { appearance: ShearsAppearance }) {
   const bladeB = useRef<Group>(null)
   const bead = useRef<Group>(null)
 
-  const { dialColor, numeralColor, scaleColor, hourTipColor } = appearance
-  const dial = useDialTexture(DIAL_RADIUS, (ctx) => drawDial(ctx, dialColor, numeralColor), [
-    dialColor,
-    numeralColor,
-  ])
-  const carrierTexture = useDialTexture(
-    SCALE.extent,
-    (ctx) => drawCarrier(ctx, scaleColor, hourTipColor),
-    [scaleColor, hourTipColor],
-  )
+  const dial = useDialTexture(DIAL_RADIUS, drawDial, [])
+  const carrierTexture = useDialTexture(SCALE.extent, drawCarrier, [])
+  const tipTexture = useDialTexture(SCALE.extent, drawTip, [])
   const blade = useDisposable(() => bladeGeometry(), [])
 
   useClockFrame((t) => {
@@ -159,14 +159,32 @@ export function ShearsWatch({ appearance }: { appearance: ShearsAppearance }) {
     <WatchCase {...appearance}>
       <mesh receiveShadow>
         <circleGeometry args={[DIAL_RADIUS + 1, 128]} />
-        <meshStandardMaterial map={dial} roughness={0.85} />
+        <meshStandardMaterial color={appearance.dialColor} roughness={0.85} />
       </mesh>
+      <PrintLayer
+        mask={dial}
+        color={appearance.numeralColor}
+        radius={DIAL_RADIUS}
+        roughness={0.85}
+      />
 
       <group ref={carrier} position={[0, 0, 0.4]}>
         <mesh>
           <circleGeometry args={[SCALE.extent, 128]} />
-          <meshStandardMaterial map={carrierTexture} transparent roughness={0.7} />
+          <meshStandardMaterial
+            map={carrierTexture}
+            color={appearance.scaleColor}
+            transparent
+            depthWrite={false}
+            roughness={0.7}
+          />
         </mesh>
+        <PrintLayer
+          mask={tipTexture}
+          color={appearance.hourTipColor}
+          radius={SCALE.extent}
+          z={0.05}
+        />
         <group ref={bead} position={[0, -SECONDS_TRACK.inner, 6]}>
           <mesh>
             <sphereGeometry args={[2.2, 24, 16]} />
