@@ -78,6 +78,28 @@ The proposals below are organized into:
 
 ---
 
+### Precedent check (October 2026)
+
+`PROJECT_VISION.md` §21 asks for an originality check before a concept is built. Searched
+against the catalogue in `docs/research/watch-references.md`:
+
+| Concept           | Nearest existing references                                                                                    | Verdict                                                                                                                                                        |
+| ----------------- | -------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 012 Iris          | Valbray EL1 / Leica "Oculus" (16-blade diaphragm hides sub-dials), Tokyoflash iris concept, Pebble "Iris" face | **Build, with care.** Existing irises reveal or hide a display; none encodes the minute as the aperture size. Overlaps Shears' "one element, two values" axis. |
+| 013 Magnetic Sand | Zelf Koelman Ferrolic (ferrofluid forms numerals), INK-MAGNETIC watch, Robison ferrofluid clock                | **Rework.** Particles that settle into numerals already exist. A new angle is needed, e.g. the amount of settled sand as the encoding, not the numeral shape.  |
+| 014 Tensegrity    | Mystery / floating-hand dials (Cartier, Longines), Ressence floating discs                                     | **Weak.** "Hands without a visible arbor" is already catalogued. Only the damped wobble is new, which is not a way of telling time.                            |
+| 015 Topography    | Relevo, Eone Bradley — listed under "rejected because they already exist"                                      | **Rejected** (already rejected in the survey, §3).                                                                                                             |
+
+Iris is the strongest next concept; Magnetic Sand stays the best showcase for compute
+shaders if its encoding is reworked. Sources: [Valbray × Leica](https://petapixel.com/2014/05/22/leica-teams-swiss-watch-maker-valbray-insanely-unique-timepiece),
+[Tokyoflash iris](https://blog.tokyoflash.com/2013/07/26/watch-design-inspired-by-a-camera-iris/),
+[Ferrolic](https://www.dezeen.com/?p=756566),
+[INK-MAGNETIC](https://www.yankodesign.com/2021/01/06/this-magnetic-ink-watch-makes-the-journey-of-time-much-more-visually-interesting/amp/),
+[floating hands](https://barringtonwatchwinders.com/pages/mystery-dial),
+[Ressence](https://www.phillips.com/detail/ressence/171995).
+
+---
+
 ## 3. Horology Showcase Features (Viewer Polish)
 
 ### 3.1 Exploded View (Layer Breakdown)
@@ -94,7 +116,7 @@ The proposals below are organized into:
 - **Architecture:**
   - Toggle button (`🌙 Lume`) in the stage toolbar.
   - Smoothly fades `StudioLighting` intensity to 0.
-  - Boosts `emissiveIntensity` of luminous materials (hands, markers, Eclipse glow, Optical Lever lasers) and triggers subtle WebGPU TSL bloom (`NodeBloom`).
+  - Boosts `emissiveIntensity` of luminous materials (hands, markers, Eclipse glow, Optical Lever lasers) and reuses the stage bloom (`postFx.bloom` → `StageBloom`, on both renderers since v0.16.0).
 
 ### 3.3 Blueprint / Technical CAD Mode
 
@@ -151,17 +173,19 @@ The proposals below are organized into:
 
 ## 6. Implementation Task Roadmap for AI Agents
 
-When executing the next iterations, agents can follow this prioritized task sequence:
+Status as of v0.16.0. The rendering groundwork these features need now exists: bloom on
+both renderers, compute shaders on the WebGPU backend, and the reading-aid pattern (Angbuilgu
+guide).
 
 ```
 [Phase 1: Viewer Polish & Showcase]
 ├── Task 1.1: Exploded View slider in WatchStage & WatchCase
-├── Task 1.2: Lume Check (Night Mode) toggle in stage toolbar
+├── Task 1.2: Lume Check (Night Mode) toggle — can reuse StageBloom
 └── Task 1.3: Web Audio API procedural mechanical tick-tock engine
 
 [Phase 2: Next Novel Concepts]
-├── Task 2.1: Concept 012 — Iris (Aperture / Origami mechanism)
-└── Task 2.2: Concept 013 — Magnetic Sand (Compute shader particles)
+├── Task 2.1: Concept 012 — Iris (passed the precedent check)
+└── Task 2.2: Concept 013 — Magnetic Sand (rework the encoding first; see the precedent check)
 
 [Phase 3: AI Lab & Sharing]
 ├── Task 3.1: Deep-link URL encoding for appearance customization

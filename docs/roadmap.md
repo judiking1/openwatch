@@ -44,12 +44,17 @@ Compute-shader fluid, the live gallery on WebGPURenderer (with shader warm-up an
 resolution) and TSL bloom for Optical Lever, all verified on the WebGPU backend itself.
 Jagyeongnu and Angbuilgu gained Arabic clock times next to their Hanja.
 
+## 0.16.0 — WebGPU Phase E
+
+Fat lines and bloom on both renderers, `?renderer=auto`, an Angbuilgu reading guide, and the
+future-concepts proposals checked against existing watches.
+
 ## Next candidates
 
 - Feature & concept proposals backlog: see `docs/future-concepts-and-features.md` (Exploded view, Lume mode, Audio tick engine, Concepts 012 Iris & 013 Magnetic Sand).
 - Visual review pass with real devices; tune lighting and strap geometry.
-- WebGPU Phase E: real-device checks before making `webgpu` the default, fat lines with
-  `Line2NodeMaterial`, selective (MRT) bloom (`docs/rendering-and-webgpu.md` §8).
+- Real-device check of `?renderer=auto` before making WebGPU the default
+  (`docs/rendering-and-webgpu.md` §9).
 - More concepts from the backlog in `docs/research/watch-references.md` (plasma, phase,
   night-only).
 - Share links that encode appearance as well as time.

@@ -371,3 +371,51 @@ beams of Optical Lever glow. WebGL ignores the request; the pipeline ships in th
    instead of hairlines.
 3. Selective bloom through MRT (`mrt({ output, bloom })`) so emitters opt in explicitly.
 4. A WebGL bloom equivalent, if the glow should be the default look and not a WebGPU extra.
+
+---
+
+## 9. Phase E review (v0.16.0)
+
+### Fat lines on WebGPU — **done**
+
+`parts/Lines` now draws `LineSegments2` with `Line2NodeMaterial` (from the lazy node library)
+on WebGPURenderer instead of hairlines, so Angbuilgu's engraved grid and needle keep their
+widths on both renderers, in the viewer and in the live gallery.
+
+### Bloom on both renderers — **done**
+
+`postFx.bloom` is no longer WebGPU-only. `StageBloom` renders through the TSL pipeline on a
+node renderer and through an `EffectComposer` + `UnrealBloomPass` (a lazy 19 kB chunk) on
+WebGL, both with the same linear-HDR threshold. The laser glow is now the default look.
+
+Routing WebGL through a half-float composer brings the linear-blending effect from §7 to WebGL
+too: the crystal turned into a grey veil. `LinearBlendingContext` / `useLinearBlending()`
+now mark every stage that blends in linear light (node renderer or HDR post chain), and the
+crystal and Jagyeongnu's glass use `LINEAR_OPACITY` there.
+
+### Selective (MRT) bloom — **shelved**
+
+The plan was `mrt({ output, glow })` with emitters opting in through `material.mrtNode`.
+`mrtNode` does reach the auto-converted classic materials, but in this sandbox the MRT pass
+showed no glow even with the mask forced to 1, and the test size later turned out to hide
+weak glows too. The result is inconclusive, and the threshold already isolates the
+unlit emitters, so this waits until a concept needs per-mesh selection.
+
+### `?renderer=auto` — **groundwork for the default**
+
+`auto` asks for a WebGPU adapter and uses WebGPURenderer only when one is returned; otherwise
+WebGLRenderer (checked both ways). The default stays `webgl` until `?renderer=webgpu` or
+`auto` has been checked on real devices.
+
+### Angbuilgu reading guide
+
+Not a rendering change, but verified with the same tooling: the shadow tip lands on the right
+hour line at 07:00, 09:00, 12:00, 15:45 and the moon bead on 二更 at 22:00. A dotted guide now
+follows the current hour line from the tip to the hour numbers (see `docs/concepts/angbuilgu.md`).
+
+### Next steps
+
+1. Real-device check of `?renderer=auto`, then switch the default.
+2. Showcase features from `docs/future-concepts-and-features.md` (exploded view, lume mode
+   reusing `StageBloom`, audio).
+3. Concept 012 Iris (passed the precedent check).

@@ -93,6 +93,17 @@ Rejected in the second round because they already exist:
 | Bracelet links show the hour   | 12/24-link hour bracelet patents, LED bracelet designs |
 | Two frames for two time zones  | GMT rotating bezel                                     |
 
+### Third round (proposals, not built)
+
+Candidates from `docs/future-concepts-and-features.md`, checked October 2026:
+
+| Idea                      | Nearest reference                                   | Verdict                          |
+| ------------------------- | --------------------------------------------------- | -------------------------------- |
+| Iris: aperture size = min | Valbray EL1 (diaphragm hides sub-dials), Tokyoflash | open — no aperture-size encoding |
+| Particles form numerals   | Ferrolic ferrofluid clock, INK-MAGNETIC watch       | exists — needs another encoding  |
+| Hands with no arbor       | Mystery / floating-hand dials, Ressence             | exists                           |
+| Pin-relief elevation wave | Relevo, Eone Bradley (rejected above)               | exists                           |
+
 ## 5. Backlog (not yet built)
 
 - **Plasma**: a gas-discharge filament whose attachment point wanders to the time.
@@ -125,3 +136,8 @@ Rejected in the second round because they already exist:
 - [TechCrunch — laser concept watch](https://techcrunch.com/?p=142685)
 - [Asia Society — Angbu-ilgu](https://asiasociety.org/korea/redistribution-power-through-angbu-ilgu-unique-korean-sundial)
 - [HYT — about](https://hytwatches.com/en/about-us.html)
+- [PetaPixel — Valbray × Leica EL1 diaphragm](https://petapixel.com/2014/05/22/leica-teams-swiss-watch-maker-valbray-insanely-unique-timepiece)
+- [Tokyoflash — iris watch concept](https://blog.tokyoflash.com/2013/07/26/watch-design-inspired-by-a-camera-iris/)
+- [Dezeen — Ferrolic ferrofluid clock](https://www.dezeen.com/?p=756566)
+- [Yanko Design — INK-MAGNETIC watch](https://www.yankodesign.com/2021/01/06/this-magnetic-ink-watch-makes-the-journey-of-time-much-more-visually-interesting/amp/)
+- [Mystery / floating-hand dials](https://barringtonwatchwinders.com/pages/mystery-dial)
