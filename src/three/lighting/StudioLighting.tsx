@@ -1,7 +1,7 @@
 import { ContactShadows, Environment, Lightformer } from '@react-three/drei'
 
 /** Offline studio setup: procedural light formers only, no HDR downloads. */
-export function StudioLighting() {
+export function StudioLighting({ contactShadows = true }: { contactShadows?: boolean }) {
   return (
     <>
       <ambientLight intensity={0.25} />
@@ -14,7 +14,9 @@ export function StudioLighting() {
         <Lightformer form="ring" intensity={2} position={[0, -3, 5]} scale={3} />
         <Lightformer form="rect" intensity={0.6} position={[0, 0, -6]} scale={[10, 10, 1]} />
       </Environment>
-      <ContactShadows position={[0, -2.9, 0]} opacity={0.4} scale={8} blur={2.5} far={4} />
+      {contactShadows && (
+        <ContactShadows position={[0, -2.9, 0]} opacity={0.4} scale={8} blur={2.5} far={4} />
+      )}
     </>
   )
 }

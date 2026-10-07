@@ -248,7 +248,10 @@ export class StableFluid {
   step(gl: WebGLRenderer, dt: number, liquidHeight: number) {
     const previous = gl.getRenderTarget()
     const autoClear = gl.autoClear
+    // Views (drei <View>) render with a scissor; the simulation must cover whole targets.
+    const scissorTest = gl.getScissorTest()
     gl.autoClear = false
+    gl.setScissorTest(false)
 
     for (const s of this.pending) {
       const point = new Vector2(s.x, s.y)
@@ -328,6 +331,7 @@ export class StableFluid {
 
     gl.setRenderTarget(previous)
     gl.autoClear = autoClear
+    gl.setScissorTest(scissorTest)
   }
 
   dispose() {

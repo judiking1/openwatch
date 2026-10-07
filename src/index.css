@@ -6,6 +6,7 @@
   --text-dim: #8b8a86;
   --accent: #c9a96e;
   --danger: #e0533d;
+  --topbar-height: 49px;
   color-scheme: dark;
   font-family:
     'Inter',
@@ -79,6 +80,9 @@ input[type='range'] {
 }
 
 .topbar {
+  box-sizing: border-box;
+  height: var(--topbar-height);
+  flex-shrink: 0;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -606,4 +610,47 @@ button:disabled {
     Menlo,
     monospace;
   pointer-events: none;
+}
+
+.gallery-toolbar {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 24px;
+}
+
+.gallery-toolbar .filters {
+  margin-bottom: 0;
+}
+
+.live-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+  border-radius: 999px;
+}
+
+.live-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--text-dim);
+}
+
+.live-toggle.active {
+  background: #20232c;
+  color: var(--text);
+  border-color: var(--danger);
+}
+
+.live-toggle.active .live-dot {
+  background: var(--danger);
+  box-shadow: 0 0 8px var(--danger);
+}
+
+/* The live gallery canvas covers the scrolling area only, never the top bar. */
+.live-layer {
+  top: var(--topbar-height) !important;
 }
