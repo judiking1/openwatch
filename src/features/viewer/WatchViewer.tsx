@@ -28,6 +28,19 @@ function isTyping(target: EventTarget | null) {
   return target instanceof HTMLElement && /^(INPUT|SELECT|TEXTAREA)$/.test(target.tagName)
 }
 
+function updateQueryParam(key: string, value: string | null) {
+  const hash = window.location.hash.replace(/^#/, '') || '/'
+  const [path, query = ''] = hash.split('?')
+  const params = new URLSearchParams(query)
+  if (value === null) {
+    params.delete(key)
+  } else {
+    params.set(key, value)
+  }
+  const q = params.toString()
+  window.location.hash = q ? `${path}?${q}` : path
+}
+
 /** ←/→ walk through the exhibition. */
 function useArrowNavigation(prev?: WatchConcept, next?: WatchConcept) {
   useEffect(() => {
@@ -79,6 +92,20 @@ export function WatchViewer({
         <div className="stage-toolbar">
           <button onClick={() => stage.current?.resetCamera()}>Front view</button>
           <button onClick={() => stageBox.current?.requestFullscreen?.()}>Fullscreen</button>
+          <button
+            onClick={() => updateQueryParam('renderer', renderer === 'webgpu' ? null : 'webgpu')}
+            title="Toggle experimental WebGPURenderer"
+            aria-pressed={renderer === 'webgpu'}
+          >
+            {renderer === 'webgpu' ? '⚡ WebGPU' : 'WebGL'}
+          </button>
+          <button
+            onClick={() => updateQueryParam('stats', stats ? null : '')}
+            title="Toggle render statistics probe"
+            aria-pressed={stats}
+          >
+            Stats
+          </button>
         </div>
         <nav className="stage-nav" aria-label="Exhibition">
           {prev && (

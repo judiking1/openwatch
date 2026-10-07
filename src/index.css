@@ -250,6 +250,13 @@ input[type='range'] {
   backdrop-filter: blur(6px);
 }
 
+.stage-toolbar button[aria-pressed='true'] {
+  background: var(--accent);
+  color: #0e0f13;
+  border-color: var(--accent);
+  font-weight: 600;
+}
+
 .watch-info h2 {
   margin: 0;
   font-size: 22px;

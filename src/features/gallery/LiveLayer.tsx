@@ -1,4 +1,4 @@
-import { PerspectiveCamera, View } from '@react-three/drei'
+import { AdaptiveDpr, PerspectiveCamera, View } from '@react-three/drei'
 import { Canvas } from '@react-three/fiber'
 import { Suspense, type RefObject } from 'react'
 import { resolveAppearance, useAppearanceStore } from '../../stores/appearanceStore'
@@ -32,7 +32,7 @@ function LiveWatch({ concept }: { concept: WatchConcept }) {
 /**
  * One transparent canvas over the whole page; every card's thumbnail is a scissored view
  * into it (drei <View>). One WebGL context for all watches, and views scrolled out of
- * sight are skipped.
+ * sight are skipped. AdaptiveDpr scales resolution when frame rate drops.
  */
 export function LiveLayer({ concepts, targets }: Props) {
   return (
@@ -43,6 +43,7 @@ export function LiveLayer({ concepts, targets }: Props) {
       eventSource={document.body}
       style={{ position: 'fixed', inset: 0, pointerEvents: 'none' }}
     >
+      <AdaptiveDpr pixelated />
       {concepts.map((concept, i) => {
         const track = targets[concept.metadata.id]
         return track ? (
