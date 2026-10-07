@@ -59,7 +59,13 @@ export function WatchViewer({
   useArrowNavigation(prev, next)
 
   const model = (
-    <WatchStage ref={stage} stats={stats} toneMapping={tone} renderer={renderer}>
+    <WatchStage
+      ref={stage}
+      stats={stats}
+      toneMapping={tone}
+      renderer={renderer}
+      postFx={concept.postFx}
+    >
       <Suspense fallback={null}>
         <Model appearance={appearance} />
       </Suspense>

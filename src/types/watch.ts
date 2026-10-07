@@ -36,12 +36,27 @@ export type WatchModelProps<A> = {
  * Everything the generic viewer needs to exhibit a concept. Concept-specific
  * logic lives in the concept folder; the viewer only talks to this shape.
  */
+export type BloomSettings = {
+  strength: number
+  /** 0..1: how far the glow spreads. */
+  radius: number
+  /** Linear (pre-tone-mapping) luminance above which pixels glow. */
+  threshold: number
+}
+
+/** Optional post effects a concept asks the stage for (WebGPURenderer only, `?renderer=webgpu`). */
+export type PostEffects = {
+  /** Glow around HDR-bright pixels such as lasers and emitters. */
+  bloom?: BloomSettings
+}
+
 export type WatchConcept<A extends object = Appearance> = {
   metadata: WatchMetadata
   defaultAppearance: A
   /** The parameters this concept declares safe to customise. */
   customization: CustomizationField<A>[]
   Model: ComponentType<WatchModelProps<A>>
+  postFx?: PostEffects
 }
 
 export type CustomizationGroup = 'Case' | 'Dial' | 'Indicators' | 'Crystal' | 'Strap'

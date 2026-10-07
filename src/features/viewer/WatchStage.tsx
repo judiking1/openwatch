@@ -17,7 +17,9 @@ import {
   type ToneMapping,
 } from 'three'
 import { StudioLighting } from '../../three/lighting/StudioLighting'
+import { NodeBloom } from '../../three/postfx/NodeBloom'
 import { StageBackground } from '../../three/StageBackground'
+import type { PostEffects } from '../../types/watch'
 import { RenderStatsProbe, type RenderSample } from '../../three/RenderStats'
 import type { RendererMode } from './rendererMode'
 import type { ToneMappingName } from './toneMapping'
@@ -46,6 +48,8 @@ type Props = {
   toneMapping?: ToneMappingName
   /** `webgpu` opts into the experimental WebGPURenderer (`?renderer=webgpu`). */
   renderer?: RendererMode
+  /** Post effects requested by the concept (applied on WebGPURenderer only). */
+  postFx?: PostEffects
 }
 
 export function WatchStage({
@@ -54,6 +58,7 @@ export function WatchStage({
   stats = false,
   toneMapping = 'aces',
   renderer = 'webgl',
+  postFx,
 }: Props) {
   const [sample, setSample] = useState<RenderSample | null>(null)
   const [backend, setBackend] = useState('')
@@ -91,6 +96,7 @@ export function WatchStage({
           maxDistance={14}
           enableDamping
         />
+        {postFx?.bloom && <NodeBloom settings={postFx.bloom} />}
         {stats && <RenderStatsProbe onSample={setSample} />}
       </Canvas>
       {stats && sample && (
