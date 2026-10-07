@@ -277,29 +277,18 @@ draw calls (Orbital Hands 53 → 25, Lens 85 → 41).
 
 ### Reference: wass08/under-the-sea (WebGPU + TSL boids)
 
-What that project shows, and what it means here:
-
-- **Init:** `new WebGPURenderer()` → `await init()` → check `backend.isWebGPUBackend` and show
-  a message instead of silently falling back — our `rendererKind().compute` is that check.
-- **GPGPU with compute:** 4 096 fish as `instancedArray` storage buffers updated by
-  `Fn(...).compute(N)` + `renderer.compute()`, a uniform grid built with atomics for neighbour
-  search, and a reminder that a stage may bind at most 8 storage buffers. Our Stable Fluids
-  passes are the render-to-texture version of the same idea; with `compute` available they
-  become compute kernels on storage textures (no full-screen quads, no ping-pong targets).
-- **AgX needs darker base colours** (3–5× lower) — the same reason `?tone=agx` looked washed
-  out in Phase A: adopting AgX means retuning palettes, not just switching the operator.
-- **`compileAsync` + warm-up frames** before revealing the scene, and **adaptive resolution**
-  (lower DPR when fps drops) — both directly useful for the live gallery.
-- **Post-processing as a node graph** (`RenderPipeline`, `pass()`, bloom) replaces
-  `EffectComposer`; Optical Lever's laser glow is the natural first candidate.
-
-### Next steps (Phase D candidates)
-
-1. Compute-shader fluid (storage textures) when `compute` is true; GLSL / TSL quads otherwise.
-2. Live gallery on `WebGPURenderer` (`<View>` scissor path is untested there).
-3. Optical Lever bloom via a TSL `RenderPipeline`.
-4. `compileAsync` warm-up and adaptive DPR for the live gallery.
-5. Make `webgpu` the default only after the WebGPU backend is checked on real devices.
+- **Source:** [wass08/under-the-sea](https://github.com/wass08/under-the-sea) & YouTube [N1rIC35MDjw ("Make it better" doesn't work. The right words do.)](https://www.youtube.com/watch?v=N1rIC35MDjw).
+- **Core Video Insight ("The right words do"):** AI coding agents excel when prompted with precise domain engineering terminology (e.g., GPGPU boids, instancing, indirect draw, TSL nodes, SDF raymarching) rather than vague requests.
+- **Architectural Takeaways:**
+  - **Init:** `new WebGPURenderer()` → `await init()` → check `backend.isWebGPUBackend` — our `rendererKind().compute` is that check.
+  - **GPGPU with compute:** 16,384 fish as `instancedArray` storage buffers updated by `Fn(...).compute(N)` + `renderer.compute()`, a uniform grid built with atomics for neighbour search.
+  - **Novel Watch Concept Inspirations:**
+    1. _Magnetic Sand Watch:_ Thousands of microscopic metallic particles simulated on the GPU via compute shaders to form numerals or fluid hourglass flows.
+    2. _Fluidic Capillary Watch:_ Real-time micro-fluidics simulation in capillary tubes for displaying hours and minutes (HYT style).
+    3. _Mechanical Swarm Watch:_ Flocking arrays of micro-reflectors that align to reflect light into legible time figures.
+  - **AgX needs darker base colours** (3–5× lower) — the same reason `?tone=agx` looked washed out in Phase A: adopting AgX means retuning palettes, not just switching the operator.
+  - **`compileAsync` + warm-up frames** and **adaptive resolution** (lower DPR when fps drops) — both implemented in Phase D below.
+  - **Post-processing as a node graph** (`RenderPipeline`, `pass()`, bloom) replaces `EffectComposer`.
 
 ---
 
@@ -358,6 +347,16 @@ Concepts may request `postFx.bloom`. On a node renderer the stage renders throug
 `RenderPipeline`: scene pass → `BloomNode` → added back → tone mapping and encoding once at
 the end. The threshold (1.2) is in linear HDR, above anything lit, so only the unlit laser
 beams of Optical Lever glow. WebGL ignores the request; the pipeline ships in the lazy chunk.
+
+### 5. Viewer toolbar and stage warm-up (contributed)
+
+- **Stage toolbar:** one-click `WebGL` / `⚡ WebGPU` and `Stats` toggles (they rewrite the
+  `?renderer=` / `?stats` query), so visitors can compare renderers without editing URLs.
+- **Stage warm-up:** `WatchStage` compiles the scene on creation (`compileAsync` where
+  available, `compile` otherwise); failures are non-fatal.
+- The gallery briefly used drei `<AdaptiveDpr>`; it only reacts to `performance.regress()`
+  calls (from interactive controls), which the non-interactive gallery never makes, so the
+  merged version keeps the fps-driven `PerformanceMonitor` above.
 
 ### Other fixes
 

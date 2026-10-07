@@ -81,7 +81,22 @@ export function WatchStage({
           toneMapping: TONE_MAPPINGS[toneMapping],
           preserveDrawingBuffer: true,
         })}
-        onCreated={(state) => setBackend(rendererKind(state.gl).label)}
+        onCreated={async (state) => {
+          setBackend(rendererKind(state.gl).label)
+          try {
+            const gl = state.gl as unknown as {
+              compileAsync?: (s: unknown, c: unknown) => Promise<unknown>
+              compile?: (s: unknown, c: unknown) => void
+            }
+            if (typeof gl.compileAsync === 'function') {
+              await gl.compileAsync(state.scene, state.camera)
+            } else if (typeof gl.compile === 'function') {
+              gl.compile(state.scene, state.camera)
+            }
+          } catch {
+            // Warm-up compilation failure is non-fatal
+          }
+        }}
       >
         <StageBackground color="#0e0f13" />
         <StudioLighting />
