@@ -4,7 +4,23 @@ All notable changes to this project are documented here.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the
 project uses [Semantic Versioning](https://semver.org).
 
-## [0.16.0] - 2026-10-08
+## [0.17.0] - 2026-10-08
+
+### Added (docs/future-concepts-and-features.md §6, all tasks)
+
+- **Exploded view:** a toolbar slider lifts crystal, bezel and hands and drops the caseback.
+- **Lume view:** studio lights fade out, prints and hands glow lume green, bloom on.
+- **Sound:** procedural Web Audio (no samples) — escapement ticks, Jagyeongnu's drops, Cipher's
+  ratchet; follows the watch's own time; louder up close and from the caseback.
+- **Watch 012 Iris:** a nine-blade diaphragm whose opening is the minute and whose rotation
+  is the hour, with a retrograde snap at the top of the hour.
+- **Watch 013 Chladni:** sand on a vibrating plate settles on the still diameter (hour) and
+  still circle (minute); reworked from the Magnetic Sand proposal after the precedent check.
+- **Share links:** `?a=` carries the customised appearance; Copy link in the Customize panel.
+- **Concept generator kit:** spec schema, prompt template, review checklist and
+  `npm run new-concept` scaffold.
+
+- 2026-10-08
 
 ### Added (Phase E of docs/rendering-and-webgpu.md)
 
