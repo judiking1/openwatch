@@ -1,5 +1,6 @@
 import type { WatchConcept } from '../types/watch'
 import { angbuilgu } from './angbuilgu'
+import { chladni } from './chladni'
 import { cipher } from './cipher'
 import { eclipse } from './eclipse'
 import { iris } from './iris'
@@ -26,6 +27,7 @@ export const concepts: WatchConcept[] = [
   angbuilgu,
   jagyeongnu,
   iris,
+  chladni,
 ]
 
 export function getConcept(id: string): WatchConcept | undefined {

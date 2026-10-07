@@ -141,3 +141,4 @@ Candidates from `docs/future-concepts-and-features.md`, checked October 2026:
 - [Dezeen — Ferrolic ferrofluid clock](https://www.dezeen.com/?p=756566)
 - [Yanko Design — INK-MAGNETIC watch](https://www.yankodesign.com/2021/01/06/this-magnetic-ink-watch-makes-the-journey-of-time-much-more-visually-interesting/amp/)
 - [Mystery / floating-hand dials](https://barringtonwatchwinders.com/pages/mystery-dial)
+- [iF Design — Moongchi Clock](https://ifdesign.com/en/winner-ranking/project/moongchi-clock/569438)
