@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { dropFall, waterClock } from './waterClock'
+import { dropFall, gakClockTime, waterClock } from './waterClock'
 
 const t = (hours: number, minutes: number, seconds = 0, milliseconds = 0) => ({
   hours,
@@ -45,5 +45,13 @@ describe('water clock', () => {
   it('drops a drop once a second', () => {
     expect(dropFall(t(1, 0, 0, 0))).toBe(0)
     expect(dropFall(t(1, 0, 0, 900))).toBeNull()
+  })
+
+  it('labels the scale with the clock times of the current 시진', () => {
+    expect(gakClockTime(5, 0)).toBe('9:00')
+    expect(gakClockTime(5, 2)).toBe('9:30')
+    expect(gakClockTime(5, 8)).toBe('11:00')
+    expect(gakClockTime(0, 0)).toBe('23:00')
+    expect(gakClockTime(0, 4)).toBe('0:00')
   })
 })

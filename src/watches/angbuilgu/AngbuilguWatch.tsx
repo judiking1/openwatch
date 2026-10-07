@@ -12,8 +12,8 @@ import { useClockFrame, useDialTexture, useDisposable } from '../../three/hooks'
 import { Crystal } from '../../three/parts/Crystal'
 import { Lines } from '../../three/parts/Lines'
 import { WatchCase } from '../../three/parts/WatchCase'
-import { createLabelCanvas, dialFont, drawLabels } from '../../three/utils/canvas'
-import { DIAL_RADIUS, dialRotationZ } from '../../three/utils/dial'
+import { dialFont, drawLabels } from '../../three/utils/canvas'
+import { countRaster, DIAL_RADIUS, dialRotationZ } from '../../three/utils/dial'
 import { PrintLayer } from '../../three/parts/PrintLayer'
 import type { AngbuilguAppearance } from './appearance'
 import {
@@ -23,6 +23,7 @@ import {
   poleVector,
   shadowOnSphere,
   SIJIN_HANJA,
+  sijinRange,
   solarLongitude,
   sunVector,
   type Vec3,
@@ -82,47 +83,81 @@ function useGrid() {
   }, [])
 }
 
-type Label = { text: string; position: P3; size: number }
+type Label = { text: string; position: P3; size: number; weight: number }
 
+/**
+ * Engraved labels. Readable without Hanja: large Arabic hours sit in the open lower bowl
+ * where the hour lines are widest apart; each 시진 character carries its clock hours, and the
+ * season lines their months.
+ */
 function useLabels(): Label[] {
   return useMemo(() => {
     const labels: Label[] = []
-    for (let h = FIRST_HOUR + 1; h <= LAST_HOUR - 1; h++) {
-      const p = tipShadow(h, -SOLSTICE - 4)
-      if (p) labels.push({ text: String(h), position: toBowl(p, 0.97), size: 8 })
+    const add = (text: string, p: Vec3 | null, size: number, weight = 700) => {
+      if (p) labels.push({ text, position: toBowl(p, 0.97), size, weight })
     }
-    // 시진 names at the middle of each double hour (卯 = 6 h … 酉 = 18 h).
+    // Hours just beyond the summer-solstice line.
+    for (let h = FIRST_HOUR + 1; h <= LAST_HOUR - 1; h++) {
+      add(String(h), tipShadow(h, SOLSTICE + 7), 9, 800)
+    }
+    // 시진 names at the middle of each double hour (卯 = 6 h … 酉 = 18 h), hours below.
     for (let h = 6; h <= 18; h += 2) {
-      const p = tipShadow(h, -SOLSTICE - 10)
       const index = ((h + 1) / 2) | 0
-      if (p) labels.push({ text: SIJIN_HANJA[index % 12], position: toBowl(p, 0.97), size: 11 })
+      add(SIJIN_HANJA[index % 12], tipShadow(h, -SOLSTICE - 10), 9)
+      add(sijinRange(index % 12), tipShadow(h, -SOLSTICE - 3), 5.4, 700)
     }
     const termLabels: Array<[string, number]> = [
-      ['冬至', -SOLSTICE],
-      ['春秋分', 0],
-      ['夏至', SOLSTICE],
+      ['冬至 12월', -SOLSTICE + 2],
+      ['春秋分 3·9월', 2],
+      ['夏至 6월', SOLSTICE - 2],
     ]
-    for (const [text, d] of termLabels) {
-      const p = tipShadow(17.4, d)
-      if (p) labels.push({ text, position: toBowl(p, 0.97), size: 9 })
-    }
+    // Between the 13 h and 14 h lines, just inside each season line.
+    for (const [text, d] of termLabels) add(text, tipShadow(13.5, d), 5, 700)
     return labels
   }, [])
 }
 
-function LabelPlane({ label, color }: { label: Label; color: string }) {
-  // White mask per label; the engraving colour is a material tint.
+/** Text mask sized to its content (a white mask; the engraving colour is a material tint). */
+function createLabelMask(text: string, weight: number) {
+  const height = 64
+  const font = dialFont(weight, 48)
+  const measure = document.createElement('canvas').getContext('2d')!
+  measure.font = font
+  const width = Math.ceil(measure.measureText(text).width) + 16
+  countRaster(Math.max(width, height))
+  const canvas = document.createElement('canvas')
+  canvas.width = width
+  canvas.height = height
+  const ctx = canvas.getContext('2d')!
+  ctx.fillStyle = '#ffffff'
+  ctx.font = font
+  ctx.textAlign = 'center'
+  ctx.textBaseline = 'middle'
+  ctx.fillText(text, width / 2, height / 2)
+  return canvas
+}
+
+/** A label with a bowl-coloured backing, so it stays legible over the engraved grid. */
+function LabelPlane({ label, color, backing }: { label: Label; color: string; backing: string }) {
   const texture = useDisposable(() => {
-    const t = new CanvasTexture(createLabelCanvas(label.text, dialFont(700, 40), '#ffffff'))
+    const t = new CanvasTexture(createLabelMask(label.text, label.weight))
     t.colorSpace = SRGBColorSpace
     return t
-  }, [label.text])
+  }, [label.text, label.weight])
+  const aspect = texture.image.width / texture.image.height
   const [x, y, z] = label.position
+  const [w, h] = [label.size * aspect, label.size]
   return (
-    <mesh position={[x, y, z + 0.4]}>
-      <planeGeometry args={[label.size * 1.6, label.size * 1.6]} />
-      <meshBasicMaterial map={texture} color={color} transparent depthWrite={false} />
-    </mesh>
+    <group position={[x, y, z + 0.4]}>
+      <mesh position-z={-0.05}>
+        <planeGeometry args={[w * 0.92, h * 0.8]} />
+        <meshStandardMaterial color={backing} metalness={0.35} roughness={0.55} />
+      </mesh>
+      <mesh>
+        <planeGeometry args={[w, h]} />
+        <meshBasicMaterial map={texture} color={color} transparent depthWrite={false} />
+      </mesh>
+    </group>
   )
 }
 
@@ -135,7 +170,8 @@ function drawRim(ctx: CanvasRenderingContext2D) {
     color: text,
     tangential: true,
   })
-  const watches = ['初更', '二更', '三更', '四更', '五更']
+  // Five night watches of two hours from 19:00, with their clock hours.
+  const watches = ['初更 19–21', '二更 21–23', '三更 23–1', '四更 1–3', '五更 3–5']
   drawLabels(ctx, watches, {
     radius: R + 7.5,
     font: dialFont(600, 4.2),
@@ -232,7 +268,12 @@ export function AngbuilguWatch({ appearance }: { appearance: AngbuilguAppearance
       />
       <Lines points={grid.hourMajor} segments color={lineColor} lineWidth={2.2} />
       {labels.map((label) => (
-        <LabelPlane key={label.text} label={label} color={lineColor} />
+        <LabelPlane
+          key={label.text}
+          label={label}
+          color={lineColor}
+          backing={appearance.bowlColor}
+        />
       ))}
 
       {/* polar needle (영침): tip at the centre of the sphere, mounted to the north rim */}

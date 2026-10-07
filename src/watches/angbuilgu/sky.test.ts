@@ -6,6 +6,8 @@ import {
   poleVector,
   shadowOnSphere,
   sijin,
+  sijinHours,
+  sijinRange,
   solarTerm,
   sunVector,
 } from './sky'
@@ -58,5 +60,17 @@ describe('angbuilgu sky model', () => {
     expect(solarTerm(271)).toBe('동지')
     expect(nightWatch(21.5)?.watch).toBe(2)
     expect(nightWatch(12)).toBeNull()
+  })
+
+  it('maps each 시진 to its clock hours', () => {
+    expect(sijinHours(0)).toEqual({ start: 23, end: 1 })
+    expect(sijinHours(5)).toEqual({ start: 9, end: 11 })
+    expect(sijinRange(5)).toBe('09–11')
+    expect(sijinRange(11)).toBe('21–23')
+    for (let h = 0; h < 24; h++) {
+      const { start, end } = sijinHours(sijin(h).index)
+      const inside = start < end ? h >= start && h < end : h >= start || h < end
+      expect(inside).toBe(true)
+    }
   })
 })

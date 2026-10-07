@@ -72,6 +72,18 @@ export function shadowOnSphere(
 export const SIJIN = ['자', '축', '인', '묘', '진', '사', '오', '미', '신', '유', '술', '해']
 export const SIJIN_HANJA = ['子', '丑', '寅', '卯', '辰', '巳', '午', '未', '申', '酉', '戌', '亥']
 
+/** Clock hours a 시진 spans: 0 = 자시 → 23–1, 5 = 사시 → 9–11. */
+export function sijinHours(index: number): { start: number; end: number } {
+  return { start: (index * 2 + 23) % 24, end: (index * 2 + 1) % 24 }
+}
+
+/** e.g. 5 → '09–11' (사시). */
+export function sijinRange(index: number): string {
+  const { start, end } = sijinHours(index)
+  const pad = (h: number) => String(h).padStart(2, '0')
+  return `${pad(start)}–${pad(end)}`
+}
+
 /** e.g. 7:45 → 진시 초 (辰初). */
 export function sijin(hours: number): { index: number; half: '초' | '정' } {
   const shifted = (hours + 1) % 24

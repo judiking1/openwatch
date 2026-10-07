@@ -45,3 +45,10 @@ export function dropFall(t: ClockTime): number | null {
 
 /** Eight 각 labels of a 시진: 初初刻 … 正三刻. */
 export const GAK_LABELS = ['初初', '初一', '初二', '初三', '正初', '正一', '正二', '正三']
+
+/** Clock time of the 각 boundary `quarter` (0..8) in 시진 `sijin`: e.g. (5, 2) → '9:30'. */
+export function gakClockTime(sijin: number, quarter: number): string {
+  const minutes = ((sijin * 2 + 23) % 24) * 60 + quarter * 15
+  const h = Math.floor(minutes / 60) % 24
+  return `${h}:${String(minutes % 60).padStart(2, '0')}`
+}

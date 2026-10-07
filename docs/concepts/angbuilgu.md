@@ -14,9 +14,14 @@ and one shadow shows the time **and** the season.
 
 ## How to read it
 
-- Time — the hour line under the needle-tip shadow (5–19 h, 시진 names 卯…酉, fine 15-minute lines).
-- Season — the curved line under the tip: 冬至 near the rim, 春秋分 in the middle, 夏至 lower.
-- Night — the sun is below the horizon; a moon bead crosses the north rim through 初更…五更.
+- Time — follow the hour line under the needle-tip shadow down to its large Arabic number
+  (6–18 h, in the open lower bowl where the lines are widest apart); fine lines are 15 minutes.
+  The 시진 characters at the top carry their clock hours (巳 `09–11`).
+- Season — the curved line under the tip: 冬至 (12월) near the rim, 春秋分 (3·9월) in the
+  middle, 夏至 (6월) lowest.
+- Night — the sun is below the horizon; a moon bead crosses the north rim through the five
+  watches, each labelled with its hours (初更 19–21 … 五更 3–5).
+- Labels sit on small bowl-coloured backings so they stay legible over the engraved grid.
 
 ## Math (`sky.ts`, tested)
 

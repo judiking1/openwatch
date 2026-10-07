@@ -11,6 +11,13 @@ After Jang Yeong-sil's self-striking water clock of 1434. A drop falls from the 
 against minutes (0–120) and the eight 각. At the end of the 시진 the vessel siphons empty and the
 plaque flips to the next zodiac hour, as the original's wooden figures announced it.
 
+## How to read it
+
+- **Time:** the water level against the left scale, which prints the clock times of the current
+  시진 (e.g. 9:00 … 11:00 for 巳). It re-prints once per 시진, so no Hanja is needed to read it.
+- **시진:** the plaque — character, Korean name with 초/정, and its clock hours (`09–11`).
+- **각:** the right scale keeps the eight traditional quarter-hours (初初 … 正三).
+
 ## Water: Navier–Stokes on the GPU
 
 `src/three/fluid/StableFluid.ts` is a reusable implementation of Jos Stam's _Stable Fluids_

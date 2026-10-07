@@ -8,10 +8,10 @@ import { WatchCase } from '../../three/parts/WatchCase'
 import { dialFont } from '../../three/utils/canvas'
 import { PrintLayer } from '../../three/parts/PrintLayer'
 import { DIAL_RADIUS } from '../../three/utils/dial'
-import { SIJIN, SIJIN_HANJA } from '../angbuilgu/sky'
+import { SIJIN, SIJIN_HANJA, sijinRange } from '../angbuilgu/sky'
 import type { JagyeongnuAppearance } from './appearance'
 import { useWaterSim } from './water'
-import { dropFall, GAK_LABELS, waterClock } from './waterClock'
+import { dropFall, GAK_LABELS, gakClockTime, waterClock } from './waterClock'
 
 /** The inflow vessel (수수호), in dial units. */
 const VESSEL = { x0: -22, x1: 18, y0: -74, y1: 52 }
@@ -21,8 +21,11 @@ const VESSEL_CX = (VESSEL.x0 + VESSEL.x1) / 2
 const SPOUT_Y = 62
 const PLAQUE = { x: 52, y: 6, w: 34, h: 52 }
 
-/** Minute and 각 scales beside the vessel (white mask). */
-function drawDial(ctx: CanvasRenderingContext2D) {
+/**
+ * Scales beside the vessel (white mask): the clock times of the current 시진 on the left, so
+ * the water level reads directly as a time, and the eight traditional 각 on the right.
+ */
+function drawDial(ctx: CanvasRenderingContext2D, sijin: number) {
   const print = '#ffffff'
   ctx.save()
   ctx.strokeStyle = print
@@ -40,8 +43,8 @@ function drawDial(ctx: CanvasRenderingContext2D) {
     ctx.lineTo(VESSEL.x1 + 4, y)
     ctx.stroke()
     ctx.textAlign = 'right'
-    ctx.font = dialFont(600, 5)
-    if (major) ctx.fillText(String(i * 15), VESSEL.x0 - 8.5, y)
+    ctx.font = dialFont(major ? 700 : 500, major ? 6 : 4.2)
+    ctx.fillText(gakClockTime(sijin, i), VESSEL.x0 - (major ? 8.5 : 5.5), y)
     if (i < 8) {
       ctx.textAlign = 'left'
       ctx.font = dialFont(600, 3.6)
@@ -50,7 +53,7 @@ function drawDial(ctx: CanvasRenderingContext2D) {
   }
   ctx.textAlign = 'center'
   ctx.font = dialFont(700, 5)
-  ctx.fillText('分', VESSEL.x0 - 11, -(VESSEL.y1 + 7))
+  ctx.fillText('시각', VESSEL.x0 - 13, -(VESSEL.y1 + 7))
   ctx.fillText('刻', VESSEL.x1 + 9, -(VESSEL.y1 + 7))
   ctx.restore()
 }
@@ -64,10 +67,12 @@ function drawPlaque(ctx: CanvasRenderingContext2D, sijin: number, half: string) 
   ctx.fillStyle = '#f6e7c1'
   ctx.textAlign = 'center'
   ctx.textBaseline = 'middle'
-  ctx.font = dialFont(800, 26)
-  ctx.fillText(SIJIN_HANJA[sijin], 0, -6)
-  ctx.font = dialFont(700, 7)
-  ctx.fillText(`${SIJIN[sijin]}시 ${half}`, 0, 16)
+  ctx.font = dialFont(800, 24)
+  ctx.fillText(SIJIN_HANJA[sijin], 0, -9)
+  ctx.font = dialFont(700, 6.5)
+  ctx.fillText(`${SIJIN[sijin]}시 ${half}`, 0, 10)
+  ctx.font = dialFont(700, 5.5)
+  ctx.fillText(sijinRange(sijin), 0, 18.5)
 }
 
 /** Watch 011 — Jagyeongnu: a self-striking water clock with simulated water. */
@@ -81,7 +86,6 @@ export function JagyeongnuWatch({ appearance }: { appearance: JagyeongnuAppearan
   const elapsed = useRef(0)
   const impactAge = useRef(10)
 
-  const dial = useDialTexture(DIAL_RADIUS, drawDial, [])
   const [plaque, setPlaque] = useState<{ sijin: number; half: string } | null>(null)
   const plaqueGroup = useRef<Group>(null)
 
@@ -145,7 +149,7 @@ export function JagyeongnuWatch({ appearance }: { appearance: JagyeongnuAppearan
         <circleGeometry args={[DIAL_RADIUS + 1, 128]} />
         <meshStandardMaterial color={appearance.dialColor} roughness={0.8} />
       </mesh>
-      <PrintLayer mask={dial} color={appearance.printColor} radius={DIAL_RADIUS} roughness={0.8} />
+      {plaque && <ScalePrint sijin={plaque.sijin} color={appearance.printColor} />}
 
       {/* reservoir (파수호) and spout */}
       <mesh position={[VESSEL_CX, 74, 2]}>
@@ -210,6 +214,12 @@ export function JagyeongnuWatch({ appearance }: { appearance: JagyeongnuAppearan
       <Crystal {...appearance} />
     </WatchCase>
   )
+}
+
+/** The scales re-print once per 시진 (two hours), when their clock times change. */
+function ScalePrint({ sijin, color }: { sijin: number; color: string }) {
+  const mask = useDialTexture(DIAL_RADIUS, (ctx) => drawDial(ctx, sijin), [sijin])
+  return <PrintLayer mask={mask} color={color} radius={DIAL_RADIUS} roughness={0.8} />
 }
 
 /** Re-draws its texture only when the 시진 or its half changes. */
