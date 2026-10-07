@@ -49,9 +49,18 @@ Jagyeongnu and Angbuilgu gained Arabic clock times next to their Hanja.
 Fat lines and bloom on both renderers, `?renderer=auto`, an Angbuilgu reading guide, and the
 future-concepts proposals checked against existing watches.
 
+## 0.17.0 — Showcase features, two concepts, sharing and the generator kit
+
+Every task of `docs/future-concepts-and-features.md` §6: exploded view, lume (night) view,
+procedural sound; 012 Iris and 013 Chladni (reworked from Magnetic Sand after the precedent
+check); share links with appearance; the concept generator kit (`docs/concept-generator/`).
+
 ## Next candidates
 
-- Feature & concept proposals backlog: see `docs/future-concepts-and-features.md` (Exploded view, Lume mode, Audio tick engine, Concepts 012 Iris & 013 Magnetic Sand).
+- Remaining proposals in `docs/future-concepts-and-features.md`: blueprint (CAD) mode,
+  gyroscope physics, the in-app Prompt-to-Watch generator built on `docs/concept-generator/`,
+  snapshot cards.
+- Chladni on compute shaders (tens of thousands of grains on the WebGPU backend).
 - Visual review pass with real devices; tune lighting and strap geometry.
 - Real-device check of `?renderer=auto` before making WebGPU the default
   (`docs/rendering-and-webgpu.md` §9).

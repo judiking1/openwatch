@@ -93,16 +93,23 @@ Rejected in the second round because they already exist:
 | Bracelet links show the hour   | 12/24-link hour bracelet patents, LED bracelet designs |
 | Two frames for two time zones  | GMT rotating bezel                                     |
 
-### Third round (proposals, not built)
+### Third round (0.17.0)
 
-Candidates from `docs/future-concepts-and-features.md`, checked October 2026:
+| No. | Concept     | Axes it occupies                                                        | Nearest reference                                   |
+| --- | ----------- | ----------------------------------------------------------------------- | --------------------------------------------------- |
+| 012 | **Iris**    | size of an aperture as the minute; its rotation as the hour; retrograde | Valbray EL1 diaphragm (hides sub-dials only)        |
+| 013 | **Chladni** | still nodal lines of a vibrating plate, revealed by sand                | Moongchi Clock (filings moved by magnets), Ferrolic |
 
-| Idea                      | Nearest reference                                   | Verdict                          |
-| ------------------------- | --------------------------------------------------- | -------------------------------- |
-| Iris: aperture size = min | Valbray EL1 (diaphragm hides sub-dials), Tokyoflash | open — no aperture-size encoding |
-| Particles form numerals   | Ferrolic ferrofluid clock, INK-MAGNETIC watch       | exists — needs another encoding  |
-| Hands with no arbor       | Mystery / floating-hand dials, Ressence             | exists                           |
-| Pin-relief elevation wave | Relevo, Eone Bradley (rejected above)               | exists                           |
+Precedent check of the proposals in `docs/future-concepts-and-features.md` (October 2026):
+
+| Idea                         | Nearest reference                                   | Verdict                         |
+| ---------------------------- | --------------------------------------------------- | ------------------------------- |
+| Iris: aperture size = min    | Valbray EL1 (diaphragm hides sub-dials), Tokyoflash | open — built as 012 Iris        |
+| Particles form numerals      | Ferrolic ferrofluid clock, INK-MAGNETIC watch       | exists — needs another encoding |
+| Filings mark hour and minute | Moongchi Clock (iF 2022)                            | exists                          |
+| Sand on still nodal lines    | none found (Chladni plates only as decoration)      | open — built as 013 Chladni     |
+| Hands with no arbor          | Mystery / floating-hand dials, Ressence             | exists                          |
+| Pin-relief elevation wave    | Relevo, Eone Bradley (rejected above)               | exists                          |
 
 ## 5. Backlog (not yet built)
 

@@ -43,6 +43,9 @@ npm run lint && npm test && npm run build && npm run format:check
 
 ## Adding a watch concept
 
+Start from a spec when you can: `docs/concept-generator/` (schema, prompt, review checklist)
+and `npm run new-concept -- spec.json` scaffold a compiling concept.
+
 1. Create `src/watches/<id>/` with `metadata.ts` (including a one-line `readingHint`),
    `appearance.ts` (defaults + customization fields), the R3F model and `index.ts` exporting
    `defineConcept({...})` with a lazy `Model`.
@@ -57,8 +60,12 @@ npm run lint && npm test && npm run build && npm run format:check
      renderers; `ShaderMaterial` and drei `<Line>` do not. Use `parts/Lines`, and give custom
      shaders a TSL twin loaded on demand (see `jagyeongnu/water.ts`). Transparent overlay
      planes (prints, labels) set `depthWrite={false}`.
-   - Optional `postFx` in `defineConcept` requests stage effects such as bloom; they apply
-     on WebGPURenderer only (see `optical-lever/index.ts`).
+   - Optional `postFx` in `defineConcept` requests stage effects such as bloom (both
+     renderers; see `optical-lever/index.ts`), and `sound` picks a procedural sound profile
+     (`escapement` by default; `drop`, `ratchet`, `quiet`).
+   - Viewer modes work through conventions: groups named `hour` / `minute` / `second` lift in
+     the exploded view and glow in the lume view; `PrintLayer` prints glow too; other layers
+     can opt in with `userData.explode` (a lift in dial units).
 2. Put pure time → geometry math in its own file with unit tests.
 3. Register it in `src/watches/registry.ts`.
 4. Document it in `docs/concepts/<id>.md`.
