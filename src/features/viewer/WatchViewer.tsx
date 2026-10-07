@@ -73,6 +73,16 @@ export function WatchViewer({
   useArrowNavigation(prev, next)
   const explode = useStageStore((s) => s.explode)
   const setExplode = useStageStore((s) => s.setExplode)
+  const lume = useStageStore((s) => s.lume)
+  const setLume = useStageStore((s) => s.setLume)
+  // Presentation modes belong to the viewer visit: reset them when leaving.
+  useEffect(
+    () => () => {
+      setExplode(0)
+      setLume(false)
+    },
+    [setExplode, setLume],
+  )
 
   const model = (
     <WatchStage
@@ -120,6 +130,13 @@ export function WatchViewer({
               aria-label="Exploded view"
             />
           </label>
+          <button
+            onClick={() => setLume(!lume)}
+            title="Night view: studio lights off, luminous prints and hands glow"
+            aria-pressed={lume}
+          >
+            🌙 Lume
+          </button>
           <button
             onClick={() => updateQueryParam('stats', stats ? null : '')}
             title="Toggle render statistics probe"

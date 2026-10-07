@@ -16,6 +16,9 @@ type Props = {
   name?: string
 }
 
+/** Prints glow in the lume (night) view. */
+const LUMINOUS = { lume: true }
+
 /**
  * Printed markings as a separate tinted layer above a plain-coloured base. Dials are
  * split into base colour + mask (rendering-and-webgpu.md §2.3): colour pickers only touch
@@ -33,7 +36,7 @@ export function PrintLayer({
   name,
 }: Props) {
   return (
-    <mesh position={[0, 0, z]} name={name}>
+    <mesh position={[0, 0, z]} name={name} userData={LUMINOUS}>
       {inner === undefined ? (
         <circleGeometry args={[radius, 128]} />
       ) : (
@@ -44,7 +47,7 @@ export function PrintLayer({
         color={color}
         emissive={color}
         emissiveIntensity={emissive}
-        emissiveMap={emissive > 0 ? mask : null}
+        emissiveMap={mask}
         transparent
         depthWrite={false}
         roughness={roughness}

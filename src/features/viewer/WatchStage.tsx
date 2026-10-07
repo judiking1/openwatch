@@ -20,6 +20,9 @@ import { StudioLighting } from '../../three/lighting/StudioLighting'
 import { StageBloom } from '../../three/postfx/StageBloom'
 import { StageBackground } from '../../three/StageBackground'
 import { ExplodeController } from '../../three/stage/ExplodeController'
+import { LUME_BLOOM } from '../../three/stage/lume'
+import { LumeController } from '../../three/stage/LumeController'
+import { useStageStore } from '../../stores/stageStore'
 import type { PostEffects } from '../../types/watch'
 import { RenderStatsProbe, type RenderSample } from '../../three/RenderStats'
 import type { RendererMode } from './rendererMode'
@@ -62,6 +65,9 @@ export function WatchStage({
   postFx,
 }: Props) {
   const [sample, setSample] = useState<RenderSample | null>(null)
+  // The lume (night) view needs bloom even for concepts that do not request it.
+  const lume = useStageStore((s) => s.lume)
+  const bloom = lume ? LUME_BLOOM : postFx?.bloom
   const [backend, setBackend] = useState('')
   const controls = useRef<ComponentRef<typeof OrbitControls>>(null)
   const modelRoot = useRef<Group>(null)
@@ -99,9 +105,9 @@ export function WatchStage({
           }
         }}
       >
-        <StageBackground color="#0e0f13" transparent={!!postFx?.bloom} />
+        <StageBackground color="#0e0f13" transparent={!!bloom} />
         <StudioLighting />
-        <LinearBlendingContext value={!!postFx?.bloom}>
+        <LinearBlendingContext value={!!bloom}>
           <group ref={modelRoot} scale={DIAL_UNIT}>
             {children}
           </group>
@@ -115,7 +121,8 @@ export function WatchStage({
           enableDamping
         />
         <ExplodeController root={modelRoot} />
-        {postFx?.bloom && <StageBloom settings={postFx.bloom} />}
+        <LumeController root={modelRoot} />
+        {bloom && <StageBloom settings={bloom} />}
         {stats && <RenderStatsProbe onSample={setSample} />}
       </Canvas>
       {stats && sample && (
