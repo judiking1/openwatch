@@ -11,12 +11,14 @@ import {
   FIVE_MINUTE_LABELS,
   HOUR_LABELS,
 } from '../../three/utils/canvas'
-import { DIAL_RADIUS, dialRotationZ } from '../../three/utils/dial'
+import { DIAL_RADIUS, dialPoint3, dialRotationZ } from '../../three/utils/dial'
+import { useLabelMasks } from '../../three/labels'
 import type { TurntableAppearance } from './appearance'
 import { turntablePose } from './turntable'
 
 const BEZEL = { inner: 100, outer: 115, numerals: 107.5 }
 const CRADLE_RADIUS = 120
+const MINUTE_LABEL_RADIUS = 75
 
 function drawBezel(ctx: CanvasRenderingContext2D, bezel: string, numerals: string) {
   ctx.fillStyle = bezel
@@ -44,7 +46,6 @@ function drawDial(ctx: CanvasRenderingContext2D, dial: string, scale: string) {
     majorWidth: 1.2,
     color: scale,
   })
-  drawLabels(ctx, FIVE_MINUTE_LABELS, { radius: 75, font: dialFont(600, 8), color: scale })
 }
 
 function Hand({
@@ -89,9 +90,14 @@ export function TurntableWatch({ appearance }: { appearance: TurntableAppearance
     scaleColor,
   ])
 
+  const labelMasks = useLabelMasks(FIVE_MINUTE_LABELS)
+  const labels = useRef<Array<Group | null>>([])
+
   useClockFrame((t) => {
     const p = turntablePose(t)
     if (head.current) head.current.rotation.z = dialRotationZ(p.head)
+    // The minute numerals ride on the turning dial but stay upright for the reader.
+    for (const label of labels.current) if (label) label.rotation.z = -dialRotationZ(p.head)
     if (minute.current) minute.current.rotation.z = dialRotationZ(p.minute)
     if (second.current) second.current.rotation.z = dialRotationZ(p.second)
   })
@@ -107,6 +113,22 @@ export function TurntableWatch({ appearance }: { appearance: TurntableAppearance
           <ringGeometry args={[BEZEL.inner, BEZEL.outer, 128]} />
           <meshStandardMaterial map={bezel} transparent metalness={0.3} roughness={0.5} />
         </mesh>
+        {FIVE_MINUTE_LABELS.map((_, i) => {
+          const [x, y] = dialPoint3(MINUTE_LABEL_RADIUS, i * 30)
+          return (
+            <group key={i} position={[x, y, 0.3]} ref={(g) => void (labels.current[i] = g)}>
+              <mesh>
+                <planeGeometry args={[12, 12]} />
+                <meshStandardMaterial
+                  map={labelMasks[i]}
+                  color={appearance.scaleColor}
+                  transparent
+                  roughness={0.75}
+                />
+              </mesh>
+            </group>
+          )
+        })}
         <Hand
           groupRef={minute}
           length={86}
