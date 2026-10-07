@@ -38,11 +38,17 @@ masks tinted by material) and Phase C: an experimental `?renderer=webgpu` flag o
 `WebGPURenderer` with the GLSL-only features (fluid, fat lines, drei environment and contact
 shadows) replaced or ported to TSL, plus the first TSL materials (brushed metal, sapphire).
 
+## 0.15.0 — WebGPU Phase D and readable Joseon dials
+
+Compute-shader fluid, the live gallery on WebGPURenderer (with shader warm-up and adaptive
+resolution) and TSL bloom for Optical Lever, all verified on the WebGPU backend itself.
+Jagyeongnu and Angbuilgu gained Arabic clock times next to their Hanja.
+
 ## Next candidates
 
 - Visual review pass with real devices; tune lighting and strap geometry.
-- WebGPU Phase D: compute-shader fluid, gallery on WebGPU, TSL bloom, real-device checks
-  (`docs/rendering-and-webgpu.md` §7).
+- WebGPU Phase E: real-device checks before making `webgpu` the default, fat lines with
+  `Line2NodeMaterial`, selective (MRT) bloom (`docs/rendering-and-webgpu.md` §8).
 - More concepts from the backlog in `docs/research/watch-references.md` (plasma, phase,
   night-only).
 - Share links that encode appearance as well as time.

@@ -54,7 +54,10 @@ npm run lint && npm test && npm run build && npm run format:check
    - Name animated groups `hour`, `minute`, `second` where they exist.
    - Stay renderer-agnostic (`?renderer=webgpu`): classic three materials work on both
      renderers; `ShaderMaterial` and drei `<Line>` do not. Use `parts/Lines`, and give custom
-     shaders a TSL twin loaded on demand (see `jagyeongnu/water.ts`).
+     shaders a TSL twin loaded on demand (see `jagyeongnu/water.ts`). Transparent overlay
+     planes (prints, labels) set `depthWrite={false}`.
+   - Optional `postFx` in `defineConcept` requests stage effects such as bloom; they apply
+     on WebGPURenderer only (see `optical-lever/index.ts`).
 2. Put pure time → geometry math in its own file with unit tests.
 3. Register it in `src/watches/registry.ts`.
 4. Document it in `docs/concepts/<id>.md`.

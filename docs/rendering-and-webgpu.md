@@ -300,3 +300,75 @@ What that project shows, and what it means here:
 3. Optical Lever bloom via a TSL `RenderPipeline`.
 4. `compileAsync` warm-up and adaptive DPR for the live gallery.
 5. Make `webgpu` the default only after the WebGPU backend is checked on real devices.
+
+---
+
+## 8. Phase D review (v0.15.0) — compute, gallery and post-processing on WebGPU
+
+### Verifying the real WebGPU backend
+
+Phase C could only test the node path on WebGPURenderer's WebGL2 backend. The cause turned
+out to be narrow: in this headless sandbox, compute and off-screen rendering work, and only
+**presenting to a canvas** loses the device. The test harness (scratch, not shipped) swaps
+the canvas swap chain for an ordinary GPU texture and reads it back, so every result below
+was checked on the WebGPU backend itself (WGSL), not only on the fallback.
+
+### 1. Compute-shader fluid — **done**
+
+`StableFluidCompute` keeps velocity, dye and pressure in storage buffers (`instancedArray`)
+with one thread per cell, and runs a whole step as two `compute()` submissions. A last kernel
+publishes dye and velocity to storage textures, so the water material is unchanged. Jagyeongnu
+picks it when `rendererKind().compute` is true.
+
+Checked against the full-screen-pass solver with identical splats (64 × 200 grid):
+
+| Field / case                       | Quad passes | Compute     |
+| ---------------------------------- | ----------- | ----------- |
+| velocity, 120 steps (Σ \|v\|)      | 35 003      | 34 997      |
+| dye under force, 20 steps (Σ, row) | 1 311, 71.6 | 1 311, 71.6 |
+| 60 steps, SwiftShader              | 1 298 ms    | 468 ms      |
+
+The comparison also exposed a real bug in the Phase C TSL solver: velocity and dye shared one
+advection material, and re-binding its textures for the second draw in the same frame did not
+take effect — the dye was never advected (fixed with a material per field). The GLSL solver
+used on WebGL was not affected.
+
+### 2. Live gallery on WebGPURenderer — **done**
+
+- `?renderer=webgpu` now applies to the gallery too.
+- **Viewport origin:** WebGPURenderer measures `setViewport` / `setScissor` from the top
+  (on both of its backends); WebGLRenderer, and therefore drei `<View>`, from the bottom.
+  Unadapted, every card drew in the mirrored row. `bottomLeftViewports(gl)` converts them.
+- **Scissors must stay inside the canvas** on WebGPU (WebGL tolerates rectangles of cards
+  scrolled away); the adapter clamps them.
+- **Transparent overlays must not write depth:** label planes in Lens, Numeral Ring and
+  Turntable were `transparent` with depth writes, hiding the crystal drawn after them. On
+  WebGPU's draw order that showed as grey squares in the gallery; they now set
+  `depthWrite={false}` like every other print layer.
+
+### 3. Warm-up and adaptive resolution — **done**
+
+Each live view runs `compileAsync(scene, camera)` (parallel compile on WebGL, async pipeline
+creation on WebGPU) and only then becomes visible and hides the card's still image
+(`data-live`). drei `PerformanceMonitor` steps the layer's DPR between 1.5, 1 and 0.75.
+
+### 4. Bloom as a node graph — **done**
+
+Concepts may request `postFx.bloom`. On a node renderer the stage renders through a TSL
+`RenderPipeline`: scene pass → `BloomNode` → added back → tone mapping and encoding once at
+the end. The threshold (1.2) is in linear HDR, above anything lit, so only the unlit laser
+beams of Optical Lever glow. WebGL ignores the request; the pipeline ships in the lazy chunk.
+
+### Other fixes
+
+- `?stats` on WebGPURenderer reported a cumulative counter; it now shows the frame's draw
+  calls (`info.render.drawCalls`) and compute submissions.
+
+### Next steps (Phase E candidates)
+
+1. Check `?renderer=webgpu` on real devices (Chrome/Edge desktop, Safari 26, Android), then
+   consider it as the default with WebGL as the fallback.
+2. Fat engraved lines on WebGPU with `Line2NodeMaterial` (now exported by `three/webgpu`)
+   instead of hairlines.
+3. Selective bloom through MRT (`mrt({ output, bloom })`) so emitters opt in explicitly.
+4. A WebGL bloom equivalent, if the glow should be the default look and not a WebGPU extra.
