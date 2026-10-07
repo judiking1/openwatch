@@ -83,12 +83,12 @@ The proposals below are organized into:
 `PROJECT_VISION.md` §21 asks for an originality check before a concept is built. Searched
 against the catalogue in `docs/research/watch-references.md`:
 
-| Concept           | Nearest existing references                                                                                    | Verdict                                                                                                                                                        |
-| ----------------- | -------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 012 Iris          | Valbray EL1 / Leica "Oculus" (16-blade diaphragm hides sub-dials), Tokyoflash iris concept, Pebble "Iris" face | **Build, with care.** Existing irises reveal or hide a display; none encodes the minute as the aperture size. Overlaps Shears' "one element, two values" axis. |
-| 013 Magnetic Sand | Zelf Koelman Ferrolic (ferrofluid forms numerals), INK-MAGNETIC watch, Robison ferrofluid clock                | **Rework.** Particles that settle into numerals already exist. A new angle is needed, e.g. the amount of settled sand as the encoding, not the numeral shape.  |
-| 014 Tensegrity    | Mystery / floating-hand dials (Cartier, Longines), Ressence floating discs                                     | **Weak.** "Hands without a visible arbor" is already catalogued. Only the damped wobble is new, which is not a way of telling time.                            |
-| 015 Topography    | Relevo, Eone Bradley — listed under "rejected because they already exist"                                      | **Rejected** (already rejected in the survey, §3).                                                                                                             |
+| Concept           | Nearest existing references                                                                                                            | Verdict                                                                                                                                  |
+| ----------------- | -------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
+| 012 Iris          | Valbray EL1 / Leica "Oculus" (16-blade diaphragm hides sub-dials), Tokyoflash iris concept, Pebble "Iris" face                         | **Built as 012 Iris** (`docs/concepts/iris.md`). Existing irises hide or reveal a display; none encodes the minute as the aperture size. |
+| 013 Magnetic Sand | Ferrolic (ferrofluid forms numerals), INK-MAGNETIC watch, Robison ferrofluid clock, Moongchi Clock (iron filings mark hour and minute) | **Reworked → built as 013 Chladni:** sand settling on a vibrating plate's still lines (`docs/concepts/chladni.md`).                      |
+| 014 Tensegrity    | Mystery / floating-hand dials (Cartier, Longines), Ressence floating discs                                                             | **Weak.** "Hands without a visible arbor" is already catalogued. Only the damped wobble is new, which is not a way of telling time.      |
+| 015 Topography    | Relevo, Eone Bradley — listed under "rejected because they already exist"                                                              | **Rejected** (already rejected in the survey, §3).                                                                                       |
 
 Iris is the strongest next concept; Magnetic Sand stays the best showcase for compute
 shaders if its encoding is reworked. Sources: [Valbray × Leica](https://petapixel.com/2014/05/22/leica-teams-swiss-watch-maker-valbray-insanely-unique-timepiece),
@@ -184,8 +184,8 @@ guide).
 └── Task 1.3: Web Audio API procedural mechanical tick-tock engine
 
 [Phase 2: Next Novel Concepts]
-├── Task 2.1: Concept 012 — Iris (passed the precedent check)
-└── Task 2.2: Concept 013 — Magnetic Sand (rework the encoding first; see the precedent check)
+├── Task 2.1: Concept 012 — Iris — built
+└── Task 2.2: Concept 013 — reworked and built as Chladni
 
 [Phase 3: AI Lab & Sharing]
 ├── Task 3.1: Deep-link URL encoding for appearance customization
