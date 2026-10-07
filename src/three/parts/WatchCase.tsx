@@ -1,7 +1,9 @@
+import { useThree } from '@react-three/fiber'
 import type { ReactNode, Ref } from 'react'
 import { BackSide, BoxGeometry, Matrix4, MeshStandardMaterial, type Group } from 'three'
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js'
 import { useDisposable } from '../hooks'
+import { getNodeLibrary } from '../renderer'
 import { DIAL_RADIUS } from '../utils/dial'
 
 export type CaseAppearance = {
@@ -102,20 +104,17 @@ export function WatchCase({
   /** Underside of the case middle; the caseback sits below it. */
   const bottom = -Math.max(17, cavityDepth + 5)
 
-  // One material per finish, shared by every part that uses it.
+  // One material per finish, shared by every part that uses it. On WebGPURenderer the case
+  // metal is the TSL brushed finish; WebGL keeps the plain standard material.
+  const library = getNodeLibrary(useThree((s) => s.gl))
+  const makeMetal = library?.createBrushedMetal ?? ((p) => new MeshStandardMaterial(p))
   const metal = useDisposable(
-    () => new MeshStandardMaterial({ color: caseColor, metalness: 1, roughness: caseRoughness }),
-    [caseColor, caseRoughness],
+    () => makeMetal({ color: caseColor, metalness: 1, roughness: caseRoughness }),
+    [caseColor, caseRoughness, library],
   )
   const metalInside = useDisposable(
-    () =>
-      new MeshStandardMaterial({
-        color: caseColor,
-        metalness: 1,
-        roughness: caseRoughness,
-        side: BackSide,
-      }),
-    [caseColor, caseRoughness],
+    () => makeMetal({ color: caseColor, metalness: 1, roughness: caseRoughness, side: BackSide }),
+    [caseColor, caseRoughness, library],
   )
   const strapMaterial = useDisposable(
     () => new MeshStandardMaterial({ color: strapColor, ...STRAP_FINISH[strapStyle] }),

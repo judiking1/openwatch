@@ -211,3 +211,92 @@ background meshes were dropped (the dial base already has that colour): Cipher w
 
 - Tints multiply the mask, so masks are pure white; anti-aliased edges keep their alpha.
 - GLB export is unchanged: masks are ordinary textures with a material colour factor.
+
+---
+
+## 7. Phase C review (v0.14.0) — WebGPU experimental flag
+
+### Renderer flag — **done**
+
+`?renderer=` selects the renderer (`src/three/renderer.ts`, `createWatchRenderer`, passed to
+R3F's async `gl` factory):
+
+| Value       | Renderer                                | Use                                         |
+| ----------- | --------------------------------------- | ------------------------------------------- |
+| `webgl`     | classic `WebGLRenderer` (default)       | production                                  |
+| `webgpu`    | `WebGPURenderer`, WebGPU backend if any | the experiment; falls back to WebGL2 itself |
+| `webgpu-gl` | `WebGPURenderer` forced onto WebGL2     | testing the node path without a GPU adapter |
+
+- `three/webgpu` and every TSL material are one lazy chunk (`materials/nodeLibrary.ts`,
+  ~705 kB / 198 kB gzip), loaded before the renderer is handed to R3F. The WebGL path never
+  downloads it; the entry chunk stays at 247 kB.
+- `rendererKind(gl)` → `{ nodes, compute, label }`; the `?stats` overlay shows the backend first.
+- **R3F v9 works with `WebGPURenderer` unchanged** (async `gl`, `await renderer.init()`):
+  `useFrame`, `<View>`-free stage, OrbitControls, shadows, the GLB exporter.
+- three r186 passes `swizzle: 'rgba'` to every `GPUTexture.createView`; Chromium ≤ 141
+  rejects it. A tiny shim drops that identity swizzle.
+
+### WebGPU blockers — **resolved**
+
+| Blocker (from §5)                          | Resolution                                                                                                                                                         |
+| ------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| drei `<Environment>` + `<Lightformer>`     | `StudioEnvironment`: the same light boxes baked once through PMREM — classic generator on WebGL, node generator on WebGPU                                          |
+| drei `<ContactShadows>`                    | `GroundShadow`: a static radial blob. ContactShadows re-rendered the whole model every frame                                                                       |
+| `StableFluid` GLSL (Jagyeongnu)            | `StableFluidTSL`: the same Stam passes written in TSL (`QuadMesh` + half-float `RenderTarget`s); the water shader became a `MeshBasicNodeMaterial` (`waterTSL.ts`) |
+| drei `<Line>` / `LineMaterial` (Angbuilgu) | `parts/Lines.tsx`: fat lines on WebGL, hairline `LineSegments` on the node renderer                                                                                |
+| GLB export of node materials               | `prepareForExport`: `isNodeMaterial` → `MeshStandardMaterial` (colour, metalness, roughness, map or `userData.exportColor`); unit tested                           |
+
+A side effect on WebGL: without ContactShadows' extra model pass, a frame costs far fewer
+draw calls (Orbital Hands 53 → 25, Lens 85 → 41).
+
+### First TSL materials — **done**
+
+- **Brushed metal** (`materials/brushedMetal.ts`, the case on the node renderer): two octaves
+  of `mx_noise_float` stretched ~12× across the grain along each part's u direction (around the
+  case wall and bezel, straight across flat rings); grain modulates roughness more than colour.
+  Colour and roughness still come from the material, so the customization panel is unchanged.
+- **Sapphire** (`materials/sapphire.ts`, the crystal): coverage follows Schlick's Fresnel
+  term — almost clear head-on, mirror-like at grazing angles — instead of one flat opacity.
+
+### Findings
+
+- **Linear blending.** `WebGPURenderer` renders into a linear half-float framebuffer and
+  tone-maps / encodes in an output pass; WebGL blends after sRGB encoding. The same opacity
+  therefore reads ~4× stronger on WebGPU (the 12 % crystal became a grey veil). Translucent
+  layers on the node path use linear-light opacities (sapphire, Jagyeongnu's glass front).
+- **Backgrounds are tone-mapped** by that output pass, crushing `#0e0f13` to black; the stage
+  leaves the canvas transparent on the node renderer and lets the identical CSS colour show.
+- **GLSL `ShaderMaterial`s write raw values** (no tone mapping, no sRGB encoding). Their TSL
+  ports set `toneMapped: false` and pre-decode with `sRGBTransferEOTF` to look the same.
+- **Draw-call counters differ:** the node renderer counts its internal passes (fluid passes,
+  output pass), so `?stats` numbers are not comparable across renderers.
+- **Verification limits here:** headless SwiftShader exposes a WebGPU adapter but loses the
+  device on first use, so the WebGPU backend itself could only be checked on real hardware.
+  All 11 concepts were verified on `?renderer=webgpu-gl` (same node materials, WGSL swapped
+  for GLSL) with no console errors, plus GLB export on that path and a WebGL regression pass.
+
+### Reference: wass08/under-the-sea (WebGPU + TSL boids)
+
+What that project shows, and what it means here:
+
+- **Init:** `new WebGPURenderer()` → `await init()` → check `backend.isWebGPUBackend` and show
+  a message instead of silently falling back — our `rendererKind().compute` is that check.
+- **GPGPU with compute:** 4 096 fish as `instancedArray` storage buffers updated by
+  `Fn(...).compute(N)` + `renderer.compute()`, a uniform grid built with atomics for neighbour
+  search, and a reminder that a stage may bind at most 8 storage buffers. Our Stable Fluids
+  passes are the render-to-texture version of the same idea; with `compute` available they
+  become compute kernels on storage textures (no full-screen quads, no ping-pong targets).
+- **AgX needs darker base colours** (3–5× lower) — the same reason `?tone=agx` looked washed
+  out in Phase A: adopting AgX means retuning palettes, not just switching the operator.
+- **`compileAsync` + warm-up frames** before revealing the scene, and **adaptive resolution**
+  (lower DPR when fps drops) — both directly useful for the live gallery.
+- **Post-processing as a node graph** (`RenderPipeline`, `pass()`, bloom) replaces
+  `EffectComposer`; Optical Lever's laser glow is the natural first candidate.
+
+### Next steps (Phase D candidates)
+
+1. Compute-shader fluid (storage textures) when `compute` is true; GLSL / TSL quads otherwise.
+2. Live gallery on `WebGPURenderer` (`<View>` scissor path is untested there).
+3. Optical Lever bloom via a TSL `RenderPipeline`.
+4. `compileAsync` warm-up and adaptive DPR for the live gallery.
+5. Make `webgpu` the default only after the WebGPU backend is checked on real devices.

@@ -136,6 +136,7 @@ input[type='range'] {
 .stage {
   position: relative;
   min-height: 420px;
+  background: var(--bg);
 }
 
 .stage-2d {

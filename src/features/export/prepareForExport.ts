@@ -11,6 +11,7 @@ import {
   type Material,
   type Mesh,
   type Object3D,
+  type Texture,
 } from 'three'
 
 type FatLine = Mesh & {
@@ -52,9 +53,35 @@ function isShader(material: Material) {
   )
 }
 
+type NodeMaterialLike = Material & {
+  isNodeMaterial?: boolean
+  color?: Color
+  metalness?: number
+  roughness?: number
+  map?: Texture | null
+}
+
+/**
+ * TSL node materials (WebGPURenderer) have no glTF equivalent: their look lives in a node
+ * graph. Keep the plain properties they carry (or `userData.exportColor`) as a standard material.
+ */
+function fromNodeMaterial(m: NodeMaterialLike) {
+  const exportColor = m.userData.exportColor as string | undefined
+  return new MeshStandardMaterial({
+    color: exportColor ?? m.color ?? '#8a8f99',
+    metalness: m.metalness ?? 0,
+    roughness: m.roughness ?? 0.5,
+    map: exportColor ? null : (m.map ?? null),
+    transparent: m.transparent,
+    // A shader-like node graph (exportColor set) computes its own alpha; match the shader path.
+    opacity: exportColor && m.transparent ? 0.85 : m.opacity,
+    side: m.side === BackSide ? DoubleSide : m.side,
+  })
+}
+
 /**
  * Returns a deep clone of `root` that the glTF exporter can write: custom shaders become
- * standard materials (using `material.userData.exportColor` when a concept provides one) and
+ * standard materials (node materials and shaders, using `material.userData.exportColor` when a concept provides one) and
  * fat lines become line segments. The live scene is not touched.
  */
 export function prepareForExport(root: Object3D): Object3D {
@@ -71,6 +98,7 @@ export function prepareForExport(root: Object3D): Object3D {
     if (!mesh.isMesh) return
     const materials = Array.isArray(mesh.material) ? mesh.material : [mesh.material]
     const fixed = materials.map((m) => {
+      if ((m as NodeMaterialLike).isNodeMaterial) return fromNodeMaterial(m)
       if (isShader(m)) {
         return new MeshStandardMaterial({
           color: (m.userData.exportColor as string | undefined) ?? '#8a8f99',

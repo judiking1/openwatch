@@ -1,28 +1,48 @@
+import { useThree } from '@react-three/fiber'
+import { useDisposable } from '../hooks'
+import { getNodeLibrary, type NodeLibrary } from '../renderer'
+
 export type CrystalAppearance = {
   crystalTint: string
   crystalOpacity: number
 }
 
+type Props = CrystalAppearance & { radius?: number; z?: number }
+
 /** Flat sapphire-like crystal covering the dial. */
-export function Crystal({
-  crystalTint,
-  crystalOpacity,
-  radius = 104,
-  z = 9,
-}: CrystalAppearance & { radius?: number; z?: number }) {
+export function Crystal({ crystalTint, crystalOpacity, radius = 104, z = 9 }: Props) {
+  const library = getNodeLibrary(useThree((s) => s.gl))
   return (
     <mesh position={[0, 0, z]} rotation={[Math.PI / 2, 0, 0]} renderOrder={10}>
       <cylinderGeometry args={[radius, radius, 1.2, 96]} />
-      <meshPhysicalMaterial
-        color={crystalTint}
-        transparent
-        opacity={crystalOpacity}
-        roughness={0.02}
-        metalness={0}
-        clearcoat={1}
-        clearcoatRoughness={0}
-        depthWrite={false}
-      />
+      {library ? (
+        <SapphireMaterial library={library} tint={crystalTint} opacity={crystalOpacity} />
+      ) : (
+        <meshPhysicalMaterial
+          color={crystalTint}
+          transparent
+          opacity={crystalOpacity}
+          roughness={0.02}
+          metalness={0}
+          clearcoat={1}
+          clearcoatRoughness={0}
+          depthWrite={false}
+        />
+      )}
     </mesh>
   )
+}
+
+/** WebGPURenderer: the TSL sapphire (Fresnel coverage, tuned for linear blending). */
+function SapphireMaterial({
+  library,
+  tint,
+  opacity,
+}: {
+  library: NodeLibrary
+  tint: string
+  opacity: number
+}) {
+  const material = useDisposable(() => library.createSapphire({}), [library])
+  return <primitive object={material} attach="material" color={tint} opacity={opacity} />
 }

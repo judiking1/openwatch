@@ -52,6 +52,9 @@ npm run lint && npm test && npm run build && npm run format:check
    - Draw markings **white** and tint them (`PrintLayer`, `useLabelMasks`); never put an
      appearance colour in a texture's dependencies, so colour pickers stay free.
    - Name animated groups `hour`, `minute`, `second` where they exist.
+   - Stay renderer-agnostic (`?renderer=webgpu`): classic three materials work on both
+     renderers; `ShaderMaterial` and drei `<Line>` do not. Use `parts/Lines`, and give custom
+     shaders a TSL twin loaded on demand (see `jagyeongnu/water.ts`).
 2. Put pure time → geometry math in its own file with unit tests.
 3. Register it in `src/watches/registry.ts`.
 4. Document it in `docs/concepts/<id>.md`.

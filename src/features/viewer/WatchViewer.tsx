@@ -5,6 +5,7 @@ import { CustomizationPanel } from '../customization/CustomizationPanel'
 import { ExportSection } from '../export/ExportSection'
 import { TimeControls } from '../time/TimeControls'
 import { WatchHeader, WatchStory } from './WatchInfo'
+import type { RendererMode } from './rendererMode'
 import type { ToneMappingName } from './toneMapping'
 import { WatchStage, type WatchStageHandle } from './WatchStage'
 
@@ -19,6 +20,8 @@ type Props = {
   stats?: boolean
   /** Tone mapping override for look development (`?tone=agx`). */
   tone?: ToneMappingName
+  /** Renderer override (`?renderer=webgpu`). */
+  renderer?: RendererMode
 }
 
 function isTyping(target: EventTarget | null) {
@@ -39,7 +42,15 @@ function useArrowNavigation(prev?: WatchConcept, next?: WatchConcept) {
 }
 
 /** Generic exhibition viewer: works for any registered concept. */
-export function WatchViewer({ concept, prev, next, bare = false, stats = false, tone }: Props) {
+export function WatchViewer({
+  concept,
+  prev,
+  next,
+  bare = false,
+  stats = false,
+  tone,
+  renderer,
+}: Props) {
   const stage = useRef<WatchStageHandle>(null)
   const stageBox = useRef<HTMLDivElement>(null)
   const { Model, metadata } = concept
@@ -48,7 +59,7 @@ export function WatchViewer({ concept, prev, next, bare = false, stats = false, 
   useArrowNavigation(prev, next)
 
   const model = (
-    <WatchStage ref={stage} stats={stats} toneMapping={tone}>
+    <WatchStage ref={stage} stats={stats} toneMapping={tone} renderer={renderer}>
       <Suspense fallback={null}>
         <Model appearance={appearance} />
       </Suspense>

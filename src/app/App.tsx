@@ -6,6 +6,7 @@ import { useTimeStore } from '../stores/timeStore'
 import { atTimeOfDay, parseClock } from '../utils/time'
 import { parseRoute, useHashRoute } from './useHashRoute'
 
+import { parseRendererMode } from '../features/viewer/rendererMode'
 import { parseToneMapping } from '../features/viewer/toneMapping'
 
 const WatchViewer = lazy(() => import('../features/viewer/WatchViewer'))
@@ -56,6 +57,7 @@ function Page({ hash }: { hash: string }) {
           bare={params.has('bare')}
           stats={params.has('stats')}
           tone={parseToneMapping(params.get('tone'))}
+          renderer={parseRendererMode(params.get('renderer'))}
         />
       </Suspense>
     )

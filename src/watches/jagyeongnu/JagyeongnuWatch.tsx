@@ -1,8 +1,8 @@
 import { useThree } from '@react-three/fiber'
 import { useRef, useState } from 'react'
-import { Color, ShaderMaterial, Vector2, Vector3, type Group, type Mesh } from 'three'
-import { StableFluid } from '../../three/fluid/StableFluid'
-import { useClockFrame, useDialTexture, useDisposable } from '../../three/hooks'
+import { Vector2, Vector3, type Group, type Mesh } from 'three'
+import { useClockFrame, useDialTexture } from '../../three/hooks'
+import { rendererKind } from '../../three/renderer'
 import { Crystal } from '../../three/parts/Crystal'
 import { WatchCase } from '../../three/parts/WatchCase'
 import { dialFont } from '../../three/utils/canvas'
@@ -10,6 +10,7 @@ import { PrintLayer } from '../../three/parts/PrintLayer'
 import { DIAL_RADIUS } from '../../three/utils/dial'
 import { SIJIN, SIJIN_HANJA } from '../angbuilgu/sky'
 import type { JagyeongnuAppearance } from './appearance'
+import { useWaterSim } from './water'
 import { dropFall, GAK_LABELS, waterClock } from './waterClock'
 
 /** The inflow vessel (수수호), in dial units. */
@@ -19,39 +20,6 @@ const VESSEL_H = VESSEL.y1 - VESSEL.y0
 const VESSEL_CX = (VESSEL.x0 + VESSEL.x1) / 2
 const SPOUT_Y = 62
 const PLAQUE = { x: 52, y: 6, w: 34, h: 52 }
-
-const WATER_VERTEX = /* glsl */ `
-varying vec2 vUv;
-void main() {
-  vUv = uv;
-  gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
-}`
-
-/** Shades the simulated water below a moving free surface. */
-const WATER_FRAGMENT = /* glsl */ `
-uniform sampler2D dye;
-uniform sampler2D velocity;
-uniform float level;
-uniform float time;
-uniform float impactAge;
-uniform vec3 deep;
-uniform vec3 shallow;
-varying vec2 vUv;
-void main() {
-  float ripple = 0.004 * sin(vUv.x * 38.0 + time * 2.6)
-    + 0.006 * exp(-impactAge * 5.0) * cos(30.0 * abs(vUv.x - 0.55) - impactAge * 18.0)
-      * exp(-abs(vUv.x - 0.55) * 4.0);
-  float surface = level + ripple;
-  if (vUv.y > surface) discard;
-  float depth = clamp(vUv.y / max(level, 0.001), 0.0, 1.0);
-  vec3 color = mix(deep, shallow, pow(depth, 1.6));
-  vec3 d = texture2D(dye, vUv).rgb;
-  float speed = length(texture2D(velocity, vUv).xy);
-  color += d * 0.6 + vec3(0.06) * smoothstep(5.0, 60.0, speed);
-  float meniscus = smoothstep(0.012, 0.0, surface - vUv.y);
-  color = mix(color, vec3(0.85, 0.95, 1.0), meniscus * 0.7);
-  gl_FragColor = vec4(color, 0.82 + 0.15 * meniscus);
-}`
 
 /** Minute and 각 scales beside the vessel (white mask). */
 function drawDial(ctx: CanvasRenderingContext2D) {
@@ -105,29 +73,8 @@ function drawPlaque(ctx: CanvasRenderingContext2D, sijin: number, half: string) 
 /** Watch 011 — Jagyeongnu: a self-striking water clock with simulated water. */
 export function JagyeongnuWatch({ appearance }: { appearance: JagyeongnuAppearance }) {
   const gl = useThree((s) => s.gl)
-  const fluid = useDisposable(
-    () =>
-      new StableFluid({ width: 64, height: 200, pressureIterations: 20, dyeDissipation: 0.975 }),
-    [],
-  )
-  const material = useDisposable(
-    () =>
-      new ShaderMaterial({
-        vertexShader: WATER_VERTEX,
-        fragmentShader: WATER_FRAGMENT,
-        transparent: true,
-        uniforms: {
-          dye: { value: null },
-          velocity: { value: null },
-          level: { value: 0 },
-          time: { value: 0 },
-          impactAge: { value: 10 },
-          deep: { value: new Color() },
-          shallow: { value: new Color() },
-        },
-      }),
-    [],
-  )
+  const { nodes } = rendererKind(gl)
+  const sim = useWaterSim(nodes)
   const water = useRef<Mesh>(null)
   const drop = useRef<Group>(null)
   const lastImpact = useRef(-1)
@@ -144,6 +91,8 @@ export function JagyeongnuWatch({ appearance }: { appearance: JagyeongnuAppearan
       setPlaque({ sijin: state.sijin, half: state.half })
     }
     elapsed.current += dt
+    if (!sim) return
+    const fluid = sim.solver
     const step = Math.min(dt, 1 / 30)
 
     // A drop leaves the spout each second; on impact it stirs the water.
@@ -172,20 +121,15 @@ export function JagyeongnuWatch({ appearance }: { appearance: JagyeongnuAppearan
     }
     fluid.step(gl, step, Math.max(state.level, 0.01))
 
-    const shader = water.current?.material as ShaderMaterial | undefined
-    if (shader) {
-      const u = shader.uniforms
-      u.dye.value = fluid.dyeTexture
-      u.velocity.value = fluid.velocityTexture
-      u.level.value = state.level
-      u.time.value = elapsed.current
-      u.impactAge.value = impactAge.current
-      u.deep.value.set(appearance.waterDeep)
-      u.shallow.value.set(appearance.waterShallow)
-      // GLB export cannot carry a shader; it falls back to this colour, cut at the level.
-      shader.userData.exportColor = appearance.waterShallow
-      water.current!.userData.exportFillFraction = state.level
-    }
+    sim.update({
+      level: state.level,
+      time: elapsed.current,
+      impactAge: impactAge.current,
+      deep: appearance.waterDeep,
+      shallow: appearance.waterShallow,
+    })
+    // GLB export cannot carry the shader; it bakes the level into the mesh (see sim.update).
+    if (water.current) water.current.userData.exportFillFraction = state.level
     impactAge.current += step
 
     // The plaque flips about its vertical axis while the vessel empties.
@@ -224,14 +168,16 @@ export function JagyeongnuWatch({ appearance }: { appearance: JagyeongnuAppearan
       </group>
 
       {/* inflow vessel (수수호): simulated water behind a glass front */}
-      <mesh
-        ref={water}
-        name="water"
-        position={[VESSEL_CX, (VESSEL.y0 + VESSEL.y1) / 2, 1]}
-        material={material}
-      >
-        <planeGeometry args={[VESSEL_W, VESSEL_H]} />
-      </mesh>
+      {sim && (
+        <mesh
+          ref={water}
+          name="water"
+          position={[VESSEL_CX, (VESSEL.y0 + VESSEL.y1) / 2, 1]}
+          material={sim.material}
+        >
+          <planeGeometry args={[VESSEL_W, VESSEL_H]} />
+        </mesh>
+      )}
       {[
         [VESSEL.x0 - 0.6, (VESSEL.y0 + VESSEL.y1) / 2, 1.2, VESSEL_H + 2.4],
         [VESSEL.x1 + 0.6, (VESSEL.y0 + VESSEL.y1) / 2, 1.2, VESSEL_H + 2.4],
@@ -247,7 +193,8 @@ export function JagyeongnuWatch({ appearance }: { appearance: JagyeongnuAppearan
         <meshPhysicalMaterial
           color="#ffffff"
           transparent
-          opacity={0.06}
+          // WebGPURenderer blends in linear light, where the same veil reads ~4× stronger.
+          opacity={nodes ? 0.015 : 0.06}
           roughness={0.05}
           clearcoat={1}
           depthWrite={false}

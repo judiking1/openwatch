@@ -31,10 +31,18 @@ rejects ideas that already exist. From its gaps: 004 Shears, 005 Turntable, 006 
 water). Model Lab (`#/lab/import`) imports GLB and drives `hour` / `minute` / `second` parts;
 every concept exports and re-imports cleanly (ADR 0004).
 
+## 0.11.0 – 0.14.0 — Rendering pipeline and WebGPU (docs/rendering-and-webgpu.md §5–7)
+
+Phase A (shared geometry, explicit tone mapping, `?stats`), live gallery, Phase B (dial
+masks tinted by material) and Phase C: an experimental `?renderer=webgpu` flag on
+`WebGPURenderer` with the GLSL-only features (fluid, fat lines, drei environment and contact
+shadows) replaced or ported to TSL, plus the first TSL materials (brushed metal, sapphire).
+
 ## Next candidates
 
 - Visual review pass with real devices; tune lighting and strap geometry.
-- Rendering pipeline refactoring and WebGPU readiness pass (see `docs/rendering-and-webgpu.md`).
+- WebGPU Phase D: compute-shader fluid, gallery on WebGPU, TSL bloom, real-device checks
+  (`docs/rendering-and-webgpu.md` §7).
 - More concepts from the backlog in `docs/research/watch-references.md` (plasma, phase,
   night-only).
 - Share links that encode appearance as well as time.

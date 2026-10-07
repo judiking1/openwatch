@@ -1,4 +1,3 @@
-import { Line } from '@react-three/drei'
 import { useMemo, useRef } from 'react'
 import {
   BackSide,
@@ -11,6 +10,7 @@ import {
 } from 'three'
 import { useClockFrame, useDialTexture, useDisposable } from '../../three/hooks'
 import { Crystal } from '../../three/parts/Crystal'
+import { Lines } from '../../three/parts/Lines'
 import { WatchCase } from '../../three/parts/WatchCase'
 import { createLabelCanvas, dialFont, drawLabels } from '../../three/utils/canvas'
 import { DIAL_RADIUS, dialRotationZ } from '../../three/utils/dial'
@@ -221,8 +221,8 @@ export function AngbuilguWatch({ appearance }: { appearance: AngbuilguAppearance
       </mesh>
       <PrintLayer mask={rim} color="#f2e3c4" radius={DIAL_RADIUS + 1} inner={R} z={0.25} />
 
-      <Line points={grid.terms} segments color={lineColor} lineWidth={1.4} />
-      <Line
+      <Lines points={grid.terms} segments color={lineColor} lineWidth={1.4} />
+      <Lines
         points={grid.hourMinor}
         segments
         color={lineColor}
@@ -230,13 +230,13 @@ export function AngbuilguWatch({ appearance }: { appearance: AngbuilguAppearance
         transparent
         opacity={0.7}
       />
-      <Line points={grid.hourMajor} segments color={lineColor} lineWidth={2.2} />
+      <Lines points={grid.hourMajor} segments color={lineColor} lineWidth={2.2} />
       {labels.map((label) => (
         <LabelPlane key={label.text} label={label} color={lineColor} />
       ))}
 
       {/* polar needle (영침): tip at the centre of the sphere, mounted to the north rim */}
-      <Line
+      <Lines
         points={[
           [0, 0, 0],
           [ex, ey, ez],
@@ -244,7 +244,7 @@ export function AngbuilguWatch({ appearance }: { appearance: AngbuilguAppearance
         color={appearance.caseColor}
         lineWidth={3}
       />
-      <Line
+      <Lines
         points={[
           [ex, ey, ez],
           [0, R, 0.4],

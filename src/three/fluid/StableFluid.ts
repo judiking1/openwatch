@@ -149,7 +149,17 @@ export type StableFluidOptions = {
   dyeDissipation?: number
 }
 
-export class StableFluid {
+/** What a display material needs from a solver; implemented in GLSL and in TSL. */
+export interface FluidSolver {
+  readonly dyeTexture: Texture
+  readonly velocityTexture: Texture
+  splat(x: number, y: number, force: Vector2, color: Vector3, radius?: number): void
+  /** `gl` is the renderer the solver was built for (WebGLRenderer or WebGPURenderer). */
+  step(gl: unknown, dt: number, liquidHeight: number): void
+  dispose(): void
+}
+
+export class StableFluid implements FluidSolver {
   readonly width: number
   readonly height: number
   private velocity: PingPong
@@ -245,7 +255,8 @@ export class StableFluid {
   }
 
   /** Advances the simulation by `dt` seconds with the free surface at `liquidHeight` (0..1). */
-  step(gl: WebGLRenderer, dt: number, liquidHeight: number) {
+  step(renderer: unknown, dt: number, liquidHeight: number) {
+    const gl = renderer as WebGLRenderer
     const previous = gl.getRenderTarget()
     const autoClear = gl.autoClear
     // Views (drei <View>) render with a scissor; the simulation must cover whole targets.

@@ -12,12 +12,16 @@ import {
   ACESFilmicToneMapping,
   AgXToneMapping,
   NeutralToneMapping,
+  PCFShadowMap,
   type Group,
   type ToneMapping,
 } from 'three'
 import { StudioLighting } from '../../three/lighting/StudioLighting'
+import { StageBackground } from '../../three/StageBackground'
 import { RenderStatsProbe, type RenderSample } from '../../three/RenderStats'
+import type { RendererMode } from './rendererMode'
 import type { ToneMappingName } from './toneMapping'
+import { createWatchRenderer, rendererKind } from '../../three/renderer'
 
 const TONE_MAPPINGS: Record<ToneMappingName, ToneMapping> = {
   aces: ACESFilmicToneMapping,
@@ -40,10 +44,19 @@ type Props = {
   /** Show renderer statistics (draw calls, triangles, memory, fps). */
   stats?: boolean
   toneMapping?: ToneMappingName
+  /** `webgpu` opts into the experimental WebGPURenderer (`?renderer=webgpu`). */
+  renderer?: RendererMode
 }
 
-export function WatchStage({ children, ref, stats = false, toneMapping = 'aces' }: Props) {
+export function WatchStage({
+  children,
+  ref,
+  stats = false,
+  toneMapping = 'aces',
+  renderer = 'webgl',
+}: Props) {
   const [sample, setSample] = useState<RenderSample | null>(null)
+  const [backend, setBackend] = useState('')
   const controls = useRef<ComponentRef<typeof OrbitControls>>(null)
   const modelRoot = useRef<Group>(null)
   useImperativeHandle(ref, () => ({
@@ -54,17 +67,18 @@ export function WatchStage({ children, ref, stats = false, toneMapping = 'aces' 
   return (
     <>
       <Canvas
-        shadows
+        // three r186 dropped PCFSoftShadowMap (R3F's default) on both renderers.
+        shadows={{ type: PCFShadowMap }}
         dpr={[1, 2]}
         camera={{ position: [0.5, -1.1, 7.9], fov: 35, near: 0.05, far: 50 }}
-        gl={{
-          preserveDrawingBuffer: true,
+        gl={createWatchRenderer(renderer, {
           // Explicit (R3F's implicit default is ACES): highlights on polished metal roll off.
           toneMapping: TONE_MAPPINGS[toneMapping],
-          toneMappingExposure: 1,
-        }}
+          preserveDrawingBuffer: true,
+        })}
+        onCreated={(state) => setBackend(rendererKind(state.gl).label)}
       >
-        <color attach="background" args={['#0e0f13']} />
+        <StageBackground color="#0e0f13" />
         <StudioLighting />
         <group ref={modelRoot} scale={DIAL_UNIT}>
           {children}
@@ -81,7 +95,7 @@ export function WatchStage({ children, ref, stats = false, toneMapping = 'aces' 
       </Canvas>
       {stats && sample && (
         <pre className="render-stats">
-          {`${sample.fps} fps · ${sample.calls} calls · ${sample.triangles.toLocaleString()} tris\n${sample.geometries} geometries · ${sample.textures} textures`}
+          {`${backend}\n${sample.fps} fps · ${sample.calls} calls · ${sample.triangles.toLocaleString()} tris\n${sample.geometries} geometries · ${sample.textures} textures`}
         </pre>
       )}
     </>
