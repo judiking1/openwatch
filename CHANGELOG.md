@@ -4,6 +4,21 @@ All notable changes to this project are documented here.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the
 project uses [Semantic Versioning](https://semver.org).
 
+## [0.13.0] - 2026-10-05
+
+### Changed (Phase B of docs/rendering-and-webgpu.md)
+
+- Every dial separates pattern from colour: markings are white masks drawn once and tinted by
+  material (`PrintLayer`, `useLabelMasks`); backgrounds are material colours. Changing any
+  colour now re-rasterises nothing (before: 20–240 canvas redraws per ten picks, up to 168 Mpx).
+- Cipher: nine 1024² ring textures → one 2048² atlas with planar UVs and one shared material;
+  per-ring background meshes removed (17 → 9 textures).
+
+### Added
+
+- `window.__owlRaster` counter of canvas rasterisations; `planarUV` geometry helper.
+- Phase B review with measurements in `docs/rendering-and-webgpu.md`.
+
 ## [0.12.0] - 2026-10-05
 
 ### Added
