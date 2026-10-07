@@ -9,13 +9,7 @@ import {
   pow,
   saturate,
 } from 'three/tsl'
-
-/**
- * Linear-light opacity that looks like the WebGL crystal over a dark dial. WebGPURenderer
- * blends in linear space (WebGL blends after sRGB encoding), where the same opacity reads
- * roughly 4× stronger.
- */
-const LINEAR_OPACITY = 0.25
+import { LINEAR_OPACITY } from '../renderer'
 
 /**
  * Second TSL material: the sapphire crystal on WebGPURenderer. Instead of one flat opacity,

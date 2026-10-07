@@ -1,4 +1,5 @@
 import { useThree } from '@react-three/fiber'
+import { createContext, useContext } from 'react'
 import { Vector2, WebGLRenderer, type ToneMapping } from 'three'
 import type { RendererMode } from '../features/viewer/rendererMode'
 
@@ -141,3 +142,21 @@ export function bottomLeftViewports(gl: unknown) {
   r.setViewport = flip(r.setViewport.bind(r) as (...args: number[]) => void, false)
   r.setScissor = flip(r.setScissor.bind(r) as (...args: number[]) => void, true)
 }
+
+/**
+ * Set by the stage when it renders through an HDR post chain (half-float target, tone mapping
+ * at the end) — on WebGL too, where blending otherwise happens after sRGB encoding.
+ */
+export const LinearBlendingContext = createContext(false)
+
+/**
+ * Whether translucent layers blend in linear light (node renderer or HDR post chain). There
+ * the same opacity reads roughly 4× stronger over dark dials, so veils use
+ * `opacity * LINEAR_OPACITY` to keep the WebGL look.
+ */
+export function useLinearBlending() {
+  const chain = useContext(LinearBlendingContext)
+  return useRendererKind().nodes || chain
+}
+
+export const LINEAR_OPACITY = 0.25

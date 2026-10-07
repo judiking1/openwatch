@@ -1,6 +1,6 @@
 import { useThree } from '@react-three/fiber'
 import { useDisposable } from '../hooks'
-import { getNodeLibrary, type NodeLibrary } from '../renderer'
+import { getNodeLibrary, LINEAR_OPACITY, useLinearBlending, type NodeLibrary } from '../renderer'
 
 export type CrystalAppearance = {
   crystalTint: string
@@ -12,6 +12,7 @@ type Props = CrystalAppearance & { radius?: number; z?: number }
 /** Flat sapphire-like crystal covering the dial. */
 export function Crystal({ crystalTint, crystalOpacity, radius = 104, z = 9 }: Props) {
   const library = getNodeLibrary(useThree((s) => s.gl))
+  const linear = useLinearBlending()
   return (
     <mesh position={[0, 0, z]} rotation={[Math.PI / 2, 0, 0]} renderOrder={10}>
       <cylinderGeometry args={[radius, radius, 1.2, 96]} />
@@ -21,7 +22,7 @@ export function Crystal({ crystalTint, crystalOpacity, radius = 104, z = 9 }: Pr
         <meshPhysicalMaterial
           color={crystalTint}
           transparent
-          opacity={crystalOpacity}
+          opacity={linear ? crystalOpacity * LINEAR_OPACITY : crystalOpacity}
           roughness={0.02}
           metalness={0}
           clearcoat={1}

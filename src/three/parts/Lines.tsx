@@ -1,8 +1,8 @@
 import { Line } from '@react-three/drei'
+import { useThree } from '@react-three/fiber'
 import type { ComponentProps } from 'react'
-import { BufferGeometry, Float32BufferAttribute } from 'three'
 import { useDisposable } from '../hooks'
-import { useRendererKind } from '../renderer'
+import { getNodeLibrary, type NodeLibrary } from '../renderer'
 
 type P3 = [number, number, number]
 
@@ -17,23 +17,33 @@ type Props = {
 }
 
 /**
- * drei `<Line>` (fat lines, `LineMaterial`) on WebGLRenderer. `LineMaterial` is a
- * `ShaderMaterial` that the node-based WebGPURenderer cannot compile, so there the lines
- * fall back to hairline `LineSegments` with a `LineBasicMaterial` (width is ignored).
+ * Wide lines on either renderer: drei `<Line>` (`LineMaterial`, a GLSL `ShaderMaterial`) on
+ * WebGLRenderer, `LineSegments2` with `Line2NodeMaterial` on the node-based WebGPURenderer.
  */
 export function Lines(props: Props) {
-  const { nodes } = useRendererKind()
-  return nodes ? <ThinLines {...props} /> : <Line {...props} />
+  const library = getNodeLibrary(useThree((s) => s.gl))
+  return library ? <NodeLines library={library} {...props} /> : <Line {...props} />
 }
 
-function ThinLines({ points, segments, color, transparent, opacity = 1 }: Props) {
-  const geometry = useDisposable(() => {
-    const list = segments ? points : points.flatMap((p, i) => (i ? [points[i - 1], p] : []))
-    return new BufferGeometry().setAttribute('position', new Float32BufferAttribute(list.flat(), 3))
-  }, [points, segments])
+function NodeLines({
+  library,
+  points,
+  segments,
+  color,
+  lineWidth = 1,
+  transparent = false,
+  opacity = 1,
+}: Props & { library: NodeLibrary }) {
+  const lines = useDisposable(() => {
+    const pairs = segments ? points : points.flatMap((p, i) => (i ? [points[i - 1], p] : []))
+    return library.createFatLines(pairs.flat(), transparent)
+  }, [library, points, segments, transparent])
   return (
-    <lineSegments geometry={geometry}>
-      <lineBasicMaterial color={color} transparent={transparent} opacity={opacity} />
-    </lineSegments>
+    <primitive
+      object={lines.object}
+      material-color={color}
+      material-linewidth={lineWidth}
+      material-opacity={opacity}
+    />
   )
 }

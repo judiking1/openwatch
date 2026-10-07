@@ -2,7 +2,7 @@ import { useThree } from '@react-three/fiber'
 import { useRef, useState } from 'react'
 import { Vector2, Vector3, type Group, type Mesh } from 'three'
 import { useClockFrame, useDialTexture } from '../../three/hooks'
-import { rendererKind } from '../../three/renderer'
+import { LINEAR_OPACITY, rendererKind, useLinearBlending } from '../../three/renderer'
 import { Crystal } from '../../three/parts/Crystal'
 import { WatchCase } from '../../three/parts/WatchCase'
 import { dialFont } from '../../three/utils/canvas'
@@ -79,6 +79,7 @@ function drawPlaque(ctx: CanvasRenderingContext2D, sijin: number, half: string) 
 export function JagyeongnuWatch({ appearance }: { appearance: JagyeongnuAppearance }) {
   const gl = useThree((s) => s.gl)
   const { nodes, compute } = rendererKind(gl)
+  const linear = useLinearBlending()
   const sim = useWaterSim({ nodes, compute })
   const water = useRef<Mesh>(null)
   const drop = useRef<Group>(null)
@@ -197,8 +198,7 @@ export function JagyeongnuWatch({ appearance }: { appearance: JagyeongnuAppearan
         <meshPhysicalMaterial
           color="#ffffff"
           transparent
-          // WebGPURenderer blends in linear light, where the same veil reads ~4× stronger.
-          opacity={nodes ? 0.015 : 0.06}
+          opacity={0.06 * (linear ? LINEAR_OPACITY : 1)}
           roughness={0.05}
           clearcoat={1}
           depthWrite={false}

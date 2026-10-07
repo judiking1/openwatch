@@ -17,13 +17,13 @@ import {
   type ToneMapping,
 } from 'three'
 import { StudioLighting } from '../../three/lighting/StudioLighting'
-import { NodeBloom } from '../../three/postfx/NodeBloom'
+import { StageBloom } from '../../three/postfx/StageBloom'
 import { StageBackground } from '../../three/StageBackground'
 import type { PostEffects } from '../../types/watch'
 import { RenderStatsProbe, type RenderSample } from '../../three/RenderStats'
 import type { RendererMode } from './rendererMode'
 import type { ToneMappingName } from './toneMapping'
-import { createWatchRenderer, rendererKind } from '../../three/renderer'
+import { createWatchRenderer, LinearBlendingContext, rendererKind } from '../../three/renderer'
 
 const TONE_MAPPINGS: Record<ToneMappingName, ToneMapping> = {
   aces: ACESFilmicToneMapping,
@@ -98,11 +98,13 @@ export function WatchStage({
           }
         }}
       >
-        <StageBackground color="#0e0f13" />
+        <StageBackground color="#0e0f13" transparent={!!postFx?.bloom} />
         <StudioLighting />
-        <group ref={modelRoot} scale={DIAL_UNIT}>
-          {children}
-        </group>
+        <LinearBlendingContext value={!!postFx?.bloom}>
+          <group ref={modelRoot} scale={DIAL_UNIT}>
+            {children}
+          </group>
+        </LinearBlendingContext>
         <OrbitControls
           ref={controls}
           makeDefault
@@ -111,7 +113,7 @@ export function WatchStage({
           maxDistance={14}
           enableDamping
         />
-        {postFx?.bloom && <NodeBloom settings={postFx.bloom} />}
+        {postFx?.bloom && <StageBloom settings={postFx.bloom} />}
         {stats && <RenderStatsProbe onSample={setSample} />}
       </Canvas>
       {stats && sample && (
