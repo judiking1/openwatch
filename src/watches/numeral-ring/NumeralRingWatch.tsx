@@ -101,6 +101,7 @@ export function NumeralRingWatch({ appearance }: { appearance: NumeralRingAppear
             map={minuteTexture}
             color={appearance.minuteRingColor}
             transparent
+            depthWrite={false}
             roughness={0.6}
           />
         </mesh>
@@ -122,6 +123,7 @@ export function NumeralRingWatch({ appearance }: { appearance: NumeralRingAppear
             map={hourTexture}
             color={appearance.hourRingColor}
             transparent
+            depthWrite={false}
             roughness={0.6}
           />
         </mesh>
@@ -138,6 +140,7 @@ export function NumeralRingWatch({ appearance }: { appearance: NumeralRingAppear
             map={secondTexture}
             color={appearance.secondColor}
             transparent
+            depthWrite={false}
             roughness={0.6}
           />
         </mesh>

@@ -63,7 +63,7 @@ function Page({ hash }: { hash: string }) {
     )
   }
 
-  return <Gallery concepts={concepts} />
+  return <Gallery concepts={concepts} renderer={parseRendererMode(params.get('renderer'))} />
 }
 
 export function App() {

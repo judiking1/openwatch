@@ -1,5 +1,6 @@
 import { createRef, lazy, Suspense, useMemo, useState, type RefObject } from 'react'
 import { ORIGIN_LABEL, type WatchConcept } from '../../types/watch'
+import type { RendererMode } from '../viewer/rendererMode'
 
 const LiveLayer = lazy(() => import('./LiveLayer'))
 
@@ -20,11 +21,13 @@ function initialLive(): boolean {
 
 type Props = {
   concepts: WatchConcept[]
+  /** Renderer for the live layer (`?renderer=`). */
+  renderer?: RendererMode
 }
 
 const ALL = 'All'
 
-export function Gallery({ concepts }: Props) {
+export function Gallery({ concepts, renderer }: Props) {
   const categories = [ALL, ...new Set(concepts.map((c) => c.metadata.category))]
   const [category, setCategory] = useState(ALL)
   const visible = concepts.filter((c) => category === ALL || c.metadata.category === category)
@@ -106,7 +109,7 @@ export function Gallery({ concepts }: Props) {
       </div>
       {live && (
         <Suspense fallback={null}>
-          <LiveLayer concepts={visible} targets={thumbs} />
+          <LiveLayer concepts={visible} targets={thumbs} renderer={renderer} />
         </Suspense>
       )}
     </div>

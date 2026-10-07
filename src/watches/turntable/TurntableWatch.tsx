@@ -128,6 +128,7 @@ export function TurntableWatch({ appearance }: { appearance: TurntableAppearance
                   map={labelMasks[i]}
                   color={appearance.scaleColor}
                   transparent
+                  depthWrite={false}
                   roughness={0.75}
                 />
               </mesh>

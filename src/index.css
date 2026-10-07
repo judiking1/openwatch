@@ -375,6 +375,11 @@ input[type='range'] {
   display: block;
 }
 
+/* The live view is ready (shaders compiled): it replaces the still. */
+.thumb[data-live] img {
+  visibility: hidden;
+}
+
 .card-body {
   padding: 16px;
   display: flex;

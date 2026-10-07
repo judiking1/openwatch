@@ -93,6 +93,7 @@ export function LensWatch({ appearance }: { appearance: LensAppearance }) {
                 map={hourTextures[i]}
                 color={appearance.hourColor}
                 transparent
+                depthWrite={false}
                 roughness={0.6}
               />
             </mesh>
@@ -110,6 +111,7 @@ export function LensWatch({ appearance }: { appearance: LensAppearance }) {
                 map={minuteTextures[i]}
                 color={appearance.minuteColor}
                 transparent
+                depthWrite={false}
                 roughness={0.6}
               />
             </mesh>
