@@ -1,6 +1,6 @@
 import { Suspense, useEffect, useRef } from 'react'
 import { resolveAppearance, useAppearanceStore } from '../../stores/appearanceStore'
-import type { WatchConcept } from '../../types/watch'
+import type { Appearance, WatchConcept } from '../../types/watch'
 import { CustomizationPanel } from '../customization/CustomizationPanel'
 import { ExportSection } from '../export/ExportSection'
 import { TimeControls } from '../time/TimeControls'
@@ -10,6 +10,9 @@ import type { ToneMappingName } from './toneMapping'
 import { WatchStage, type WatchStageHandle } from './WatchStage'
 import { useStageStore } from '../../stores/stageStore'
 import { watchAudio } from '../audio/engine'
+import { decodeAppearance, encodeAppearance, shareLink } from '../share/appearanceLink'
+import { useTimeStore } from '../../stores/timeStore'
+import { clockTimeFromMs, formatClock } from '../../utils/time'
 
 type Props = {
   concept: WatchConcept
@@ -24,6 +27,8 @@ type Props = {
   tone?: ToneMappingName
   /** Renderer override (`?renderer=webgpu`). */
   renderer?: RendererMode
+  /** Appearance from a share link (`?a=`), applied over the defaults. */
+  appearanceCode?: string | null
 }
 
 function isTyping(target: EventTarget | null) {
@@ -41,6 +46,30 @@ function updateQueryParam(key: string, value: string | null) {
   }
   const q = params.toString()
   window.location.hash = q ? `${path}?${q}` : path
+}
+
+/** A share link (`?a=`) replaces this watch's customisation with the linked one. */
+function useSharedAppearance(concept: WatchConcept, code?: string | null) {
+  useEffect(() => {
+    if (!code) return
+    const store = useAppearanceStore.getState()
+    store.reset(concept.metadata.id)
+    const shared = decodeAppearance(concept.customization, code)
+    for (const [key, value] of Object.entries(shared)) {
+      if (value !== undefined) store.set(concept.metadata.id, key, value)
+    }
+  }, [concept, code])
+}
+
+/** Copies a link to this watch with its appearance (and the time, if the clock is frozen). */
+async function copyShareLink(concept: WatchConcept, appearance: Appearance) {
+  const code = encodeAppearance(concept.customization, concept.defaultAppearance, appearance)
+  const time = useTimeStore.getState()
+  const frozenAt = time.model.paused ? formatClock(clockTimeFromMs(time.now())) : undefined
+  const base = `${window.location.origin}${window.location.pathname}`
+  const link = shareLink(base, concept.metadata.id, code, frozenAt)
+  await navigator.clipboard.writeText(link)
+  return link
 }
 
 /** ←/→ walk through the exhibition. */
@@ -65,6 +94,7 @@ export function WatchViewer({
   stats = false,
   tone,
   renderer,
+  appearanceCode,
 }: Props) {
   const stage = useRef<WatchStageHandle>(null)
   const stageBox = useRef<HTMLDivElement>(null)
@@ -72,6 +102,7 @@ export function WatchViewer({
   const overrides = useAppearanceStore((s) => s.overrides[metadata.id])
   const appearance = resolveAppearance(concept.defaultAppearance, overrides)
   useArrowNavigation(prev, next)
+  useSharedAppearance(concept, appearanceCode)
   const explode = useStageStore((s) => s.explode)
   const setExplode = useStageStore((s) => s.setExplode)
   const lume = useStageStore((s) => s.lume)
@@ -189,6 +220,7 @@ export function WatchViewer({
           appearance={appearance}
           onChange={(key, value) => useAppearanceStore.getState().set(metadata.id, key, value)}
           onReset={() => useAppearanceStore.getState().reset(metadata.id)}
+          onShare={() => copyShareLink(concept, appearance)}
         />
         <ExportSection
           meta={metadata}

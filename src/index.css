@@ -684,3 +684,8 @@ button:disabled {
 .live-layer {
   top: var(--topbar-height) !important;
 }
+
+.section-actions {
+  display: flex;
+  gap: 12px;
+}

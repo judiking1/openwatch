@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import type { Appearance, CustomizationField, CustomizationGroup } from '../../types/watch'
 
 const GROUP_ORDER: CustomizationGroup[] = ['Case', 'Dial', 'Indicators', 'Crystal', 'Strap']
@@ -7,6 +8,8 @@ type Props = {
   appearance: Appearance
   onChange: (key: string, value: Appearance[string]) => void
   onReset: () => void
+  /** Copies a share link; resolves when it is on the clipboard. */
+  onShare?: () => Promise<unknown>
 }
 
 function Control({
@@ -60,7 +63,17 @@ function Control({
 }
 
 /** Renders whatever customisation fields the concept declares, grouped. */
-export function CustomizationPanel({ fields, appearance, onChange, onReset }: Props) {
+export function CustomizationPanel({ fields, appearance, onChange, onReset, onShare }: Props) {
+  const [shared, setShared] = useState<'idle' | 'copied' | 'failed'>('idle')
+  const share = async () => {
+    try {
+      await onShare?.()
+      setShared('copied')
+    } catch {
+      setShared('failed')
+    }
+    setTimeout(() => setShared('idle'), 1800)
+  }
   const groups = GROUP_ORDER.map((g) => ({
     group: g,
     fields: fields.filter((f) => f.group === g),
@@ -70,9 +83,20 @@ export function CustomizationPanel({ fields, appearance, onChange, onReset }: Pr
     <section className="panel-section">
       <div className="section-header">
         <h3>Customize</h3>
-        <button className="link-button" onClick={onReset}>
-          Reset
-        </button>
+        <div className="section-actions">
+          {onShare && (
+            <button className="link-button" onClick={() => void share()}>
+              {shared === 'copied'
+                ? 'Link copied'
+                : shared === 'failed'
+                  ? 'Copy failed'
+                  : 'Copy link'}
+            </button>
+          )}
+          <button className="link-button" onClick={onReset}>
+            Reset
+          </button>
+        </div>
       </div>
       {groups.map(({ group, fields }) => (
         <div key={group} className="field-group">

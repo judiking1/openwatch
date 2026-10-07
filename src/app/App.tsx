@@ -58,6 +58,7 @@ function Page({ hash }: { hash: string }) {
           stats={params.has('stats')}
           tone={parseToneMapping(params.get('tone'))}
           renderer={parseRendererMode(params.get('renderer'))}
+          appearanceCode={params.get('a')}
         />
       </Suspense>
     )
