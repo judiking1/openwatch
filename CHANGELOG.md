@@ -4,7 +4,33 @@ All notable changes to this project are documented here.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the
 project uses [Semantic Versioning](https://semver.org).
 
-## [0.14.0] - 2026-10-07
+## [0.15.0] - 2026-10-07
+
+### Added (Phase D of docs/rendering-and-webgpu.md)
+
+- Compute-shader Stable Fluids (`StableFluidCompute`) for Jagyeongnu on the WebGPU backend:
+  storage buffers, two compute submissions per step, 2.8× faster than full-screen passes.
+- Live gallery on WebGPURenderer (`?renderer=webgpu`), with shaders compiled before each view
+  appears (`compileAsync`; the still image stays until then) and adaptive resolution.
+- TSL bloom post-processing; Optical Lever's laser beams glow on WebGPURenderer.
+- Stage toolbar toggles for `WebGL` / `⚡ WebGPU` and `Stats`; the stage pre-compiles its
+  shaders on creation.
+
+### Changed
+
+- Jagyeongnu: the scale beside the vessel shows the clock times of the current 시진
+  (e.g. 9:00 … 11:00) and the plaque its hours (09–11), so it reads without Hanja.
+- Angbuilgu: large Arabic hours in the lower bowl, 시진 characters with their hours, season
+  lines with months, night watches with hours; labels on backings over the grid.
+
+### Fixed
+
+- TSL fluid solver (WebGPURenderer on WebGL2): the dye was never advected.
+- Gallery on WebGPURenderer: views were mirrored vertically and some label planes showed as
+  grey squares (transparent overlays wrote depth).
+- `?stats` call counts on WebGPURenderer.
+
+- 2026-10-07
 
 ### Added (Phase C of docs/rendering-and-webgpu.md)
 
