@@ -4,7 +4,25 @@ All notable changes to this project are documented here.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the
 project uses [Semantic Versioning](https://semver.org).
 
-## [0.15.0] - 2026-10-07
+## [0.16.0] - 2026-10-08
+
+### Added (Phase E of docs/rendering-and-webgpu.md)
+
+- Bloom on WebGL too (EffectComposer + UnrealBloomPass, loaded on demand): Optical Lever's
+  lasers glow by default.
+- Wide engraved lines on WebGPURenderer (`Line2NodeMaterial`) instead of hairlines.
+- `?renderer=auto`: WebGPU when the browser provides an adapter, WebGL otherwise.
+- Angbuilgu: a dotted guide follows the current hour line from the shadow tip down to the
+  hour numbers, so the time reads directly (also at high speed).
+- `docs/future-concepts-and-features.md` (proposals) with a precedent check; third-round
+  entries in the reference survey.
+
+### Changed
+
+- Translucent veils (crystal, Jagyeongnu glass) use linear-light opacity whenever the stage
+  blends in linear light, including WebGL with bloom.
+
+- 2026-10-07
 
 ### Added (Phase D of docs/rendering-and-webgpu.md)
 
