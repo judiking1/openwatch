@@ -250,6 +250,23 @@ input[type='range'] {
   backdrop-filter: blur(6px);
 }
 
+.toolbar-range {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0 10px;
+  font-size: 13px;
+  color: var(--text-dim);
+  background: rgba(21, 23, 29, 0.85);
+  backdrop-filter: blur(6px);
+  border: 1px solid var(--panel-border);
+  border-radius: 6px;
+}
+
+.toolbar-range input {
+  width: 84px;
+}
+
 .stage-toolbar button[aria-pressed='true'] {
   background: var(--accent);
   color: #0e0f13;

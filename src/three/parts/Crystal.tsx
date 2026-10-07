@@ -1,11 +1,15 @@
 import { useThree } from '@react-three/fiber'
 import { useDisposable } from '../hooks'
+import { EXPLODE_LIFT } from '../stage/explode'
 import { getNodeLibrary, LINEAR_OPACITY, useLinearBlending, type NodeLibrary } from '../renderer'
 
 export type CrystalAppearance = {
   crystalTint: string
   crystalOpacity: number
 }
+
+/** Rises first in the exploded view. */
+const LIFT = { explode: EXPLODE_LIFT.crystal }
 
 type Props = CrystalAppearance & { radius?: number; z?: number }
 
@@ -14,7 +18,7 @@ export function Crystal({ crystalTint, crystalOpacity, radius = 104, z = 9 }: Pr
   const library = getNodeLibrary(useThree((s) => s.gl))
   const linear = useLinearBlending()
   return (
-    <mesh position={[0, 0, z]} rotation={[Math.PI / 2, 0, 0]} renderOrder={10}>
+    <mesh position={[0, 0, z]} rotation={[Math.PI / 2, 0, 0]} renderOrder={10} userData={LIFT}>
       <cylinderGeometry args={[radius, radius, 1.2, 96]} />
       {library ? (
         <SapphireMaterial library={library} tint={crystalTint} opacity={crystalOpacity} />

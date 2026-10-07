@@ -19,6 +19,7 @@ import {
 import { StudioLighting } from '../../three/lighting/StudioLighting'
 import { StageBloom } from '../../three/postfx/StageBloom'
 import { StageBackground } from '../../three/StageBackground'
+import { ExplodeController } from '../../three/stage/ExplodeController'
 import type { PostEffects } from '../../types/watch'
 import { RenderStatsProbe, type RenderSample } from '../../three/RenderStats'
 import type { RendererMode } from './rendererMode'
@@ -113,6 +114,7 @@ export function WatchStage({
           maxDistance={14}
           enableDamping
         />
+        <ExplodeController root={modelRoot} />
         {postFx?.bloom && <StageBloom settings={postFx.bloom} />}
         {stats && <RenderStatsProbe onSample={setSample} />}
       </Canvas>

@@ -4,7 +4,12 @@ import { BackSide, BoxGeometry, Matrix4, MeshStandardMaterial, type Group } from
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js'
 import { useDisposable } from '../hooks'
 import { getNodeLibrary } from '../renderer'
+import { EXPLODE_LIFT } from '../stage/explode'
 import { DIAL_RADIUS } from '../utils/dial'
+
+/** Exploded-view lifts (see `stage/explode.ts`). */
+const BEZEL = { explode: EXPLODE_LIFT.bezel }
+const CASEBACK = { explode: EXPLODE_LIFT.caseback }
 
 export type CaseAppearance = {
   caseColor: string
@@ -152,11 +157,16 @@ export function WatchCase({
           <circleGeometry args={[seat, 128]} />
         </mesh>
         {/* bezel */}
-        <mesh position={[0, 0, 3]} material={metal}>
+        <mesh position={[0, 0, 3]} material={metal} userData={BEZEL}>
           <torusGeometry args={[radius + 6, 7, 32, 128]} />
         </mesh>
         {/* caseback */}
-        <mesh position={[0, 0, bottom - 1]} rotation={[Math.PI / 2, 0, 0]} material={metal}>
+        <mesh
+          position={[0, 0, bottom - 1]}
+          rotation={[Math.PI / 2, 0, 0]}
+          material={metal}
+          userData={CASEBACK}
+        >
           <cylinderGeometry args={[outer - 8, outer - 4, 4, 96]} />
         </mesh>
         {/* crown */}

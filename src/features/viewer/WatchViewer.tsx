@@ -8,6 +8,7 @@ import { WatchHeader, WatchStory } from './WatchInfo'
 import type { RendererMode } from './rendererMode'
 import type { ToneMappingName } from './toneMapping'
 import { WatchStage, type WatchStageHandle } from './WatchStage'
+import { useStageStore } from '../../stores/stageStore'
 
 type Props = {
   concept: WatchConcept
@@ -70,6 +71,8 @@ export function WatchViewer({
   const overrides = useAppearanceStore((s) => s.overrides[metadata.id])
   const appearance = resolveAppearance(concept.defaultAppearance, overrides)
   useArrowNavigation(prev, next)
+  const explode = useStageStore((s) => s.explode)
+  const setExplode = useStageStore((s) => s.setExplode)
 
   const model = (
     <WatchStage
@@ -105,6 +108,18 @@ export function WatchViewer({
           >
             {renderer === 'webgpu' ? '⚡ WebGPU' : 'WebGL'}
           </button>
+          <label className="toolbar-range" title="Pull the layers apart along the watch axis">
+            Explode
+            <input
+              type="range"
+              min={0}
+              max={1}
+              step={0.01}
+              value={explode}
+              onChange={(e) => setExplode(Number(e.target.value))}
+              aria-label="Exploded view"
+            />
+          </label>
           <button
             onClick={() => updateQueryParam('stats', stats ? null : '')}
             title="Toggle render statistics probe"
