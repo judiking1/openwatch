@@ -40,7 +40,17 @@ Particles forming numerals (Ferrolic, INK-MAGNETIC) and iron filings moved by hi
 to mark the hour and minute (Moongchi Clock, iF 2022) exist, so the original proposal was
 reworked. No timepiece that reads time from Chladni nodal lines was found (October 2026).
 
+## Renderers
+
+- **WebGPU backend:** 32 768 grains simulated by a compute shader (`sandCompute.ts`, TSL
+  `Fn().compute()` over a storage buffer) and drawn as one instanced mesh whose vertex stage
+  reads the same buffer, so the grains never return to the CPU. The kernel mirrors
+  `stepSand` (energy, gradient, pulse kick, tilt slide, reflection at the rim) with a hash
+  in place of the CPU's random numbers. Verified off-screen against the CPU model: mean
+  energy after settling 0.034 (GPU) vs 0.032 (CPU).
+- **WebGL and WebGPU-on-WebGL2:** 4 000 grains on the CPU (`sand.ts`).
+
 ## Next
 
-The simulation runs on the CPU (4 000 grains, both renderers). A compute-shader version on the
-WebGPU backend could raise it to tens of thousands of grains.
+Grain–grain collisions (piling height) and a lit sand heightfield instead of instanced
+pebbles.

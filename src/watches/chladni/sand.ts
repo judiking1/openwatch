@@ -40,8 +40,8 @@ function direction(clockDeg: number) {
 }
 
 /** Softening of the energy where the two still lines cross. */
-const SOFT = 0.0025
-const GAIN = 4
+export const SOFT = 0.0025
+export const GAIN = 4
 
 /** Normalised distances across the still diameter (s) and from the still circle (d). */
 function distances(x: number, y: number, pose: PlatePose) {

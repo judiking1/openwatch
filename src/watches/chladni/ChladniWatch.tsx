@@ -1,8 +1,10 @@
+import { useThree } from '@react-three/fiber'
 import { useLayoutEffect, useMemo, useRef } from 'react'
 import { Matrix4, type Group, type InstancedMesh } from 'three'
 import { useClockFrame, useDialTexture } from '../../three/hooks'
 import { Crystal } from '../../three/parts/Crystal'
 import { PrintLayer } from '../../three/parts/PrintLayer'
+import { rendererKind } from '../../three/renderer'
 import { tilt } from '../../three/stage/tilt'
 import { WatchCase } from '../../three/parts/WatchCase'
 import { dialFont, drawLabels, drawTicks, HOUR_LABELS } from '../../three/utils/canvas'
@@ -11,6 +13,7 @@ import { useTimeStore } from '../../stores/timeStore'
 import { clockTimeFromMs, dialPoint } from '../../utils/time'
 import type { ChladniAppearance } from './appearance'
 import { PLATE_RADIUS, platePose, random, ringRadius, scatterSand, stepSand } from './sand'
+import { useComputeSand } from './useComputeSand'
 
 const GRAINS = 4000
 /** Steps run on mount (~3 s of sand time). */
@@ -57,6 +60,10 @@ function drawRim(ctx: CanvasRenderingContext2D) {
 /** Watch 013 — Chladni: sand on a vibrating plate settles where it is still; that is the time. */
 export function ChladniWatch({ appearance }: { appearance: ChladniAppearance }) {
   const sand = useRef<InstancedMesh>(null)
+  const gl = useThree((s) => s.gl)
+  // WebGPU backend: 8× the grains on a compute shader; elsewhere the CPU model below.
+  const { compute } = rendererKind(gl)
+  const gpuSand = useComputeSand(compute, GRAIN_Z)
   const exciter = useRef<Group>(null)
   const rand = useMemo(() => random(1787), [])
   // Scattered, then settled to the current time so the pattern is there when the watch appears.
@@ -83,10 +90,15 @@ export function ChladniWatch({ appearance }: { appearance: ChladniAppearance }) 
     const pose = platePose(t)
     // Two substeps keep the drift stable at low frame rates.
     const step = Math.min(dt, 1 / 30) / 2
-    stepSand(grains, pose, step, rand, tilt)
-    stepSand(grains, pose, step, rand, tilt)
+    if (gpuSand) {
+      gpuSand.step(gl, pose, step, tilt)
+      gpuSand.step(gl, pose, step, tilt)
+    } else if (!compute) {
+      stepSand(grains, pose, step, rand, tilt)
+      stepSand(grains, pose, step, rand, tilt)
+    }
     const mesh = sand.current
-    if (mesh) {
+    if (mesh && !compute) {
       const matrices = mesh.instanceMatrix.array as Float32Array
       for (let i = 0; i < GRAINS; i++) {
         matrices[i * 16 + 12] = grains[i * 2]
@@ -116,15 +128,19 @@ export function ChladniWatch({ appearance }: { appearance: ChladniAppearance }) 
       </mesh>
       <PrintLayer mask={plate} color={appearance.scaleColor} radius={PLATE_RADIUS} z={0.62} />
 
-      <instancedMesh
-        ref={sand}
-        args={[undefined, undefined, GRAINS]}
-        name="sand"
-        frustumCulled={false}
-      >
-        <icosahedronGeometry args={[0.55, 0]} />
-        <meshStandardMaterial color={appearance.sandColor} roughness={0.9} />
-      </instancedMesh>
+      {compute ? (
+        gpuSand && <primitive object={gpuSand.mesh} material-color={appearance.sandColor} />
+      ) : (
+        <instancedMesh
+          ref={sand}
+          args={[undefined, undefined, GRAINS]}
+          name="sand"
+          frustumCulled={false}
+        >
+          <icosahedronGeometry args={[0.55, 0]} />
+          <meshStandardMaterial color={appearance.sandColor} roughness={0.9} />
+        </instancedMesh>
+      )}
 
       {/* the exciter on the rim: the still diameter's hour end */}
       <group ref={exciter} name="hour">
