@@ -47,6 +47,8 @@ export type WatchStageHandle = {
   resetCamera: () => void
   /** The watch model root (excludes lights, environment and controls). */
   getModelRoot: () => Group | null
+  /** The stage canvas as last drawn (WebGL keeps its drawing buffer for this). */
+  getCanvas: () => HTMLCanvasElement | null
 }
 
 type Props = {
@@ -80,9 +82,11 @@ export function WatchStage({
   const [backend, setBackend] = useState('')
   const controls = useRef<ComponentRef<typeof OrbitControls>>(null)
   const modelRoot = useRef<Group>(null)
+  const canvas = useRef<HTMLCanvasElement | null>(null)
   useImperativeHandle(ref, () => ({
     resetCamera: () => controls.current?.reset(),
     getModelRoot: () => modelRoot.current,
+    getCanvas: () => canvas.current,
   }))
 
   return (
@@ -98,6 +102,7 @@ export function WatchStage({
           preserveDrawingBuffer: true,
         })}
         onCreated={async (state) => {
+          canvas.current = state.gl.domElement
           setBackend(rendererKind(state.gl).label)
           try {
             const gl = state.gl as unknown as {

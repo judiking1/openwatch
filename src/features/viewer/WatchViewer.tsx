@@ -11,6 +11,7 @@ import { WatchStage, type WatchStageHandle } from './WatchStage'
 import { useStageStore } from '../../stores/stageStore'
 import { watchAudio } from '../audio/engine'
 import { decodeAppearance, encodeAppearance, shareLink } from '../share/appearanceLink'
+import { drawSnapshotCard } from '../share/snapshotCard'
 import { useTimeStore } from '../../stores/timeStore'
 import { clockTimeFromMs, formatClock } from '../../utils/time'
 
@@ -76,6 +77,28 @@ async function copyShareLink(concept: WatchConcept, appearance: Appearance) {
   const link = shareLink(base, concept.metadata.id, code, frozenAt)
   await navigator.clipboard.writeText(link)
   return link
+}
+
+/** A PNG card of the current view, with a QR link that reopens it at the same time. */
+async function snapshotCard(
+  concept: WatchConcept,
+  appearance: Appearance,
+  render: HTMLCanvasElement | null,
+): Promise<Blob | null> {
+  if (!render) return null
+  const time = formatClock(clockTimeFromMs(useTimeStore.getState().now()))
+  const code = encodeAppearance(concept.customization, concept.defaultAppearance, appearance)
+  const base = `${window.location.origin}${window.location.pathname}`
+  const { metadata: m } = concept
+  const card = drawSnapshotCard(render, {
+    number: m.number,
+    name: m.name,
+    tagline: m.tagline,
+    readingHint: m.readingHint,
+    time,
+    link: shareLink(base, m.id, code, time),
+  })
+  return new Promise((resolve) => card.toBlob(resolve, 'image/png'))
 }
 
 /** ←/→ walk through the exhibition. */
@@ -264,6 +287,7 @@ export function WatchViewer({
           meta={metadata}
           appearance={appearance}
           getRoot={() => stage.current?.getModelRoot()}
+          getCard={() => snapshotCard(concept, appearance, stage.current?.getCanvas() ?? null)}
         />
       </aside>
     </div>

@@ -7,9 +7,11 @@ type Props = {
   meta: WatchMetadata
   appearance: Appearance
   getRoot: () => Object3D | null | undefined
+  /** Renders a shareable PNG card of the current view. */
+  getCard?: () => Promise<Blob | null>
 }
 
-export function ExportSection({ meta, appearance, getRoot }: Props) {
+export function ExportSection({ meta, appearance, getRoot, getCard }: Props) {
   const [exporting, setExporting] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -35,6 +37,16 @@ export function ExportSection({ meta, appearance, getRoot }: Props) {
       <button onClick={handleExport} disabled={exporting}>
         {exporting ? 'Exporting…' : 'Download GLB'}
       </button>
+      {getCard && (
+        <button
+          onClick={async () => {
+            const card = await getCard()
+            if (card) downloadBlob(card, `${meta.number}-${meta.id}-card.png`)
+          }}
+        >
+          Snapshot card
+        </button>
+      )}
       {error && <p className="note error">Export failed: {error}</p>}
       <p className="note">
         Exports the current configuration and time as shown. {EXPORT_DISCLAIMER}
