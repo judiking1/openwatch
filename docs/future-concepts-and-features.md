@@ -53,7 +53,7 @@ The proposals below are organized into:
 
 ---
 
-### Concept 014 — Tensegrity (Levitation / Non-Contact Arbor)
+### Proposed concept — Tensegrity (Levitation / Non-Contact Arbor)
 
 - **Concept:** A watch with no central pivot arbor or visible axle. The indicator rings float in mid-air inside a hollow glass chamber, seemingly held only by micro-wire tension and magnetic repulsion.
 - **How time is read:**
@@ -66,7 +66,7 @@ The proposals below are organized into:
 
 ---
 
-### Concept 015 — Tactile Topography (3D Relief / Surface Morph)
+### Proposed concept — Tactile Topography (3D Relief / Surface Morph)
 
 - **Concept:** A dial composed of a fine grid of mechanical pins (e.g. 32×32 or concentric radial pins) that rise and fall along the Z-axis, forming a dynamic topographic landscape.
 - **How time is read:**
@@ -87,8 +87,8 @@ against the catalogue in `docs/research/watch-references.md`:
 | ----------------- | -------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
 | 012 Iris          | Valbray EL1 / Leica "Oculus" (16-blade diaphragm hides sub-dials), Tokyoflash iris concept, Pebble "Iris" face                         | **Built as 012 Iris** (`docs/concepts/iris.md`). Existing irises hide or reveal a display; none encodes the minute as the aperture size. |
 | 013 Magnetic Sand | Ferrolic (ferrofluid forms numerals), INK-MAGNETIC watch, Robison ferrofluid clock, Moongchi Clock (iron filings mark hour and minute) | **Reworked → built as 013 Chladni:** sand settling on a vibrating plate's still lines (`docs/concepts/chladni.md`).                      |
-| 014 Tensegrity    | Mystery / floating-hand dials (Cartier, Longines), Ressence floating discs                                                             | **Weak.** "Hands without a visible arbor" is already catalogued. Only the damped wobble is new, which is not a way of telling time.      |
-| 015 Topography    | Relevo, Eone Bradley — listed under "rejected because they already exist"                                                              | **Rejected** (already rejected in the survey, §3).                                                                                       |
+| Tensegrity        | Mystery / floating-hand dials (Cartier, Longines), Ressence floating discs                                                             | **Weak.** "Hands without a visible arbor" is already catalogued. Only the damped wobble is new, which is not a way of telling time.      |
+| Topography        | Relevo, Eone Bradley — listed under "rejected because they already exist"                                                              | **Rejected** (already rejected in the survey, §3).                                                                                       |
 
 Iris is the strongest next concept; Magnetic Sand stays the best showcase for compute
 shaders if its encoding is reworked. Sources: [Valbray × Leica](https://petapixel.com/2014/05/22/leica-teams-swiss-watch-maker-valbray-insanely-unique-timepiece),

@@ -10,6 +10,8 @@ import { marble } from './marble'
 import { numeralRing } from './numeral-ring'
 import { opticalLever } from './optical-lever'
 import { orbitalHands } from './orbital-hands'
+import { phase } from './phase'
+import { plasma } from './plasma'
 import { shears } from './shears'
 import { turntable } from './turntable'
 
@@ -28,6 +30,8 @@ export const concepts: WatchConcept[] = [
   jagyeongnu,
   iris,
   chladni,
+  plasma,
+  phase,
 ]
 
 export function getConcept(id: string): WatchConcept | undefined {

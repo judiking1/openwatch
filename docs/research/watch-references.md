@@ -111,13 +111,23 @@ Precedent check of the proposals in `docs/future-concepts-and-features.md` (Octo
 | Hands with no arbor          | Mystery / floating-hand dials, Ressence             | exists                          |
 | Pin-relief elevation wave    | Relevo, Eone Bradley (rejected above)               | exists                          |
 
-## 5. Backlog (not yet built)
+## 5. Backlog
 
-- **Plasma**: a gas-discharge filament whose attachment point wanders to the time.
-- **Phase**: hour and minute as two interfering waves; the time is where they meet.
-- **Night-only**: a watch legible only in the dark (phosphor charge decays from the past hour).
+Checked and built in October 2026:
+
+| Idea                                     | Nearest reference                                                    | Verdict                                                                    |
+| ---------------------------------------- | -------------------------------------------------------------------- | -------------------------------------------------------------------------- |
+| Plasma: a discharge points at the time   | Discharge-hand clock patent (US 6,919,688)                           | exists — reworked as 014 Plasma: random filaments, read from the afterglow |
+| Night-only: phosphor charged by the time | Analumi (UV LEDs draw hands on phosphor), UV plot clocks, glow dials | exists — not built alone; the afterglow became 014 Plasma's reading        |
+| Phase: waves meet at the time            | Hamon (hands stir water), Tokyoflash water-ripple concept            | open as a phased-array focus — built as 015 Phase                          |
 
 ## Sources
+
+- [Discharge-hand clock patent US 6,919,688](https://image-ppubs.uspto.gov/dirsearch-public/print/downloadPdf/6919688)
+- [Analumi clock](https://www.hackster.io/news/the-analumi-clock-uses-uv-leds-instead-of-hands-to-tell-the-time-e0841b018e0d)
+- [UV plot clock](https://blog.hackster.io/this-clock-plots-the-time-in-uv-letters-on-glow-in-the-dark-film-b710d522ecc2)
+- [Hamon](https://www.designboom.com/?p=208183)
+- [Tokyoflash water-ripple concept](https://blog.tokyoflash.com/2010/10/04/water-ripple-led-watch-design/)
 
 - [Phillips — unconventional watch displays](https://www.phillips.com/article/think-you-know-how-to-read-the-time-part-two-unconventional-watch-displays-phillips-hong-kong-fall-2026-online-auction)
 - [Watchfinder — satellite hours](https://mcdev.watchfinder.hk/articles/getting-technical-satellite-hours)
