@@ -107,6 +107,8 @@ export function WatchViewer({
   const setExplode = useStageStore((s) => s.setExplode)
   const lume = useStageStore((s) => s.lume)
   const setLume = useStageStore((s) => s.setLume)
+  const blueprint = useStageStore((s) => s.blueprint)
+  const setBlueprint = useStageStore((s) => s.setBlueprint)
   const sound = useStageStore((s) => s.sound)
   const setSound = useStageStore((s) => s.setSound)
   const toggleSound = async () => {
@@ -124,9 +126,10 @@ export function WatchViewer({
       setExplode(0)
       setLume(false)
       setSound(false)
+      setBlueprint(false)
       watchAudio.stop()
     },
-    [setExplode, setLume, setSound],
+    [setExplode, setLume, setSound, setBlueprint],
   )
 
   const model = (
@@ -148,7 +151,7 @@ export function WatchViewer({
 
   return (
     <div className="split-layout">
-      <div className="stage" ref={stageBox}>
+      <div className={`stage${blueprint ? ' stage-blueprint' : ''}`} ref={stageBox}>
         {model}
         <div className="reading-hint" role="note">
           <span className="reading-hint-label">How to read</span>
@@ -182,6 +185,13 @@ export function WatchViewer({
             aria-pressed={lume}
           >
             🌙 Lume
+          </button>
+          <button
+            onClick={() => setBlueprint(!blueprint)}
+            title="Technical drawing: feature edges and dimensions (visual model, not for manufacture)"
+            aria-pressed={blueprint}
+          >
+            📐 Blueprint
           </button>
           <button
             onClick={() => void toggleSound()}

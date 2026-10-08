@@ -88,6 +88,13 @@ export function prepareForExport(root: Object3D): Object3D {
   const copy = root.clone(true)
   const replacements: Array<[Object3D, Object3D]> = []
 
+  // View helpers (blueprint edges, dimensions) are not part of the model.
+  const helpers: Object3D[] = []
+  copy.traverse((object) => {
+    if (object.userData.helper) helpers.push(object)
+  })
+  helpers.forEach((h) => h.removeFromParent())
+
   copy.traverse((object) => {
     const line = object as FatLine
     if (line.isLine2 || line.isLineSegments2) {

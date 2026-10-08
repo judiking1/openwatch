@@ -8,16 +8,21 @@ type StageStore = {
   lume: boolean
   /** Procedural watch sounds (off until the visitor turns them on). */
   sound: boolean
+  /** Technical drawing: flat fill, feature edges and dimension callouts. */
+  blueprint: boolean
   setExplode: (value: number) => void
   setLume: (value: boolean) => void
   setSound: (value: boolean) => void
+  setBlueprint: (value: boolean) => void
 }
 
 export const useStageStore = create<StageStore>()((set) => ({
   explode: 0,
   lume: false,
   sound: false,
+  blueprint: false,
   setExplode: (explode) => set({ explode }),
   setLume: (lume) => set({ lume }),
   setSound: (sound) => set({ sound }),
+  setBlueprint: (blueprint) => set({ blueprint }),
 }))

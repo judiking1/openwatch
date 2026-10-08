@@ -22,6 +22,8 @@ import { StageBackground } from '../../three/StageBackground'
 import { ExplodeController } from '../../three/stage/ExplodeController'
 import { LUME_BLOOM } from '../../three/stage/lume'
 import { LumeController } from '../../three/stage/LumeController'
+import { BlueprintController } from '../../three/stage/BlueprintController'
+import { BlueprintDimensions } from '../../three/stage/BlueprintDimensions'
 import { useStageStore } from '../../stores/stageStore'
 import type { PostEffects, SoundProfile } from '../../types/watch'
 import { AudioDriver } from '../audio/AudioDriver'
@@ -72,7 +74,8 @@ export function WatchStage({
   const [sample, setSample] = useState<RenderSample | null>(null)
   // The lume (night) view needs bloom even for concepts that do not request it.
   const lume = useStageStore((s) => s.lume)
-  const bloom = lume ? LUME_BLOOM : postFx?.bloom
+  const blueprint = useStageStore((s) => s.blueprint)
+  const bloom = blueprint ? undefined : lume ? LUME_BLOOM : postFx?.bloom
   const [backend, setBackend] = useState('')
   const controls = useRef<ComponentRef<typeof OrbitControls>>(null)
   const modelRoot = useRef<Group>(null)
@@ -110,11 +113,12 @@ export function WatchStage({
           }
         }}
       >
-        <StageBackground color="#0e0f13" transparent={!!bloom} />
+        <StageBackground color="#0e0f13" transparent={!!bloom || blueprint} />
         <StudioLighting />
         <LinearBlendingContext value={!!bloom}>
           <group ref={modelRoot} scale={DIAL_UNIT}>
             {children}
+            <BlueprintDimensions />
           </group>
         </LinearBlendingContext>
         <OrbitControls
@@ -127,6 +131,7 @@ export function WatchStage({
         />
         <ExplodeController root={modelRoot} />
         <LumeController root={modelRoot} />
+        <BlueprintController root={modelRoot} />
         <AudioDriver profile={sound} root={modelRoot} />
         {bloom && <StageBloom settings={bloom} />}
         {stats && <RenderStatsProbe onSample={setSample} />}

@@ -689,3 +689,22 @@ button:disabled {
   display: flex;
   gap: 12px;
 }
+
+/* Blueprint view: drafting paper behind the transparent canvas. */
+.stage-blueprint {
+  background-color: #0d2a4a;
+  background-image:
+    linear-gradient(rgba(159, 216, 255, 0.08) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(159, 216, 255, 0.08) 1px, transparent 1px);
+  background-size: 24px 24px;
+}
+
+.blueprint-label {
+  color: #ffffff;
+  font:
+    600 12px/1 ui-monospace,
+    'SFMono-Regular',
+    monospace;
+  white-space: nowrap;
+  pointer-events: none;
+}
