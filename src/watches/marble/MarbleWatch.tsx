@@ -13,6 +13,7 @@ import {
 import { dialPoint3, dialRotationZ } from '../../three/utils/dial'
 import { degToRad, handAngles } from '../../utils/time'
 import type { MarbleAppearance } from './appearance'
+import { tiltPolar } from '../../three/stage/tilt'
 import { advanceMarble, DISH_TILT, type MarbleState } from './marble'
 
 const HOUR_DISH = { inner: 60, outer: 97, groove: 87, labels: 71, marble: 7, z: -9 }
@@ -165,8 +166,9 @@ export function MarbleWatch({ appearance }: { appearance: MarbleAppearance }) {
       minute: { angle: a.minute, velocity: 0 },
     })
     const step = Math.min(dt, 0.1)
-    s.hour = advanceMarble(s.hour, a.hour, step)
-    s.minute = advanceMarble(s.minute, a.minute, step)
+    const watchTilt = tiltPolar()
+    s.hour = advanceMarble(s.hour, a.hour, step, watchTilt)
+    s.minute = advanceMarble(s.minute, a.minute, step, watchTilt)
 
     if (hourDish.current)
       hourDish.current.quaternion.copy(tiltTowards(a.hour, DISH_TILT, q.current))

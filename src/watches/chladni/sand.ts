@@ -107,9 +107,19 @@ const g = { x: 0, y: 0 }
 /**
  * Advances grains (xy pairs) by `dt` seconds. Each grain drifts down ∇E and gets a random
  * kick proportional to the local vibration (√E), stronger during the pulse at the start of
- * every second; grains leaving the plate are reflected back onto it.
+ * every second; grains shaken loose slide with the watch's tilt (in-plane gravity, sin of
+ * the tilt angle); grains leaving the plate are reflected back onto it.
  */
-export function stepSand(grains: Float32Array, pose: PlatePose, dt: number, rand: () => number) {
+/** How fast shaking grains slide downhill when the watch is tilted (units/s at full tilt). */
+export const SLIDE = 220
+
+export function stepSand(
+  grains: Float32Array,
+  pose: PlatePose,
+  dt: number,
+  rand: () => number,
+  tilt: { x: number; y: number } = { x: 0, y: 0 },
+) {
   const pulse = 1 + 2.5 * Math.exp(-pose.pulse * 10)
   const kick = KICK * Math.sqrt(dt) * pulse
   for (let i = 0; i < grains.length; i += 2) {
@@ -117,8 +127,10 @@ export function stepSand(grains: Float32Array, pose: PlatePose, dt: number, rand
     let y = grains[i + 1]
     energyGradient(x, y, pose, g)
     const shake = Math.sqrt(energy(x, y, pose))
-    x += -DRIFT * g.x * dt + (rand() - 0.5) * kick * shake
-    y += -DRIFT * g.y * dt + (rand() - 0.5) * kick * shake
+    // Only grains that are being shaken loose slide with the tilt.
+    const slide = SLIDE * Math.min(1, shake * 4) * dt
+    x += -DRIFT * g.x * dt + (rand() - 0.5) * kick * shake + tilt.x * slide
+    y += -DRIFT * g.y * dt + (rand() - 0.5) * kick * shake + tilt.y * slide
     const r = Math.hypot(x, y)
     if (r > PLATE_RADIUS) {
       const k = (2 * PLATE_RADIUS - r) / r

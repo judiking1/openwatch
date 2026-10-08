@@ -23,6 +23,7 @@ import { ExplodeController } from '../../three/stage/ExplodeController'
 import { LUME_BLOOM } from '../../three/stage/lume'
 import { LumeController } from '../../three/stage/LumeController'
 import { BlueprintController } from '../../three/stage/BlueprintController'
+import { TiltController } from '../../three/stage/TiltController'
 import { BlueprintDimensions } from '../../three/stage/BlueprintDimensions'
 import { useStageStore } from '../../stores/stageStore'
 import type { PostEffects, SoundProfile } from '../../types/watch'
@@ -132,6 +133,7 @@ export function WatchStage({
         <ExplodeController root={modelRoot} />
         <LumeController root={modelRoot} />
         <BlueprintController root={modelRoot} />
+        <TiltController root={modelRoot} />
         <AudioDriver profile={sound} root={modelRoot} />
         {bloom && <StageBloom settings={bloom} />}
         {stats && <RenderStatsProbe onSample={setSample} />}

@@ -3,6 +3,7 @@ import { Matrix4, type Group, type InstancedMesh } from 'three'
 import { useClockFrame, useDialTexture } from '../../three/hooks'
 import { Crystal } from '../../three/parts/Crystal'
 import { PrintLayer } from '../../three/parts/PrintLayer'
+import { tilt } from '../../three/stage/tilt'
 import { WatchCase } from '../../three/parts/WatchCase'
 import { dialFont, drawLabels, drawTicks, HOUR_LABELS } from '../../three/utils/canvas'
 import { DIAL_RADIUS, dialRotationZ } from '../../three/utils/dial'
@@ -82,8 +83,8 @@ export function ChladniWatch({ appearance }: { appearance: ChladniAppearance }) 
     const pose = platePose(t)
     // Two substeps keep the drift stable at low frame rates.
     const step = Math.min(dt, 1 / 30) / 2
-    stepSand(grains, pose, step, rand)
-    stepSand(grains, pose, step, rand)
+    stepSand(grains, pose, step, rand, tilt)
+    stepSand(grains, pose, step, rand, tilt)
     const mesh = sand.current
     if (mesh) {
       const matrices = mesh.instanceMatrix.array as Float32Array

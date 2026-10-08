@@ -48,6 +48,12 @@ function updateQueryParam(key: string, value: string | null) {
   window.location.hash = q ? `${path}?${q}` : path
 }
 
+/** Phones and tablets: motion sensors are only worth offering on touch devices. */
+const HAS_MOTION_SENSOR =
+  typeof window !== 'undefined' &&
+  'DeviceOrientationEvent' in window &&
+  window.matchMedia?.('(pointer: coarse)').matches
+
 /** A share link (`?a=`) replaces this watch's customisation with the linked one. */
 function useSharedAppearance(concept: WatchConcept, code?: string | null) {
   useEffect(() => {
@@ -109,6 +115,18 @@ export function WatchViewer({
   const setLume = useStageStore((s) => s.setLume)
   const blueprint = useStageStore((s) => s.blueprint)
   const setBlueprint = useStageStore((s) => s.setBlueprint)
+  const deviceTilt = useStageStore((s) => s.deviceTilt)
+  const setDeviceTilt = useStageStore((s) => s.setDeviceTilt)
+  const toggleDeviceTilt = async () => {
+    if (!deviceTilt) {
+      // iOS asks for motion permission, and only from a tap.
+      const request = (
+        DeviceOrientationEvent as unknown as { requestPermission?: () => Promise<string> }
+      ).requestPermission
+      if (request && (await request()) !== 'granted') return
+    }
+    setDeviceTilt(!deviceTilt)
+  }
   const sound = useStageStore((s) => s.sound)
   const setSound = useStageStore((s) => s.setSound)
   const toggleSound = async () => {
@@ -127,9 +145,10 @@ export function WatchViewer({
       setLume(false)
       setSound(false)
       setBlueprint(false)
+      setDeviceTilt(false)
       watchAudio.stop()
     },
-    [setExplode, setLume, setSound, setBlueprint],
+    [setExplode, setLume, setSound, setBlueprint, setDeviceTilt],
   )
 
   const model = (
@@ -193,6 +212,15 @@ export function WatchViewer({
           >
             📐 Blueprint
           </button>
+          {HAS_MOTION_SENSOR && (
+            <button
+              onClick={() => void toggleDeviceTilt()}
+              title="Free parts (marbles, sand) follow how you hold the phone"
+              aria-pressed={deviceTilt}
+            >
+              📱 Tilt
+            </button>
+          )}
           <button
             onClick={() => void toggleSound()}
             title="Procedural watch sounds, following the watch's own time"
