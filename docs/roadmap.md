@@ -55,16 +55,25 @@ Every task of `docs/future-concepts-and-features.md` §6: exploded view, lume (n
 procedural sound; 012 Iris and 013 Chladni (reworked from Magnetic Sand after the precedent
 check); share links with appearance; the concept generator kit (`docs/concept-generator/`).
 
+## 0.18.0 — Next candidates: viewer modes, Concept Lab, compute sand, 014 and 015
+
+Blueprint (CAD) view, tilt physics (device gyroscope or the camera's view), the in-browser
+Concept Lab (`#/lab/concept`) built on the generator kit, snapshot cards with a QR link,
+Chladni sand on compute shaders (32 768 grains on the WebGPU backend), and two concepts from
+the research backlog after the precedent check: 014 Plasma and 015 Phase (Night-only was
+retired as a standalone concept).
+
 ## Next candidates
 
-- Remaining proposals in `docs/future-concepts-and-features.md`: blueprint (CAD) mode,
-  gyroscope physics, the in-app Prompt-to-Watch generator built on `docs/concept-generator/`,
-  snapshot cards.
-- Chladni on compute shaders (tens of thousands of grains on the WebGPU backend).
-- Visual review pass with real devices; tune lighting and strap geometry.
+Needs the user (cannot be done from the headless sandbox):
+
+- Visual review pass on real devices; tune lighting and strap geometry.
 - Real-device check of `?renderer=auto` before making WebGPU the default
-  (`docs/rendering-and-webgpu.md` §9).
-- More concepts from the backlog in `docs/research/watch-references.md` (plasma, phase,
-  night-only).
-- Share links that encode appearance as well as time.
-- Phase 7 — AI-assisted concept pipeline (concept document template, review checklist).
+  (`docs/rendering-and-webgpu.md` §9), and of the tilt button on phones (gyroscope
+  permission).
+
+Can be done next:
+
+- Chladni grain–grain collisions and a sand heightfield; Phase waves as a GPU wave equation
+  with reflections off the case wall; Plasma filaments that follow a touch.
+- Phase 8 — Blender assets for the hero concepts.

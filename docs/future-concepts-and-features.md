@@ -173,7 +173,10 @@ shaders if its encoding is reworked. Sources: [Valbray × Leica](https://petapix
 
 ## 6. Implementation Task Roadmap for AI Agents
 
-Status as of v0.17.0: every task below is done. The rendering groundwork these features need now exists: bloom on
+Status as of v0.18.0: every task below is done, and so are the other proposals of §3–§5 —
+blueprint (CAD) mode, gyroscope / tilt physics, the in-app Prompt-to-Watch Concept Lab
+(`#/lab/concept`) and snapshot cards. Task 2.2's compute-shader showcase also landed:
+Chladni runs 32 768 grains on compute shaders on the WebGPU backend. Earlier (v0.17.0): The rendering groundwork these features need now exists: bloom on
 both renderers, compute shaders on the WebGPU backend, and the reading-aid pattern (Angbuilgu
 guide).
 

@@ -4,6 +4,32 @@ All notable changes to this project are documented here.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the
 project uses [Semantic Versioning](https://semver.org).
 
+## [0.18.0] - 2026-10-08
+
+### Added (roadmap "Next candidates")
+
+- **Blueprint view:** a toolbar toggle turns the stage into a technical drawing — edges on
+  blueprint paper with case and dial diameters in millimetres (visual model, not a drawing
+  for manufacture).
+- **Tilt physics:** Marble's balls and Chladni's sand slide with how the watch is held — the
+  phone's gyroscope (📱 Tilt on touch devices) or the camera's view on desktop.
+- **Concept Lab** (`#/lab/concept`): build the generator prompt, paste the returned spec,
+  validate it and preview a parametric sketch of the watch in the browser.
+- **Snapshot cards:** one-click PNG card with the rendered watch, its number and reading
+  hint, and a QR code to the live model.
+- **Chladni on compute shaders:** 32 768 grains on the WebGPU backend (4 000 on the CPU
+  elsewhere).
+- **Watch 014 Plasma:** random discharge filaments; the time is where their phosphor
+  afterglow piles up.
+- **Watch 015 Phase:** a fixed phased array focuses long waves on the hour and short waves on
+  the minute; nothing moves.
+
+### Changed
+
+- Precedent check of the research backlog: Plasma reworked (discharge hands exist),
+  Night-only retired as a standalone concept (UV phosphor clocks exist), Phase built.
+- Roadmap "Next candidates" cleaned up; real-device checks are listed as needing the user.
+
 ## [0.17.0] - 2026-10-08
 
 ### Added (docs/future-concepts-and-features.md §6, all tasks)

@@ -65,7 +65,13 @@ and `npm run new-concept -- spec.json` scaffold a compiling concept.
      (`escapement` by default; `drop`, `ratchet`, `quiet`).
    - Viewer modes work through conventions: groups named `hour` / `minute` / `second` lift in
      the exploded view and glow in the lume view; `PrintLayer` prints glow too; other layers
-     can opt in with `userData.explode` (a lift in dial units).
+     can opt in with `userData.explode` (a lift in dial units) and `userData.lume`. The
+     blueprint view draws edges of every mesh; objects with `userData.helper` are skipped
+     there and in GLB export.
+   - Free-moving parts can feel how the watch is held: read the shared `tilt` object
+     (`src/three/stage/tilt.ts`, `{ x, y }` in-plane gravity) inside `useClockFrame`.
+   - Simulations may add a compute path for the WebGPU backend (`rendererKind(gl).compute`)
+     and keep a CPU path for the other renderers (see `chladni/sandCompute.ts`).
 2. Put pure time → geometry math in its own file with unit tests.
 3. Register it in `src/watches/registry.ts`.
 4. Document it in `docs/concepts/<id>.md`.

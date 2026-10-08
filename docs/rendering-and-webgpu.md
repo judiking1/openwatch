@@ -417,5 +417,25 @@ follows the current hour line from the tip to the hour numbers (see `docs/concep
 
 1. Real-device check of `?renderer=auto`, then switch the default.
 2. Showcase features from `docs/future-concepts-and-features.md` (exploded view, lume mode
-   reusing `StageBloom`, audio).
-3. Concept 012 Iris (passed the precedent check).
+   reusing `StageBloom`, audio) — done in v0.17.0.
+3. Concept 012 Iris (passed the precedent check) — done in v0.17.0.
+
+## 10. v0.18.0 notes
+
+### Chladni sand on compute shaders — **done**
+
+`chladni/sandCompute.ts` keeps 32 768 grains in a storage buffer (`instancedArray`) and
+steps them with a TSL kernel that mirrors the CPU `stepSand` (energy gradient, kick, tilt
+slide, reflection at the rim; a hash replaces the random numbers). The instanced grain mesh
+reads the same buffer in its vertex stage through a **read-only** storage view
+(`storage(...).toReadOnly()`): a read-write binding is not allowed in the vertex stage, and
+without it the grains silently did not draw. Verified off-screen on the WebGPU backend:
+after settling, mean energy 0.034 (GPU) vs 0.032 (CPU, 4 000 grains), no NaNs. WebGL and
+WebGPU-on-WebGL2 keep the CPU model.
+
+### New concepts on both renderers
+
+014 Plasma (per-frame ribbon geometry, instanced phosphor tiles with instance colours) and
+015 Phase (per-frame `DataTexture` waves) use classic materials only and were checked on
+WebGL and the WebGPU backend. Both drive bloom with unlit HDR colours (`toneMapped={false}`,
+colours scaled above 1) so that only the glowing parts cross the threshold.
