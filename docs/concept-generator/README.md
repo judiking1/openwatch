@@ -1,8 +1,10 @@
 # Concept generator kit
 
-From an idea to a running concept in four steps. This is the groundwork for the
-"Prompt-to-Watch" lab in `docs/future-concepts-and-features.md` §5.1: the same spec format
-can later be produced inside the app.
+From an idea to a running concept in four steps. The in-app **Concept Lab** (`#/lab/concept`)
+runs steps 1–2 in the browser: it writes the prompt from this kit's own template and schema,
+validates the pasted answer with the same validator as the CLI, and sketches the encoding
+live (each encoded unit drawn with the primitive its variable suggests). Nothing is sent
+anywhere; the visitor uses any LLM.
 
 1. **Spec** — write or generate a JSON spec with [`prompt.md`](prompt.md). The format is
    [`concept-spec.schema.json`](concept-spec.schema.json): metadata, how each unit of time is

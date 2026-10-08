@@ -11,6 +11,7 @@ import { parseToneMapping } from '../features/viewer/toneMapping'
 
 const WatchViewer = lazy(() => import('../features/viewer/WatchViewer'))
 const ModelLab = lazy(() => import('../features/import/ModelLab'))
+const ConceptLab = lazy(() => import('../features/lab/ConceptLab'))
 
 /**
  * `?t=HH:MM:SS` freezes the clock at that time (screenshots, sharing a reading).
@@ -35,6 +36,12 @@ function useTimeParam(route: string) {
 function Page({ hash }: { hash: string }) {
   const { path, params } = parseRoute(hash)
   if (path === '/lab/orbital-hands-2d') return <OrbitalHandsPrototype />
+  if (path === '/lab/concept')
+    return (
+      <Suspense fallback={<div className="placeholder">Loading concept lab…</div>}>
+        <ConceptLab />
+      </Suspense>
+    )
   if (path === '/lab/import')
     return (
       <Suspense fallback={<div className="placeholder">Loading model lab…</div>}>
@@ -82,6 +89,7 @@ export function App() {
           </a>
           <nav>
             <a href="#/">Exhibition</a>
+            <a href="#/lab/concept">Concept Lab</a>
             <a href="#/lab/import">Import</a>
             <a href="#/lab/orbital-hands-2d">2D Lab</a>
           </nav>

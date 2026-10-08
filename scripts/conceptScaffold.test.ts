@@ -1,6 +1,5 @@
 import { describe, expect, it } from 'vitest'
 import spec from '../docs/concept-generator/example-spec.json'
-// @ts-expect-error — plain ESM script without type declarations
 import { register, scaffold, validateSpec } from './conceptScaffold.mjs'
 
 describe('concept scaffold', () => {

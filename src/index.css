@@ -708,3 +708,28 @@ button:disabled {
   white-space: nowrap;
   pointer-events: none;
 }
+
+.lab-text {
+  width: 100%;
+  box-sizing: border-box;
+  margin: 6px 0 10px;
+  padding: 8px;
+  background: #15171d;
+  color: var(--text);
+  border: 1px solid var(--panel-border);
+  border-radius: 6px;
+  font: inherit;
+  resize: vertical;
+}
+
+.lab-code {
+  font:
+    12px/1.45 ui-monospace,
+    'SFMono-Regular',
+    monospace;
+}
+
+.lab-errors {
+  margin: 0 0 8px;
+  padding-left: 18px;
+}
