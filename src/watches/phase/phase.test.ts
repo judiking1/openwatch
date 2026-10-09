@@ -2,8 +2,6 @@ import { describe, expect, it } from 'vitest'
 import {
   amplitude,
   brightestAngle,
-  createGrid,
-  focusField,
   focusPhases,
   HOUR_RING,
   HOUR_WAVE,
@@ -11,7 +9,6 @@ import {
   MINUTE_WAVE,
   phasePose,
   polar,
-  writeWave,
 } from './phase'
 
 const t = (hours: number, minutes: number, seconds = 0) => ({
@@ -65,27 +62,5 @@ describe('phase', () => {
       }
       expect(side).toBeLessThan(0.45)
     }
-  })
-
-  it('draws crests that flash at the focus once a second', () => {
-    const grid = createGrid(64)
-    const cells = 64 * 64
-    const re = new Float32Array(cells)
-    const im = new Float32Array(cells)
-    focusField(grid, focusPhases(polar(MINUTE_RING, 90), MINUTE_WAVE), MINUTE_WAVE, re, im)
-    const out = new Uint8Array(cells * 4)
-    // Cell nearest the focus (x = 74, y = 0).
-    const i = Math.floor(((74 + 84) / 168) * 64)
-    const j = Math.floor((84 / 168) * 64)
-    const c = j * 64 + i
-    let lo = 255
-    let hi = 0
-    for (let s = 0; s < 1; s += 0.05) {
-      writeWave(grid, re, im, s, out)
-      lo = Math.min(lo, out[c * 4])
-      hi = Math.max(hi, out[c * 4])
-    }
-    expect(hi).toBeGreaterThan(150)
-    expect(lo).toBeLessThan(20)
   })
 })

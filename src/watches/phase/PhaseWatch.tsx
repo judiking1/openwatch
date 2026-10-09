@@ -1,9 +1,11 @@
-import { useMemo, useRef } from 'react'
-import { AdditiveBlending, Color, DataTexture, LinearFilter, type Group } from 'three'
-import { useClockFrame, useDialTexture, useDisposable } from '../../three/hooks'
+import { useThree } from '@react-three/fiber'
+import { useEffect, useMemo, useRef, useState } from 'react'
+import { AdditiveBlending, Color, type Group } from 'three'
+import { useClockFrame, useDialTexture } from '../../three/hooks'
 import { Crystal } from '../../three/parts/Crystal'
 import { PrintLayer } from '../../three/parts/PrintLayer'
 import { WatchCase } from '../../three/parts/WatchCase'
+import { rendererKind } from '../../three/renderer'
 import {
   dialFont,
   drawLabels,
@@ -13,32 +15,14 @@ import {
 } from '../../three/utils/canvas'
 import { DIAL_RADIUS, dialRotationZ } from '../../three/utils/dial'
 import type { PhaseAppearance } from './appearance'
-import {
-  createGrid,
-  EMITTER_POSITIONS,
-  FIELD_RADIUS,
-  focusField,
-  focusPhases,
-  HOUR_RING,
-  HOUR_WAVE,
-  MINUTE_RING,
-  MINUTE_WAVE,
-  phasePose,
-  polar,
-  writeWave,
-  type FieldGrid,
-  type PhasePose,
-} from './phase'
+import { EMITTER_POSITIONS, HOUR_RING, MINUTE_RING, phasePose, polar } from './phase'
+import { SIM_DT, WALL } from './wave'
+import { createCpuWaves, WAVE_FIELDS, type WaveField, type WaveKind } from './waveField'
 
-const GRID = 128
 const CAP_RADIUS = 14
 
 type Kind = 'hour' | 'minute'
 const KINDS: Kind[] = ['hour', 'minute']
-const WAVE = {
-  hour: { ring: HOUR_RING, wavelength: HOUR_WAVE, z: 0.3, step: 0.4 },
-  minute: { ring: MINUTE_RING, wavelength: MINUTE_WAVE, z: 0.35, step: 0.3 },
-} as const
 
 /** Hour numerals between the rings, minute scale across the outer ring (white mask). */
 function drawScales(ctx: CanvasRenderingContext2D) {
@@ -75,41 +59,36 @@ function drawScales(ctx: CanvasRenderingContext2D) {
   drawLabels(ctx, FIVE_MINUTE_LABELS, { radius: 92, font: dialFont(600, 5.5), color: print })
 }
 
-type Field = {
-  texture: DataTexture
-  pixels: Uint8Array
-  re: Float32Array
-  im: Float32Array
-  /** Focus angle the field was last computed for. */
-  angle: number
-}
+/** Simulation steps run on top of real time per frame until the waves have filled the dial. */
+const CATCH_UP = 12
+/** At most this much clock time is simulated per frame (fast-forward plays slower). */
+const MAX_FRAME = 3 * SIM_DT
 
-function createField(): Field & { dispose(): void } {
-  const pixels = new Uint8Array(GRID * GRID * 4)
-  const texture = new DataTexture(pixels, GRID, GRID)
-  texture.magFilter = texture.minFilter = LinearFilter
-  texture.needsUpdate = true
-  const cells = GRID * GRID
-  return {
-    texture,
-    pixels,
-    re: new Float32Array(cells),
-    im: new Float32Array(cells),
-    angle: NaN,
-    dispose: () => texture.dispose(),
-  }
-}
-
-/** Re-aims a field when its focus has moved visibly (the slow part), then draws the wave. */
-function update(f: Field, grid: FieldGrid, kind: Kind, pose: PhasePose) {
-  const w = WAVE[kind]
-  if (!(Math.abs(pose[kind] - f.angle) < w.step)) {
-    const phases = focusPhases(polar(w.ring, pose[kind]), w.wavelength)
-    focusField(grid, phases, w.wavelength, f.re, f.im)
-    f.angle = pose[kind]
-  }
-  writeWave(grid, f.re, f.im, pose.seconds, f.pixels)
-  f.texture.needsUpdate = true
+/**
+ * The two wave fields: compute shaders on the WebGPU backend (loaded on demand), the CPU
+ * solver elsewhere. Null while the compute module loads.
+ */
+function useWaveFields(compute: boolean) {
+  const [fields, setFields] = useState<Record<WaveKind, WaveField> | null>(null)
+  useEffect(() => {
+    let live = true
+    let made: Record<WaveKind, WaveField> | undefined
+    const factory = compute
+      ? import('./waveCompute').then((m) => m.createComputeWaves)
+      : Promise.resolve(createCpuWaves)
+    void factory.then((create) => {
+      if (!live) return
+      made = { hour: create('hour'), minute: create('minute') }
+      setFields(made)
+    })
+    return () => {
+      live = false
+      made?.hour.dispose()
+      made?.minute.dispose()
+      setFields(null)
+    }
+  }, [compute])
+  return fields
 }
 
 /** Wave colours are pushed into HDR so that only the foci cross the bloom threshold. */
@@ -118,9 +97,16 @@ const FOCUS_GAIN = 2.2
 /** Watch 015 — Phase: a fixed phased array focuses waves on the hour and the minute. */
 export function PhaseWatch({ appearance }: { appearance: PhaseAppearance }) {
   const scales = useDialTexture(DIAL_RADIUS, drawScales, [])
-  const grid = useMemo(() => createGrid(GRID), [])
-  const hourField = useDisposable(createField, [])
-  const minuteField = useDisposable(createField, [])
+  const gl = useThree((state) => state.gl)
+  const fields = useWaveFields(rendererKind(gl).compute)
+  const clock = useRef({ last: NaN, carry: 0, warm: { hour: 0, minute: 0 } })
+  useEffect(() => {
+    // New fields start empty: run their warm-up quickly over the next frames.
+    clock.current.warm = {
+      hour: WAVE_FIELDS.hour.warm / SIM_DT,
+      minute: WAVE_FIELDS.minute.warm / SIM_DT,
+    }
+  }, [fields])
   const second = useRef<Group>(null)
   const hourColor = useMemo(
     () => new Color(appearance.hourWaveColor).multiplyScalar(FOCUS_GAIN),
@@ -131,9 +117,22 @@ export function PhaseWatch({ appearance }: { appearance: PhaseAppearance }) {
     [appearance.minuteWaveColor],
   )
 
-  useClockFrame((t) => {
+  useClockFrame((t, _delta, ms) => {
     const pose = phasePose(t)
-    for (const kind of KINDS) update(kind === 'hour' ? hourField : minuteField, grid, kind, pose)
+    const c = clock.current
+    // Waves run on the watch's own time: they hold still while paused or rewound.
+    const elapsed = Number.isNaN(c.last) ? 0 : (ms - c.last) / 1000
+    c.last = ms
+    c.carry = Math.min(c.carry + Math.max(0, elapsed), MAX_FRAME)
+    const steps = Math.floor(c.carry / SIM_DT)
+    c.carry -= steps * SIM_DT
+    if (fields) {
+      for (const kind of KINDS) {
+        const catchUp = Math.min(c.warm[kind], CATCH_UP)
+        c.warm[kind] -= catchUp
+        fields[kind].advance(gl, polar(WAVE_FIELDS[kind].ring, pose[kind]), steps + catchUp)
+      }
+    }
     if (second.current) second.current.rotation.z = dialRotationZ(pose.second)
   })
 
@@ -145,19 +144,20 @@ export function PhaseWatch({ appearance }: { appearance: PhaseAppearance }) {
       </mesh>
       <PrintLayer mask={scales} color={appearance.printColor} radius={DIAL_RADIUS} />
 
-      {KINDS.map((kind) => (
-        <mesh key={kind} position-z={WAVE[kind].z}>
-          <planeGeometry args={[FIELD_RADIUS * 2, FIELD_RADIUS * 2]} />
-          <meshBasicMaterial
-            map={(kind === 'hour' ? hourField : minuteField).texture}
-            color={kind === 'hour' ? hourColor : minuteColor}
-            transparent
-            blending={AdditiveBlending}
-            depthWrite={false}
-            toneMapped={false}
-          />
-        </mesh>
-      ))}
+      {fields &&
+        KINDS.map((kind) => (
+          <mesh key={kind} position-z={kind === 'hour' ? 0.3 : 0.35}>
+            <planeGeometry args={[WALL * 2, WALL * 2]} />
+            <meshBasicMaterial
+              map={fields[kind].texture}
+              color={kind === 'hour' ? hourColor : minuteColor}
+              transparent
+              blending={AdditiveBlending}
+              depthWrite={false}
+              toneMapped={false}
+            />
+          </mesh>
+        ))}
 
       {/* the emitters */}
       {EMITTER_POSITIONS.map((p, i) => (

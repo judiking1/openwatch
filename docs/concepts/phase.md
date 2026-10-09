@@ -20,23 +20,38 @@ As time passes only the delays change; the foci glide round the dial with nothin
 - **Seconds:** the red hand on the centre cap. Crests leave the emitters once a second, so
   the foci also flash with the seconds.
 
-## Math (`phase.ts`, tested)
+## Math (`phase.ts`, `wave.ts`, tested)
 
-- `focusPhases(F, λ)`: `φₖ = −k·|F − pₖ|` with `k = 2π/λ`.
-- `field(x, y)`: the normalised complex sum `(1/N)·Σ e^{i(k·dₖ + φₖ)}`; its modulus is 1 at
-  the focus. Tests check that, that the brightest point on each ring reads the time back
-  within 0.5°, and that elsewhere on the ring the amplitude stays below 0.45 (no grating
-  lobe takes over).
-- The wave shown is `Re(F·e^{−iωt})` at 1 Hz. It is split into a slow part — the complex
-  field over a 128² grid, recomputed only when a focus has moved 0.3–0.4° — and a fast part
-  per frame (`writeWave`: two multiplies per cell). Crests are drawn at full contrast
-  everywhere and weighted by the local amplitude², so ripples are visible but the foci win.
+- `focusPhases(F, λ)`: `φₖ = −k·|F − pₖ|` with `k = 2π/λ`. `field` / `brightestAngle` are the
+  free-space model (a normalised sum of phasors): tests check that the focus has amplitude
+  1, that the brightest point on each ring reads the time within 0.5°, and that elsewhere on
+  the ring the amplitude stays below 0.45.
+- **The dial runs the wave equation itself** (`wave.ts`): `u_tt = c²∇²u − γu_t + sources` on
+  a square grid over the dial (leapfrog, 5-point Laplacian), `c = λ·f`, a hard wall (`u = 0`)
+  at the case and damping `γ = 0.08 /s`. The emitters are point forces on their grid cells,
+  driven at 1 Hz with focusing delays measured from those cells. Waves reflect off the case
+  and fade; the interference of direct and reflected waves is what you see.
+- Tests run the solver and read the time back from the running amplitude: within 2.5° on the
+  hour ring (160² grid, 12 s) and 2° on the minute ring (256², 18 s); the wall holds (nothing
+  outside it, nothing blows up), and with the emitters off the energy stays in and only the
+  damping takes it.
+- Display (`writeCrests`): crests of the instantaneous wave at full contrast, weighted by
+  (amplitude ÷ focus amplitude)², with the 1/√r spreading near the emitters discounted so the
+  eye goes to the focus.
+- The waves run on the watch's own time: they hold still while paused, and fast-forward
+  plays at most three steps per frame. Like a real array, the foci need a few seconds to
+  re-form after a jump; on mount the solver runs its warm-up (12 s / 18 s of wave time) fast
+  over the first frames, so the waves visibly spread out from the emitters.
 
 ## Rendering
 
-Two additive planes with a `DataTexture` each (greyscale crests, tinted by the material
-colour, so the colour pickers never touch the texture). The colours are pushed into HDR
-so that only the foci cross the bloom threshold. Classic materials only: both renderers.
+Two additive planes, each showing one field (greyscale crests tinted by the material colour,
+pushed into HDR so the foci bloom). On WebGL and WebGPU-on-WebGL2 the CPU solver uploads a
+`DataTexture` (`waveField.ts`). On the WebGPU backend the same scheme runs in compute
+shaders on finer grids (256² / 384², `waveCompute.ts`): leapfrog, emitter forces, running
+power, a ring-peak reduction (atomic max on float bits) and a kernel that writes the crests
+into a storage texture — nothing returns to the CPU. Verified off-screen: CPU and GPU fields
+focus on the same point with the same brightness.
 
 ## Precedent
 
@@ -47,5 +62,5 @@ found (October 2026).
 
 ## Next
 
-Simulate the waves on the GPU (a wave equation on a compute grid) so that they reflect off
-the case wall, and let the user's touch add a third source.
+A touch on the crystal as a third source; emitters that can be switched off one by one to
+show how the focus degrades.
