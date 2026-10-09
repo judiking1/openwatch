@@ -14,6 +14,7 @@ import {
   random,
   steadyPeak,
   stepBand,
+  touchTarget,
   WANDER,
   wander,
 } from './plasma'
@@ -93,5 +94,16 @@ describe('plasma', () => {
     expect(path[1]).toBeCloseTo(0, 4)
     expect(path[24]).toBeCloseTo(80, 4)
     expect(path[25]).toBeCloseTo(0, 4)
+  })
+})
+
+describe('plasma touch', () => {
+  it('pulls filaments to the touch point, not on the core or off the dial', () => {
+    const at3 = touchTarget(40, 0)
+    expect(at3?.angle).toBeCloseTo(90, 6)
+    expect(at3?.radius).toBeCloseTo(40, 6)
+    expect(touchTarget(-30, -30)?.angle).toBeCloseTo(225, 6)
+    expect(touchTarget(2, 2)).toBeNull()
+    expect(touchTarget(95, 0)).toBeNull()
   })
 })

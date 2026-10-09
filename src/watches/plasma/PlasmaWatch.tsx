@@ -6,6 +6,7 @@ import {
   Color,
   DynamicDrawUsage,
   Matrix4,
+  type Group,
   type InstancedMesh,
 } from 'three'
 import { useClockFrame, useDialTexture, useDisposable } from '../../three/hooks'
@@ -36,6 +37,10 @@ import {
   steadyPeak,
   stepBand,
   WANDER,
+  CRYSTAL_Z,
+  TOUCH_FILAMENTS,
+  TOUCH_JITTER,
+  touchTarget,
   type Band,
 } from './plasma'
 
@@ -95,14 +100,17 @@ function createRibbons(count: number) {
   return geometry
 }
 
-/** Ribbons for both kinds, disposed together. */
+/** Ribbons for the hour, minute and touch filaments, disposed together. */
 function ribbonSet() {
-  const set = { hour: createRibbons(FILAMENTS.hour), minute: createRibbons(FILAMENTS.minute) }
+  const set = {
+    hour: createRibbons(FILAMENTS.hour),
+    minute: createRibbons(FILAMENTS.minute),
+    touch: createRibbons(TOUCH_FILAMENTS),
+  }
   return {
     ...set,
     dispose() {
-      set.hour.dispose()
-      set.minute.dispose()
+      for (const geometry of Object.values(set)) geometry.dispose()
     },
   }
 }
@@ -113,6 +121,7 @@ function writeRibbon(
   path: Float32Array,
   width: number,
   arc: number,
+  zEnd = FILAMENT_Z,
 ) {
   const out = geometry.getAttribute('position').array as Float32Array
   const base = filament * (SEGMENTS + 1) * 2 * 3
@@ -127,7 +136,7 @@ function writeRibbon(
     const w = (width / 2) * (0.35 + 0.65 * Math.sin(Math.PI * f))
     const nx = (-dy / len) * w
     const ny = (dx / len) * w
-    const z = FILAMENT_Z + arc * Math.sin(Math.PI * f)
+    const z = FILAMENT_Z + (zEnd - FILAMENT_Z) * f * f + arc * Math.sin(Math.PI * f)
     const o = base + i * 6
     out[o] = path[i * 2] + nx
     out[o + 1] = path[i * 2 + 1] + ny
@@ -136,6 +145,41 @@ function writeRibbon(
     out[o + 4] = path[i * 2 + 1] - ny
     out[o + 5] = z
   }
+}
+
+/** Filament ribbons: a violet additive halo and a white-hot core (HDR, blooms). */
+function Filaments({
+  halo,
+  core,
+  color,
+}: {
+  halo: BufferGeometry
+  core: BufferGeometry
+  color: string
+}) {
+  return (
+    <>
+      <mesh geometry={halo} frustumCulled={false}>
+        <meshBasicMaterial
+          color={color}
+          transparent
+          opacity={0.55}
+          blending={AdditiveBlending}
+          depthWrite={false}
+          toneMapped={false}
+        />
+      </mesh>
+      <mesh geometry={core} frustumCulled={false}>
+        <meshBasicMaterial
+          color="#ffffff"
+          transparent
+          blending={AdditiveBlending}
+          depthWrite={false}
+          toneMapped={false}
+        />
+      </mesh>
+    </>
+  )
 }
 
 /** A phosphor band: one small additive tile per bin, brightness via instance colour. */
@@ -206,6 +250,9 @@ export function PlasmaWatch({ appearance }: { appearance: PlasmaAppearance }) {
   const phosphor = useRef<Partial<Record<Kind, InstancedMesh | null>>>({})
   const path = useMemo(() => new Float32Array((SEGMENTS + 1) * 2), [])
   const glow = useMemo(() => new Color(), [])
+  // Where the crystal is touched (dial units), or null.
+  const touch = useRef<{ x: number; y: number } | null>(null)
+  const touchGroup = useRef<Group>(null)
   const peaks = useMemo(
     () => ({
       hour: steadyPeak(FILAMENTS.hour, WANDER.hour),
@@ -235,6 +282,18 @@ export function PlasmaWatch({ appearance }: { appearance: PlasmaAppearance }) {
       }
       mesh.instanceColor.needsUpdate = true
     }
+    const target = touch.current && touchTarget(touch.current.x, touch.current.y)
+    if (touchGroup.current) touchGroup.current.visible = target !== null
+    if (target) {
+      for (let f = 0; f < TOUCH_FILAMENTS; f++) {
+        const angle = target.angle + (rand() - 0.5) * 2 * TOUCH_JITTER
+        filamentPath(angle, target.radius, SEGMENTS, rand, path)
+        writeRibbon(cores.touch, f, path, 0.6, 3, CRYSTAL_Z)
+        writeRibbon(halos.touch, f, path, 3.2, 3, CRYSTAL_Z)
+      }
+      cores.touch.getAttribute('position').needsUpdate = true
+      halos.touch.getAttribute('position').needsUpdate = true
+    }
   })
 
   return (
@@ -261,28 +320,27 @@ export function PlasmaWatch({ appearance }: { appearance: PlasmaAppearance }) {
             color={kind === 'hour' ? appearance.hourGlowColor : appearance.minuteGlowColor}
             bandRef={(mesh) => void (phosphor.current[kind] = mesh)}
           />
-          {/* filaments: violet halo and a white-hot core */}
-          <mesh geometry={halos[kind]} frustumCulled={false}>
-            <meshBasicMaterial
-              color={appearance.filamentColor}
-              transparent
-              opacity={0.55}
-              blending={AdditiveBlending}
-              depthWrite={false}
-              toneMapped={false}
-            />
-          </mesh>
-          <mesh geometry={cores[kind]} frustumCulled={false}>
-            <meshBasicMaterial
-              color="#ffffff"
-              transparent
-              blending={AdditiveBlending}
-              depthWrite={false}
-              toneMapped={false}
-            />
-          </mesh>
+          <Filaments halo={halos[kind]} core={cores[kind]} color={appearance.filamentColor} />
         </group>
       ))}
+
+      {/* a touch on the crystal pulls filaments up to it (hidden until touched) */}
+      <group ref={touchGroup} visible={false}>
+        <Filaments halo={halos.touch} core={cores.touch} color={appearance.filamentColor} />
+      </group>
+      <mesh
+        position-z={CRYSTAL_Z + 0.4}
+        userData={{ helper: true }}
+        onPointerMove={(e) => {
+          const p = e.object.worldToLocal(e.point.clone())
+          touch.current = { x: p.x, y: p.y }
+        }}
+        onPointerOut={() => void (touch.current = null)}
+        onPointerUp={(e) => void (e.pointerType === 'touch' && (touch.current = null))}
+      >
+        <circleGeometry args={[DIAL_RADIUS, 64]} />
+        <meshBasicMaterial transparent opacity={0} depthWrite={false} colorWrite={false} />
+      </mesh>
 
       {/* the central electrode */}
       <mesh position-z={3}>

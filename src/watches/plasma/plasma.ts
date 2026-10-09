@@ -158,3 +158,21 @@ export function filamentPath(
   }
   return out
 }
+
+/** A touch on the crystal pulls extra filaments up to it, as on a plasma globe. */
+export const TOUCH_FILAMENTS = 2
+/** Height under the crystal where touch filaments end, dial units. */
+export const CRYSTAL_Z = 8.5
+/** Touch filaments flicker this far (degrees) around the touch point. */
+export const TOUCH_JITTER = 2
+
+/**
+ * Where a touch at dial point (x, y) draws the filaments: clock angle and radius. Null on
+ * the core itself or beyond the outer electrode ring. Touch filaments end on the glass, not
+ * on a phosphor ring, so they never change the reading.
+ */
+export function touchTarget(x: number, y: number) {
+  const radius = Math.hypot(x, y)
+  if (radius < CORE_RADIUS + 3 || radius > MINUTE_RING + 6) return null
+  return { angle: wrap((Math.atan2(x, y) * 180) / Math.PI), radius }
+}

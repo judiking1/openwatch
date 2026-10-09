@@ -13,6 +13,7 @@ export const plasmaMetadata: WatchMetadata = {
     'Ignore the individual filaments; they wander ±15° and more.',
     'Hour: the brightest part of the inner phosphor ring, against the numerals just outside it.',
     'Minute: the brightest part of the outer phosphor ring, against the minute scale on the rim.',
+    'Touch the crystal (or hover over it) and filaments reach up to your finger, as on a plasma globe; they land on the glass, so the reading does not change.',
     'The glow fades in about five seconds, so it always shows the last few seconds of strikes. When you scrub the time quickly, the glow trails behind like a comet tail.',
   ],
   experimental:

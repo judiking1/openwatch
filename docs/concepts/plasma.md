@@ -45,6 +45,13 @@ piles up: the reading is a statistic, integrated by the afterglow.
   the band colour stays a material uniform. Works on both renderers.
 - On mount the bands are pre-run for 15 s, so the glow is there when the watch appears.
 
+## Touch
+
+As on a plasma globe, touching the crystal (or hovering over it with a mouse) pulls two
+extra filaments up from the core to the glass under the finger (`touchTarget`, an invisible
+hit disc under the crystal marked `userData.helper`). They end on the glass, not on a
+phosphor ring, so they never change the reading.
+
 ## Precedent
 
 Discharge clocks where each hand is a glowing discharge in its own chamber exist (US
@@ -56,5 +63,5 @@ exists statistically, integrated by the afterglow. No such timepiece was found (
 
 ## Next
 
-Real 3D filaments that bend towards the crystal and touch it where a finger rests (a
-pointer-driven attractor, like a plasma globe).
+Filaments that bend in 3D around the core instead of arcing in a plane; a crackle in the
+sound profile synced to the strikes.
