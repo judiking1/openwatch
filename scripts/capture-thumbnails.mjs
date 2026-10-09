@@ -25,11 +25,15 @@ const browser = await chromium.launch({
 })
 const page = await browser.newPage({ viewport: { width: 900, height: 900 } })
 
+// Watches that simulate from rest need longer before their figure has formed (headless
+// software rendering runs at a few frames per second).
+const SETTLE_MS = { phase: 40000 }
+
 for (const id of ids) {
   await page.goto(`${base}/#/watch/${id}?t=10:08:37&bare`)
   // Wait until the canvas has painted, then let heavy scenes (textures, fluid) settle.
   await page.waitForSelector('canvas')
-  await page.waitForTimeout(7000)
+  await page.waitForTimeout(SETTLE_MS[id] ?? 7000)
   await page.screenshot({
     path: `public/thumbnails/${id}.png`,
     clip: { x: 150, y: 150, width: 600, height: 600 },

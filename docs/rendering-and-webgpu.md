@@ -439,3 +439,25 @@ WebGPU-on-WebGL2 keep the CPU model.
 015 Phase (per-frame `DataTexture` waves) use classic materials only and were checked on
 WebGL and the WebGPU backend. Both drive bloom with unlit HDR colours (`toneMapped={false}`,
 colours scaled above 1) so that only the glowing parts cross the threshold.
+
+## 11. v0.19.0 notes
+
+### More compute on the WebGPU backend
+
+- **Chladni piling:** an atomic-add pass bins the grains into a 96² height grid, a blur pass
+  turns counts into heights, and the step kernel reads the slope. The heightfield mesh reads
+  the same heights in its vertex shader and derives normals from their differences (passed
+  to the fragment stage with `varying`), so nothing returns to the CPU. Off-screen check:
+  total height identical on CPU and GPU.
+- **Phase wave equation:** leapfrog step, emitter forces, running power, a ring-peak
+  reduction (atomic max on `floatBitsToUint`, which orders like the floats for positive
+  values) and a crest kernel writing a storage texture. Two pitfalls: a storage texture used
+  as a `map` must not be 8-bit (R3F tags `map` textures sRGB, and sRGB formats cannot be
+  storage-bound — use half floats), and an index computed with `int(...)` that is also an
+  assignment target must be `.toVar()`'d or the cast is lost in the generated WGSL.
+  Off-screen check: CPU and GPU fields focus on the same point with the same brightness.
+
+### Blender assets
+
+`useGLTF` geometry for the strap, bracelet, crown and lugs, with the case's own materials.
+The node-based brushed metal on WebGPU reads `uv`, so the assets are exported unwrapped.

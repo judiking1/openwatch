@@ -12,7 +12,7 @@ Status of the phases defined in `PROJECT_VISION.md` §15.
 | 0.6.0   | Phase 5 — Customization                                                | done   |
 | 0.7.0   | Phase 6 — GLB export                                                   | done   |
 
-Later: Phase 7 (AI concept pipeline), Phase 8 (Blender assets).
+Phase 7 (AI concept pipeline) landed in 0.17–0.18, Phase 8 (Blender assets) in 0.19.
 
 ## MVP status (PROJECT_VISION.md §18)
 
@@ -63,17 +63,26 @@ Chladni sand on compute shaders (32 768 grains on the WebGPU backend), and two c
 the research backlog after the precedent check: 014 Plasma and 015 Phase (Night-only was
 retired as a standalone concept).
 
+## 0.19.0 — Simulations deepened, Phase 8 Blender assets
+
+Chladni sand piles into a lit heightfield (height grid on CPU and GPU), Phase runs the wave
+equation with reflections off the case wall (CPU solver, compute shaders on the WebGPU
+backend), Plasma filaments follow a touch, and the shared strap, bracelet, crown and lugs
+are modelled in Blender (`blender/generate_assets.py`). A refactor pass shared the random
+numbers, clock angles, TSL node typing and test helpers.
+
 ## Next candidates
 
 Needs the user (cannot be done from the headless sandbox):
 
-- Visual review pass on real devices; tune lighting and strap geometry.
+- Visual review pass on real devices; tune lighting and the new Blender strap and lugs.
 - Real-device check of `?renderer=auto` before making WebGPU the default
-  (`docs/rendering-and-webgpu.md` §9), and of the tilt button on phones (gyroscope
-  permission).
+  (`docs/rendering-and-webgpu.md` §9), of the tilt button on phones (gyroscope permission),
+  and of the frame cost of Phase's wave solver on low-end phones.
 
 Can be done next:
 
-- Chladni grain–grain collisions and a sand heightfield; Phase waves as a GPU wave equation
-  with reflections off the case wall; Plasma filaments that follow a touch.
-- Phase 8 — Blender assets for the hero concepts.
+- Phase: a touch on the crystal as a third wave source.
+- Plasma: filaments bending in 3D around the core; a crackle sound synced to the strikes.
+- Chladni: true grain–grain collisions (neighbour grid) and an angle of repose.
+- More Blender assets: bezels and engraved casebacks for the hero concepts.
