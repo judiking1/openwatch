@@ -1,7 +1,6 @@
 import { describe, expect, it } from 'vitest'
+import { clockTime as t } from '../../utils/time'
 import { CIPHER, cipherValues, ringTargets, shortestDelta, slotAngle } from './cipher'
-
-const t = (hours: number, minutes: number) => ({ hours, minutes, seconds: 0, milliseconds: 0 })
 
 /** Glyph index visible on ring `b` at dial angle `angle` given ring rotation `rot`. */
 function glyphAt(groupIndex: number, b: number, rot: number, angle: number) {

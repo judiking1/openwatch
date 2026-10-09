@@ -1,4 +1,4 @@
-import type { ClockTime } from '../../utils/time'
+import { handAngles, type ClockTime } from '../../utils/time'
 
 /** Fixed emitters on a small ring around the centre: nothing on this dial moves. */
 export const EMITTERS = 32
@@ -25,14 +25,7 @@ export type PhasePose = {
 }
 
 export function phasePose(t: ClockTime): PhasePose {
-  const seconds = t.seconds + t.milliseconds / 1000
-  const minute = t.minutes + seconds / 60
-  return {
-    hour: (((t.hours % 12) + minute / 60) / 12) * 360,
-    minute: minute * 6,
-    second: seconds * 6,
-    seconds,
-  }
+  return { ...handAngles(t), seconds: t.seconds + t.milliseconds / 1000 }
 }
 
 /** Point at clock angle `deg` on a circle of `radius` (dial xy, y up). */

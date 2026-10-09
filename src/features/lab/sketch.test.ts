@@ -1,12 +1,6 @@
 import { describe, expect, it } from 'vitest'
+import { clockTime as t } from '../../utils/time'
 import { dotCount, sketchIndicators, unitFraction } from './sketch'
-
-const t = (hours: number, minutes: number, seconds = 0) => ({
-  hours,
-  minutes,
-  seconds,
-  milliseconds: 0,
-})
 
 describe('concept lab sketch', () => {
   it('maps each encoding variable to a primitive in its own band', () => {

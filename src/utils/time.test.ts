@@ -9,15 +9,9 @@ import {
   jumpHourAngle,
   parseClock,
   secondsOfDay,
-  type ClockTime,
+  angleDistance,
+  clockTime as t,
 } from './time'
-
-const t = (hours: number, minutes = 0, seconds = 0, milliseconds = 0): ClockTime => ({
-  hours,
-  minutes,
-  seconds,
-  milliseconds,
-})
 
 describe('handAngles', () => {
   it('is zero at 12:00:00', () => {
@@ -113,5 +107,15 @@ describe('angleDelta', () => {
     expect(angleDelta(10, 350)).toBe(20)
     expect(angleDelta(350, 10)).toBe(-20)
     expect(angleDelta(180, 0)).toBe(180)
+  })
+})
+
+describe('angleDistance', () => {
+  it('is the short way round the dial', () => {
+    expect(angleDistance(10, 350)).toBe(20)
+    expect(angleDistance(350, 10)).toBe(20)
+    expect(angleDistance(90, 270)).toBe(180)
+    expect(angleDistance(-30, 30)).toBe(60)
+    expect(angleDistance(725, 5)).toBe(0)
   })
 })

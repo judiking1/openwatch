@@ -12,6 +12,16 @@ export type ClockTime = {
   milliseconds: number
 }
 
+/** A clock time from its parts (handy in tests and fixed scenes). */
+export function clockTime(hours: number, minutes = 0, seconds = 0, milliseconds = 0): ClockTime {
+  return { hours, minutes, seconds, milliseconds }
+}
+
+/** Shortest distance between two dial angles, degrees (0..180). */
+export function angleDistance(a: number, b: number): number {
+  return Math.abs(((((a - b + 540) % 360) + 360) % 360) - 180)
+}
+
 export function clockTimeFromMs(epochMs: number): ClockTime {
   const d = new Date(epochMs)
   return {

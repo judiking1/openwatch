@@ -27,6 +27,7 @@ import {
   vec4,
 } from 'three/tsl'
 import type { FluidSolver, StableFluidOptions } from './StableFluid'
+import { loose as n } from '../utils/tsl'
 
 /**
  * Stam's Stable Fluids as WebGPU compute shaders (TSL `Fn().compute()`), used when
@@ -39,14 +40,6 @@ import type { FluidSolver, StableFluidOptions } from './StableFluid'
  * A last kernel writes dye and velocity into storage textures, so the display material
  * samples them exactly like the render-target versions.
  */
-
-/**
- * TSL's typings do not follow storage-buffer elements through swizzles and mixed vector
- * types; the shader graph itself is type-checked when it is built, so nodes are loose here.
- */
-// oxlint-disable-next-line typescript/no-explicit-any
-type AnyNode = any
-const n = (node: unknown): AnyNode => node
 
 const WORKGROUP = 64
 

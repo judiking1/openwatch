@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest'
+import { clockTime as t } from '../../utils/time'
 import {
   BLADE_RADIUS,
   bladeOutline,
@@ -9,13 +10,6 @@ import {
   ringRadius,
   SNAP_SECONDS,
 } from './iris'
-
-const t = (hours: number, minutes: number, seconds = 0, milliseconds = 0) => ({
-  hours,
-  minutes,
-  seconds,
-  milliseconds,
-})
 
 describe('iris', () => {
   it('closes steadily over the hour and reads back the minute', () => {

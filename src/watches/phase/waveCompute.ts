@@ -26,11 +26,7 @@ import {
 import { EMITTER_RING, EMITTERS, FIELD_RADIUS, FREQUENCY } from './phase'
 import { aimWaves, AMP_TAU, createWaveSim, DAMPING, SIM_DT, SOURCE, WALL } from './wave'
 import { WAVE_FIELDS, type WaveField, type WaveKind } from './waveField'
-
-// TSL typings do not follow storage elements through arithmetic; the graph is checked at build.
-// oxlint-disable-next-line typescript/no-explicit-any
-type AnyNode = any
-const n = (node: unknown): AnyNode => node
+import { loose as n, type AnyNode } from '../../three/utils/tsl'
 
 const RING_SAMPLES = 720
 

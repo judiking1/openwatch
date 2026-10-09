@@ -1,12 +1,6 @@
 import { describe, expect, it } from 'vitest'
+import { clockTime as t } from '../../utils/time'
 import { readShears, SECONDS_TRACK, shearsPose } from './shears'
-
-const t = (hours: number, minutes: number, seconds = 0) => ({
-  hours,
-  minutes,
-  seconds,
-  milliseconds: 0,
-})
 
 describe('shears', () => {
   it('is closed and points at the hour on the hour', () => {

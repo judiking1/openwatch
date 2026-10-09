@@ -49,11 +49,7 @@ import {
   SOFT,
   type PlatePose,
 } from './sand'
-
-// TSL typings do not follow storage elements through swizzles; the graph is checked at build.
-// oxlint-disable-next-line typescript/no-explicit-any
-type AnyNode = any
-const n = (node: unknown): AnyNode => node
+import { loose as n } from '../../three/utils/tsl'
 
 /**
  * Chladni sand on the WebGPU backend: grains live in a storage buffer, a compute kernel

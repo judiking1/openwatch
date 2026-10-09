@@ -1,12 +1,6 @@
 import { describe, expect, it } from 'vitest'
+import { clockTime as t } from '../../utils/time'
 import { dropFall, gakClockTime, waterClock } from './waterClock'
-
-const t = (hours: number, minutes: number, seconds = 0, milliseconds = 0) => ({
-  hours,
-  minutes,
-  seconds,
-  milliseconds,
-})
 
 describe('water clock', () => {
   it('fills through 진시 (07–09) and reads 45 minutes as the fourth 각', () => {

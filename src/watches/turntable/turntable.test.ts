@@ -1,12 +1,6 @@
 import { describe, expect, it } from 'vitest'
+import { clockTime as t } from '../../utils/time'
 import { onHead, turntablePose } from './turntable'
-
-const t = (hours: number, minutes: number, seconds = 0) => ({
-  hours,
-  minutes,
-  seconds,
-  milliseconds: 0,
-})
 
 describe('turntable', () => {
   it('puts the current hour numeral under the index at twelve', () => {

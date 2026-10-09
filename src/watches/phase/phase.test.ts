@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest'
+import { angleDistance, clockTime as t } from '../../utils/time'
 import {
   amplitude,
   brightestAngle,
@@ -10,15 +11,6 @@ import {
   phasePose,
   polar,
 } from './phase'
-
-const t = (hours: number, minutes: number, seconds = 0) => ({
-  hours,
-  minutes,
-  seconds,
-  milliseconds: 0,
-})
-
-const angleDiff = (a: number, b: number) => Math.abs(((a - b + 540) % 360) - 180)
 
 describe('phase', () => {
   it('aims the foci at the hour and minute', () => {
@@ -44,8 +36,10 @@ describe('phase', () => {
       const pose = phasePose(t(h, m))
       const hp = focusPhases(polar(HOUR_RING, pose.hour), HOUR_WAVE)
       const mp = focusPhases(polar(MINUTE_RING, pose.minute), MINUTE_WAVE)
-      expect(angleDiff(brightestAngle(HOUR_RING, hp, HOUR_WAVE), pose.hour)).toBeLessThan(0.5)
-      expect(angleDiff(brightestAngle(MINUTE_RING, mp, MINUTE_WAVE), pose.minute)).toBeLessThan(0.5)
+      expect(angleDistance(brightestAngle(HOUR_RING, hp, HOUR_WAVE), pose.hour)).toBeLessThan(0.5)
+      expect(angleDistance(brightestAngle(MINUTE_RING, mp, MINUTE_WAVE), pose.minute)).toBeLessThan(
+        0.5,
+      )
     }
   })
 

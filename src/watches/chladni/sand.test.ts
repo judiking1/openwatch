@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest'
+import { clockTime as t } from '../../utils/time'
 import {
   energy,
   energyGradient,
@@ -16,13 +17,6 @@ import {
   GRID,
 } from './sand'
 import { createHeightfieldGeometry, SAND_BASE_Z, writeHeightfield } from './heightfield'
-
-const t = (hours: number, minutes: number, seconds = 0, milliseconds = 0) => ({
-  hours,
-  minutes,
-  seconds,
-  milliseconds,
-})
 
 describe('chladni plate', () => {
   it('maps the hour to the still diameter and the minute to the still circle', () => {

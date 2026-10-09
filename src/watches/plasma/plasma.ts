@@ -1,4 +1,7 @@
-import type { ClockTime } from '../../utils/time'
+import { gaussian } from '../../utils/random'
+import { handAngles, type ClockTime } from '../../utils/time'
+
+export { gaussian, random } from '../../utils/random'
 
 /** Radius of the central electrode, dial units. */
 export const CORE_RADIUS = 7
@@ -25,27 +28,8 @@ export type PlasmaPose = {
 }
 
 export function plasmaPose(t: ClockTime): PlasmaPose {
-  const seconds = t.seconds + t.milliseconds / 1000
-  const minute = t.minutes + seconds / 60
-  return { hour: (((t.hours % 12) + minute / 60) / 12) * 360, minute: minute * 6 }
-}
-
-/** Deterministic pseudo-random numbers (mulberry32). */
-export function random(seed: number) {
-  let a = seed >>> 0
-  return () => {
-    a = (a + 0x6d2b79f5) >>> 0
-    let t = a
-    t = Math.imul(t ^ (t >>> 15), t | 1)
-    t ^= t + Math.imul(t ^ (t >>> 7), t | 61)
-    return ((t ^ (t >>> 14)) >>> 0) / 4294967296
-  }
-}
-
-/** Standard normal sample (Box–Muller). */
-export function gaussian(rand: () => number) {
-  const u = Math.max(rand(), 1e-12)
-  return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * rand())
+  const { hour, minute } = handAngles(t)
+  return { hour, minute }
 }
 
 /**

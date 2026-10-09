@@ -1,8 +1,7 @@
 import { describe, expect, it } from 'vitest'
+import { clockTime as t } from '../../utils/time'
 import { jumpHourAngle } from '../../utils/time'
 import { lensScale, swell } from './lens'
-
-const t = (hours: number, minutes: number) => ({ hours, minutes, seconds: 0, milliseconds: 0 })
 
 describe('lens', () => {
   it('is strongest at the focus and fades with distance', () => {

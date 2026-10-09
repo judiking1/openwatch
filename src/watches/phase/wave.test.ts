@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest'
+import { angleDistance } from '../../utils/time'
 import { HOUR_RING, HOUR_WAVE, MINUTE_RING, MINUTE_WAVE, polar } from './phase'
 import {
   aimWaves,
@@ -13,8 +14,6 @@ import {
   writeCrests,
 } from './wave'
 
-const angleDiff = (a: number, b: number) => Math.abs(((a - b + 540) % 360) - 180)
-
 function warm(n: number, wavelength: number, ring: number, deg: number, seconds: number) {
   const sim = createWaveSim(n, wavelength)
   aimWaves(sim, polar(ring, deg))
@@ -26,10 +25,10 @@ describe('wave equation', () => {
   it('focuses the simulated waves on the hour and the minute', () => {
     for (const deg of [37, 200]) {
       const sim = warm(160, HOUR_WAVE, HOUR_RING, deg, 12)
-      expect(angleDiff(strongestAngle(sim, HOUR_RING), deg)).toBeLessThan(2.5)
+      expect(angleDistance(strongestAngle(sim, HOUR_RING), deg)).toBeLessThan(2.5)
     }
     const sim = warm(256, MINUTE_WAVE, MINUTE_RING, 243, 18)
-    expect(angleDiff(strongestAngle(sim, MINUTE_RING), 243)).toBeLessThan(2)
+    expect(angleDistance(strongestAngle(sim, MINUTE_RING), 243)).toBeLessThan(2)
     // Opposite the focus the waves (direct and reflected) mostly cancel.
     const opposite = polar(MINUTE_RING, 63)
     expect(amplitudeAt(sim, opposite.x, opposite.y) / ringPeak(sim, MINUTE_RING)).toBeLessThan(0.3)

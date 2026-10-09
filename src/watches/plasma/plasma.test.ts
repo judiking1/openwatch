@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest'
+import { angleDistance, clockTime as t } from '../../utils/time'
 import {
   AFTERGLOW,
   BINS,
@@ -18,15 +19,6 @@ import {
   WANDER,
   wander,
 } from './plasma'
-
-const t = (hours: number, minutes: number, seconds = 0) => ({
-  hours,
-  minutes,
-  seconds,
-  milliseconds: 0,
-})
-
-const angleDiff = (a: number, b: number) => Math.abs(((a - b + 540) % 360) - 180)
 
 describe('plasma', () => {
   it('draws the filaments to the hour and minute', () => {
@@ -80,7 +72,7 @@ describe('plasma', () => {
       const band = createBand(FILAMENTS[kind], WANDER[kind], rand)
       for (let i = 0; i < 30 * 30; i++) stepBand(band, target, WANDER[kind], 1 / 30, rand)
       // Within a few degrees, although each filament strays by ±WANDER.
-      expect(angleDiff(peakAngle(band.bins), target)).toBeLessThan(kind === 'hour' ? 9 : 6)
+      expect(angleDistance(peakAngle(band.bins), target)).toBeLessThan(kind === 'hour' ? 9 : 6)
       const peak = Math.max(...band.bins)
       const expected = steadyPeak(FILAMENTS[kind], WANDER[kind])
       expect(peak / expected).toBeGreaterThan(0.6)
