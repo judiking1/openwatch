@@ -12,6 +12,8 @@ export default defineConfig({
   // routing is hash-based so no server rewrites are needed.
   base: './',
   plugins: [react()],
+  // Blender body parts (src/assets/models) are imported as asset URLs.
+  assetsInclude: ['**/*.glb'],
   define: {
     __APP_VERSION__: JSON.stringify(pkg.version),
   },

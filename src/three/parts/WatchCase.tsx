@@ -1,11 +1,12 @@
 import { useThree } from '@react-three/fiber'
 import type { ReactNode, Ref } from 'react'
-import { BackSide, BoxGeometry, Matrix4, MeshStandardMaterial, type Group } from 'three'
+import { BackSide, Matrix4, MeshStandardMaterial, type BufferGeometry, type Group } from 'three'
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js'
 import { useDisposable } from '../hooks'
 import { getNodeLibrary } from '../renderer'
 import { EXPLODE_LIFT } from '../stage/explode'
 import { DIAL_RADIUS } from '../utils/dial'
+import { useBodyAssets } from './bodyAssets'
 
 /** Exploded-view lifts (see `stage/explode.ts`). */
 const BEZEL = { explode: EXPLODE_LIFT.bezel }
@@ -34,33 +35,6 @@ type Props = CaseAppearance & {
   cavityDepth?: number
 }
 
-type StrapSegment = { y: number; z: number; tilt: number; length: number }
-
-/**
- * Strap path: a short straight run from the lugs, then an arc bending back
- * around an imaginary wrist. Built from overlapping thin segments.
- */
-function strapSegments(startY: number, startZ: number): StrapSegment[] {
-  const segments: StrapSegment[] = []
-  const straight = 24
-  const bend = 110
-  const sweep = 1.2
-  const count = 14
-  segments.push({ y: startY + straight / 2, z: startZ, tilt: 0, length: straight + 2 })
-  const step = sweep / count
-  const length = bend * step + 1.5
-  for (let i = 0; i < count; i++) {
-    const a = (i + 0.5) * step
-    segments.push({
-      y: startY + straight + bend * Math.sin(a),
-      z: startZ - bend * (1 - Math.cos(a)),
-      tilt: a,
-      length,
-    })
-  }
-  return segments
-}
-
 const STRAP_FINISH: Record<CaseAppearance['strapStyle'], { metalness: number; roughness: number }> =
   {
     metal: { metalness: 1, roughness: 0.25 },
@@ -68,22 +42,16 @@ const STRAP_FINISH: Record<CaseAppearance['strapStyle'], { metalness: number; ro
     leather: { metalness: 0, roughness: 0.6 },
   }
 
-/** One strap side as a single static mesh: all segments merged into one geometry. */
-function strapGeometry(segments: StrapSegment[]) {
-  const parts = segments.map((s) =>
-    new BoxGeometry(62, s.length, 6).applyMatrix4(
-      new Matrix4().makeRotationX(s.tilt).setPosition(0, s.y, s.z),
-    ),
-  )
-  const merged = mergeGeometries(parts)
-  parts.forEach((p) => p.dispose())
-  return merged
-}
-
-/** The four lugs as one geometry. */
-function lugGeometry(outer: number) {
+/** The four lugs as one geometry: the Blender lug placed and mirrored at each corner. */
+function lugGeometry(lug: BufferGeometry, outer: number) {
   const parts = [-1, 1].flatMap((sy) =>
-    [-1, 1].map((sx) => new BoxGeometry(14, 34, 14).translate(sx * 38, sy * (outer + 10), -8)),
+    [-1, 1].map((sx) =>
+      lug
+        .clone()
+        .applyMatrix4(
+          new Matrix4().makeScale(sx, sy, 1).setPosition(sx * 38, sy * (outer + 10), -8),
+        ),
+    ),
   )
   const merged = mergeGeometries(parts)
   parts.forEach((p) => p.dispose())
@@ -125,8 +93,9 @@ export function WatchCase({
     () => new MeshStandardMaterial({ color: strapColor, ...STRAP_FINISH[strapStyle] }),
     [strapColor, strapStyle],
   )
-  const strap = useDisposable(() => strapGeometry(strapSegments(outer + 6, -8)), [outer])
-  const lugs = useDisposable(() => lugGeometry(outer), [outer])
+  const assets = useBodyAssets()
+  const lugs = useDisposable(() => lugGeometry(assets.lug, outer), [assets.lug, outer])
+  const strap = strapStyle === 'metal' ? assets.bracelet : assets.strap
 
   return (
     <group>
@@ -170,20 +139,15 @@ export function WatchCase({
           <cylinderGeometry args={[outer - 8, outer - 4, 4, 96]} />
         </mesh>
         {/* crown */}
-        <group position={[outer + 4, 0, -6]} rotation={[0, 0, Math.PI / 2]}>
-          <mesh material={metal}>
-            <cylinderGeometry args={[8, 8, 12, 32]} />
-          </mesh>
-          <mesh position={[0, -7, 0]} material={metal}>
-            <cylinderGeometry args={[4, 4, 4, 24]} />
-          </mesh>
-        </group>
+        <mesh geometry={assets.crown} position={[outer - 2, 0, -6]} material={metal} />
         {children}
       </group>
       {/* lugs and strap: static, each a single merged mesh */}
       <mesh geometry={lugs} material={metal} />
       {[-1, 1].map((sy) => (
-        <mesh key={sy} geometry={strap} material={strapMaterial} scale={[1, sy, 1]} />
+        <group key={sy} scale={[1, sy, 1]}>
+          <mesh geometry={strap} material={strapMaterial} position={[0, outer + 6, -8]} />
+        </group>
       ))}
     </group>
   )

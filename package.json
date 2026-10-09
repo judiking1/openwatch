@@ -12,7 +12,8 @@
     "format:check": "prettier --check .",
     "test": "vitest run --passWithNoTests",
     "typecheck": "tsc -b",
-    "new-concept": "node scripts/new-concept.mjs"
+    "new-concept": "node scripts/new-concept.mjs",
+    "assets": "python3 blender/generate_assets.py"
   },
   "dependencies": {
     "@react-three/drei": "^10.7.9",
