@@ -31,6 +31,11 @@ pushes the sand into a shape; it only reveals where the plate is still.
 - Each grain drifts down `∇E` and gets a random kick proportional to `√E` (stronger during
   the pulse); grains leaving the plate are reflected. Tests check the gradient against finite
   differences and that scattered sand loses >80 % of its energy within four seconds.
+- **Piling** (grain–grain contact, simplified): every step the grains are binned into a
+  96 × 96 height grid (`depositSand`, a 3 × 3 blur; the total sand volume is fixed, so 4 000
+  and 32 768 grains build the same ridges) and slide down its slope (`PILE`). Ridges get a
+  width and a height instead of collapsing into a line. Tests check that the grid holds the
+  whole volume and that piled ridges are wider but still on the still lines.
 - On mount the sand is pre-settled (180 steps) to the current time, so the figure is already
   drawn when the watch appears.
 
@@ -48,9 +53,15 @@ reworked. No timepiece that reads time from Chladni nodal lines was found (Octob
   `stepSand` (energy, gradient, pulse kick, tilt slide, reflection at the rim) with a hash
   in place of the CPU's random numbers. Verified off-screen against the CPU model: mean
   energy after settling 0.034 (GPU) vs 0.032 (CPU).
+  Piling runs there too: an atomic-add pass counts grains into the grid, a blur pass turns
+  counts into heights, and the step kernel reads the slope.
 - **WebGL and WebGPU-on-WebGL2:** 4 000 grains on the CPU (`sand.ts`).
+- **Heightfield:** the piled sand is drawn as a lit surface over the grid
+  (`heightfield.ts`), with the loose grains on top. On the CPU path its vertices and normals
+  are rewritten each frame; on the compute path the vertex shader reads the heights from the
+  storage buffer and derives normals from their differences — no readback.
 
 ## Next
 
-Grain–grain collisions (piling height) and a lit sand heightfield instead of instanced
-pebbles.
+True grain–grain collisions (a sorted neighbour grid) and an angle of repose; sand that
+spills off the plate edge.

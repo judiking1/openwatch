@@ -1,7 +1,7 @@
 import { useThree } from '@react-three/fiber'
 import { useLayoutEffect, useMemo, useRef } from 'react'
 import { Matrix4, type Group, type InstancedMesh } from 'three'
-import { useClockFrame, useDialTexture } from '../../three/hooks'
+import { useClockFrame, useDialTexture, useDisposable } from '../../three/hooks'
 import { Crystal } from '../../three/parts/Crystal'
 import { PrintLayer } from '../../three/parts/PrintLayer'
 import { rendererKind } from '../../three/renderer'
@@ -12,7 +12,16 @@ import { DIAL_RADIUS, dialRotationZ } from '../../three/utils/dial'
 import { useTimeStore } from '../../stores/timeStore'
 import { clockTimeFromMs, dialPoint } from '../../utils/time'
 import type { ChladniAppearance } from './appearance'
-import { PLATE_RADIUS, platePose, random, ringRadius, scatterSand, stepSand } from './sand'
+import { createHeightfieldGeometry, writeHeightfield } from './heightfield'
+import {
+  createGrid,
+  PLATE_RADIUS,
+  platePose,
+  random,
+  ringRadius,
+  scatterSand,
+  stepSand,
+} from './sand'
 import { useComputeSand } from './useComputeSand'
 
 const GRAINS = 4000
@@ -67,12 +76,14 @@ export function ChladniWatch({ appearance }: { appearance: ChladniAppearance }) 
   const exciter = useRef<Group>(null)
   const rand = useMemo(() => random(1787), [])
   // Scattered, then settled to the current time so the pattern is there when the watch appears.
+  const grid = useMemo(() => createGrid(), [])
   const grains = useMemo(() => {
     const scattered = scatterSand(GRAINS, random(1787))
     const pose = platePose(clockTimeFromMs(useTimeStore.getState().now()))
-    for (let i = 0; i < SETTLE_STEPS; i++) stepSand(scattered, pose, 1 / 60, rand)
+    for (let i = 0; i < SETTLE_STEPS; i++) stepSand(scattered, pose, 1 / 60, rand, undefined, grid)
     return scattered
-  }, [rand])
+  }, [rand, grid])
+  const heightfield = useDisposable(createHeightfieldGeometry, [])
   const plate = useDialTexture(PLATE_RADIUS, drawPlate, [])
   const rim = useDialTexture(DIAL_RADIUS + 1, drawRim, [])
 
@@ -94,8 +105,9 @@ export function ChladniWatch({ appearance }: { appearance: ChladniAppearance }) 
       gpuSand.step(gl, pose, step, tilt)
       gpuSand.step(gl, pose, step, tilt)
     } else if (!compute) {
-      stepSand(grains, pose, step, rand, tilt)
-      stepSand(grains, pose, step, rand, tilt)
+      stepSand(grains, pose, step, rand, tilt, grid)
+      stepSand(grains, pose, step, rand, tilt, grid)
+      writeHeightfield(heightfield, grid.heights)
     }
     const mesh = sand.current
     if (mesh && !compute) {
@@ -129,17 +141,28 @@ export function ChladniWatch({ appearance }: { appearance: ChladniAppearance }) 
       <PrintLayer mask={plate} color={appearance.scaleColor} radius={PLATE_RADIUS} z={0.62} />
 
       {compute ? (
-        gpuSand && <primitive object={gpuSand.mesh} material-color={appearance.sandColor} />
+        gpuSand && (
+          <>
+            <primitive object={gpuSand.mesh} material-color={appearance.sandColor} />
+            <primitive object={gpuSand.heightfield} material-color={appearance.sandColor} />
+          </>
+        )
       ) : (
-        <instancedMesh
-          ref={sand}
-          args={[undefined, undefined, GRAINS]}
-          name="sand"
-          frustumCulled={false}
-        >
-          <icosahedronGeometry args={[0.55, 0]} />
-          <meshStandardMaterial color={appearance.sandColor} roughness={0.9} />
-        </instancedMesh>
+        <>
+          {/* the piled sand as a lit surface; loose grains on top of it */}
+          <mesh geometry={heightfield} name="sand-heightfield">
+            <meshStandardMaterial color={appearance.sandColor} roughness={0.95} />
+          </mesh>
+          <instancedMesh
+            ref={sand}
+            args={[undefined, undefined, GRAINS]}
+            name="sand"
+            frustumCulled={false}
+          >
+            <icosahedronGeometry args={[0.55, 0]} />
+            <meshStandardMaterial color={appearance.sandColor} roughness={0.9} />
+          </instancedMesh>
+        </>
       )}
 
       {/* the exciter on the rim: the still diameter's hour end */}
