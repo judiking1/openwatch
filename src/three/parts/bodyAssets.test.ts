@@ -25,6 +25,7 @@ async function bounds(file: string, name: string) {
   const gltf = await new GLTFLoader().parseAsync(buffer, '')
   const mesh = gltf.scene.getObjectByName(name) as Mesh
   expect(mesh?.geometry.getAttribute('normal')).toBeDefined()
+  expect(mesh?.geometry.getAttribute('uv')).toBeDefined()
   mesh.geometry.computeBoundingBox()
   return { box: mesh.geometry.boundingBox as Box3, tris: mesh.geometry.index!.count / 3 }
 }

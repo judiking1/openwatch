@@ -178,7 +178,7 @@ def make_bracelet():
                 v.co = (x0 + lx, y + ty * ly + ny * lz, z + tz * ly + nz * lz)
         s += pitch
     links = obj_from_bmesh("bracelet", bm)
-    bevel(links, 0.9, 3)
+    bevel(links, 0.9, 2)
     smooth(links, 35)
     return links
 
@@ -242,10 +242,19 @@ def join(target, others):
     bpy.ops.object.join()
 
 
+def unwrap(obj):
+    """UVs for the brushed-metal node material on WebGPU (it reads uv for the grain)."""
+    bpy.ops.object.mode_set(mode="EDIT")
+    bpy.ops.mesh.select_all(action="SELECT")
+    bpy.ops.uv.smart_project(angle_limit=math.radians(66), island_margin=0.01)
+    bpy.ops.object.mode_set(mode="OBJECT")
+
+
 def export(obj, filename):
     bpy.ops.object.select_all(action="DESELECT")
     obj.select_set(True)
     bpy.context.view_layer.objects.active = obj
+    unwrap(obj)
     path = os.path.abspath(os.path.join(OUT, filename))
     bpy.ops.export_scene.gltf(
         filepath=path,
@@ -254,7 +263,7 @@ def export(obj, filename):
         export_yup=False,
         export_materials="NONE",
         export_normals=True,
-        export_texcoords=False,
+        export_texcoords=True,
         export_extras=False,
     )
     tris = sum(len(p.vertices) - 2 for p in obj.data.polygons)
