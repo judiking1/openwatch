@@ -45,6 +45,18 @@ piles up: the reading is a statistic, integrated by the afterglow.
   the band colour stays a material uniform. Works on both renderers.
 - On mount the bands are pre-run for 15 s, so the glow is there when the watch appears.
 
+## Strikes and sound
+
+About five times a second a strike flashes every filament core well above white (the bloom
+flares) and you hear a crackle: two or three very short high clicks (`crackle` sound
+profile). Both come from `randomEvents` in `utils/random.ts`, a pure function of the
+watch's time, so the flash and the sound land on the same instants without sharing any
+state — and both pause, scrub and fast-forward with the watch.
+
+The filaments bend in 3D: besides the sideways kinks, each one gets a vertical random walk
+(pinned at both electrodes) and an arc height that changes every frame, so seen from an
+angle they climb and fall like the arcs in a plasma globe.
+
 ## Touch
 
 As on a plasma globe, touching the crystal (or hovering over it with a mouse) pulls two
@@ -63,5 +75,4 @@ exists statistically, integrated by the afterglow. No such timepiece was found (
 
 ## Next
 
-Filaments that bend in 3D around the core instead of arcing in a plane; a crackle in the
-sound profile synced to the strikes.
+Branching filaments (short forks that die out in the gas).

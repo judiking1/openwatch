@@ -1,4 +1,5 @@
 import type { SoundProfile } from '../../types/watch'
+import { hash01, randomEvents } from '../../utils/random'
 
 export const DEFAULT_SOUND: SoundProfile = { kind: 'escapement', beatsPerHour: 28_800 }
 
@@ -31,6 +32,11 @@ export function soundEvents(profile: SoundProfile, from: number, to: number): So
       return periodic(from, to, 1000, profile.offset * 1000)
     case 'ratchet':
       return periodic(from, to, 60_000, 0)
+    case 'crackle':
+      // The same pure function of time the watch uses for its visible strikes.
+      return randomEvents(from, to, profile.rate)
+        .slice(0, MAX_EVENTS_PER_FRAME)
+        .map((at) => ({ at, accent: hash01(Math.round(at)) > 0.7 }))
     case 'quiet':
       return []
   }

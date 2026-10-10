@@ -7,6 +7,7 @@ import type { SoundProfile } from '../../types/watch'
  *   the tock is pitched a little lower than the tick.
  * - Drop: a sine sweeping down an octave in 90 ms plus a soft noise splash (Jagyeongnu).
  * - Ratchet: a train of five clicks (Cipher's rings).
+ * - Crackle: two or three very short high clicks a few ms apart (a spark; Plasma).
  */
 class WatchAudioEngine {
   private ctx: AudioContext | null = null
@@ -55,8 +56,18 @@ class WatchAudioEngine {
       case 'ratchet':
         for (let i = 0; i < 5; i++) this.click(t + i * 0.028, 2400 + i * 120, 0.004, 0.45)
         return
+      case 'crackle':
+        return this.crackle(t, accent)
       case 'quiet':
         return
+    }
+  }
+
+  private crackle(t: number, accent: boolean) {
+    const sparks = accent ? 3 : 2
+    for (let i = 0; i < sparks; i++) {
+      const at = t + i * (0.003 + Math.random() * 0.006)
+      this.click(at, 5200 + Math.random() * 2600, 0.0015, (accent ? 0.5 : 0.28) / (i + 1))
     }
   }
 

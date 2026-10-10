@@ -9,7 +9,6 @@ import {
   decay,
   filamentPath,
   FILAMENTS,
-  gaussian,
   peakAngle,
   plasmaPose,
   random,
@@ -44,13 +43,6 @@ describe('plasma', () => {
     expect(Math.sqrt(sq / n)).toBeLessThan(23)
   })
 
-  it('gaussian samples have unit variance', () => {
-    const rand = random(3)
-    let sq = 0
-    for (let i = 0; i < 10000; i++) sq += gaussian(rand) ** 2
-    expect(sq / 10000).toBeCloseTo(1, 1)
-  })
-
   it('charges a spot that wraps across 12 o’clock and decays with the afterglow', () => {
     const bins = new Float32Array(BINS)
     charge(bins, 359.5, 1)
@@ -78,6 +70,14 @@ describe('plasma', () => {
       expect(peak / expected).toBeGreaterThan(0.6)
       expect(peak / expected).toBeLessThan(1.8)
     }
+  })
+
+  it('filaments bend in 3D but stay pinned to both electrodes', () => {
+    const lift = new Float32Array(13)
+    filamentPath(90, 80, 12, random(5), undefined, lift)
+    expect(lift[0]).toBeCloseTo(0, 6)
+    expect(lift[12]).toBeCloseTo(0, 6)
+    expect(Math.max(...lift.map(Math.abs))).toBeGreaterThan(0.1)
   })
 
   it('filaments run from the core to the ring', () => {

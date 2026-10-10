@@ -6,6 +6,7 @@ import {
   Color,
   DynamicDrawUsage,
   Matrix4,
+  MeshBasicMaterial,
   type Group,
   type InstancedMesh,
 } from 'three'
@@ -23,6 +24,7 @@ import {
 } from '../../three/utils/canvas'
 import { DIAL_RADIUS } from '../../three/utils/dial'
 import { useTimeStore } from '../../stores/timeStore'
+import { randomEvents } from '../../utils/random'
 import { clockTimeFromMs } from '../../utils/time'
 import type { PlasmaAppearance } from './appearance'
 import {
@@ -39,6 +41,8 @@ import {
   stepBand,
   WANDER,
   CRYSTAL_Z,
+  STRIKE_FADE,
+  STRIKE_RATE,
   TOUCH_FILAMENTS,
   TOUCH_JITTER,
   touchTarget,
@@ -122,6 +126,7 @@ function writeRibbon(
   path: Float32Array,
   width: number,
   arc: number,
+  lift: Float32Array,
   zEnd = FILAMENT_Z,
 ) {
   const out = geometry.getAttribute('position').array as Float32Array
@@ -137,7 +142,7 @@ function writeRibbon(
     const w = (width / 2) * (0.35 + 0.65 * Math.sin(Math.PI * f))
     const nx = (-dy / len) * w
     const ny = (dx / len) * w
-    const z = FILAMENT_Z + (zEnd - FILAMENT_Z) * f * f + arc * Math.sin(Math.PI * f)
+    const z = FILAMENT_Z + (zEnd - FILAMENT_Z) * f * f + arc * Math.sin(Math.PI * f) + lift[i]
     const o = base + i * 6
     out[o] = path[i * 2] + nx
     out[o + 1] = path[i * 2 + 1] + ny
@@ -149,14 +154,32 @@ function writeRibbon(
 }
 
 /** Filament ribbons: a violet additive halo and a white-hot core (HDR, blooms). */
+/** The white-hot core of every filament, one shared material so a strike lights all of them. */
+function createCoreMaterial() {
+  return new MeshBasicMaterial({
+    color: '#ffffff',
+    transparent: true,
+    blending: AdditiveBlending,
+    depthWrite: false,
+    toneMapped: false,
+  })
+}
+
+/** A strike flashes the cores well above white (HDR, so the bloom flares with it). */
+function flashCores(material: MeshBasicMaterial, flash: number) {
+  material.color.setScalar(1 + 3 * flash)
+}
+
 function Filaments({
   halo,
   core,
   color,
+  coreMaterial,
 }: {
   halo: BufferGeometry
   core: BufferGeometry
   color: string
+  coreMaterial: MeshBasicMaterial
 }) {
   return (
     <>
@@ -170,15 +193,7 @@ function Filaments({
           toneMapped={false}
         />
       </mesh>
-      <mesh geometry={core} frustumCulled={false}>
-        <meshBasicMaterial
-          color="#ffffff"
-          transparent
-          blending={AdditiveBlending}
-          depthWrite={false}
-          toneMapped={false}
-        />
-      </mesh>
+      <mesh geometry={core} material={coreMaterial} frustumCulled={false} />
     </>
   )
 }
@@ -250,6 +265,10 @@ export function PlasmaWatch({ appearance }: { appearance: PlasmaAppearance }) {
   const halos = useDisposable(() => ribbonSet(), [])
   const phosphor = useRef<Partial<Record<Kind, InstancedMesh | null>>>({})
   const path = useMemo(() => new Float32Array((SEGMENTS + 1) * 2), [])
+  const lift = useMemo(() => new Float32Array(SEGMENTS + 1), [])
+  // Strikes: brief flashes at the instants the crackle sound also uses.
+  const coreMaterial = useDisposable(createCoreMaterial, [])
+  const strike = useRef({ last: NaN, flash: 0 })
   const glow = useMemo(() => new Color(), [])
   // Where the crystal is touched (dial units), or null.
   const touch = useRef<TouchPoint | null>(null)
@@ -262,16 +281,23 @@ export function PlasmaWatch({ appearance }: { appearance: PlasmaAppearance }) {
     [],
   )
 
-  useClockFrame((t, delta) => {
+  useClockFrame((t, delta, ms) => {
     const pose = plasmaPose(t)
     const dt = Math.min(delta, 1 / 20)
+    const s = strike.current
+    if (!Number.isNaN(s.last) && randomEvents(s.last, ms, STRIKE_RATE).length) s.flash = 1
+    s.last = ms
+    s.flash *= Math.exp(-dt / STRIKE_FADE)
+    flashCores(coreMaterial, s.flash)
     for (const kind of KINDS) {
       const band = bands[kind]
       stepBand(band, pose[kind], WANDER[kind], dt, rand)
       band.offsets.forEach((offset, f) => {
-        filamentPath(pose[kind] + offset, RING[kind], SEGMENTS, rand, path)
-        writeRibbon(cores[kind], f, path, 0.45, ARC_HEIGHT[kind])
-        writeRibbon(halos[kind], f, path, 2.4, ARC_HEIGHT[kind])
+        filamentPath(pose[kind] + offset, RING[kind], SEGMENTS, rand, path, lift)
+        // Each frame a slightly different arc: the filaments breathe up and down.
+        const arc = ARC_HEIGHT[kind] * (0.7 + 0.6 * rand())
+        writeRibbon(cores[kind], f, path, 0.45, arc, lift)
+        writeRibbon(halos[kind], f, path, 2.4, arc, lift)
       })
       cores[kind].getAttribute('position').needsUpdate = true
       halos[kind].getAttribute('position').needsUpdate = true
@@ -288,9 +314,9 @@ export function PlasmaWatch({ appearance }: { appearance: PlasmaAppearance }) {
     if (target) {
       for (let f = 0; f < TOUCH_FILAMENTS; f++) {
         const angle = target.angle + (rand() - 0.5) * 2 * TOUCH_JITTER
-        filamentPath(angle, target.radius, SEGMENTS, rand, path)
-        writeRibbon(cores.touch, f, path, 0.6, 3, CRYSTAL_Z)
-        writeRibbon(halos.touch, f, path, 3.2, 3, CRYSTAL_Z)
+        filamentPath(angle, target.radius, SEGMENTS, rand, path, lift)
+        writeRibbon(cores.touch, f, path, 0.6, 3, lift, CRYSTAL_Z)
+        writeRibbon(halos.touch, f, path, 3.2, 3, lift, CRYSTAL_Z)
       }
       cores.touch.getAttribute('position').needsUpdate = true
       halos.touch.getAttribute('position').needsUpdate = true
@@ -321,13 +347,23 @@ export function PlasmaWatch({ appearance }: { appearance: PlasmaAppearance }) {
             color={kind === 'hour' ? appearance.hourGlowColor : appearance.minuteGlowColor}
             bandRef={(mesh) => void (phosphor.current[kind] = mesh)}
           />
-          <Filaments halo={halos[kind]} core={cores[kind]} color={appearance.filamentColor} />
+          <Filaments
+            halo={halos[kind]}
+            core={cores[kind]}
+            color={appearance.filamentColor}
+            coreMaterial={coreMaterial}
+          />
         </group>
       ))}
 
       {/* a touch on the crystal pulls filaments up to it (hidden until touched) */}
       <group ref={touchGroup} visible={false}>
-        <Filaments halo={halos.touch} core={cores.touch} color={appearance.filamentColor} />
+        <Filaments
+          halo={halos.touch}
+          core={cores.touch}
+          color={appearance.filamentColor}
+          coreMaterial={coreMaterial}
+        />
       </group>
       <TouchSurface onTouch={(p) => void (touch.current = p)} z={CRYSTAL_Z + 0.4} />
 

@@ -115,6 +115,8 @@ export function stepBand(band: Band, target: number, sd: number, dt: number, ran
 /**
  * A jagged filament from the core to a ring at clock angle `angle`, as xy pairs (y up).
  * The kinks are a random walk across the path, pinned at both ends, redrawn every frame.
+ * If `lift` is given it receives a second, vertical walk (dial units, also pinned), so the
+ * filament bends in 3D instead of lying in one plane.
  */
 export function filamentPath(
   angle: number,
@@ -122,6 +124,7 @@ export function filamentPath(
   segments: number,
   rand: () => number,
   out = new Float32Array((segments + 1) * 2),
+  lift?: Float32Array,
 ) {
   const a = (angle * Math.PI) / 180
   const ux = Math.sin(a)
@@ -140,8 +143,24 @@ export function filamentPath(
     out[i * 2] = ux * r + uy * across
     out[i * 2 + 1] = uy * r - ux * across
   }
+  if (lift) {
+    let up = 0
+    for (let i = 0; i <= segments; i++) {
+      lift[i] = up
+      up += (rand() - 0.5) * 2.4
+    }
+    for (let i = 0; i <= segments; i++) {
+      const f = i / segments
+      lift[i] = (lift[i] - lift[segments] * f) * Math.sin(Math.PI * f)
+    }
+  }
   return out
 }
+
+/** Bright strikes per second: brief flashes of the filaments and the crackle you hear. */
+export const STRIKE_RATE = 5
+/** A strike's flash fades with this time constant, seconds. */
+export const STRIKE_FADE = 0.07
 
 /** A touch on the crystal pulls extra filaments up to it, as on a plasma globe. */
 export const TOUCH_FILAMENTS = 2

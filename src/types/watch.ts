@@ -58,6 +58,8 @@ export type SoundProfile =
   | { kind: 'drop'; offset: number }
   /** A ratchet each time the minute changes (combination-lock rings). */
   | { kind: 'ratchet' }
+  /** Random electric crackles, about `rate` per second (discharges). */
+  | { kind: 'crackle'; rate: number }
   /** Silent instruments (sundials, light). */
   | { kind: 'quiet' }
 
