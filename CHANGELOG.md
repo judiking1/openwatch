@@ -4,6 +4,31 @@ All notable changes to this project are documented here.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the
 project uses [Semantic Versioning](https://semver.org).
 
+## [0.20.0] - 2026-10-10
+
+### Fixed
+
+- **Gallery:** live views use the viewer's camera aimed at the watch centre (matching the
+  stills), and the live canvas moves with the page while it scrolls instead of the views
+  trailing behind it.
+- **Phase:** the warm-up no longer blows out around the emitters.
+
+### Added (roadmap "Next candidates")
+
+- **Phase touch:** a finger (or hovering mouse) on the crystal is a third wave source.
+- **Plasma:** filaments bend in 3D; about five strikes a second flash the filaments, with a
+  new `crackle` sound profile in sync (both from a pure function of the watch's time).
+- **Chladni:** an angle of repose (34°) for the pile, grain–grain contacts through a
+  neighbour grid (CPU and GPU), grains resting on top of the pile.
+- **Blender assets:** a coin-edge bezel that seats the crystal and a caseback with engraved
+  rings, an orbit emblem and lettering. All body GLBs are meshopt-compressed (`gltfpack`).
+
+### Changed
+
+- Refactor: `useAsyncDisposable`, shared `TouchSurface`, `randomEvents`; Chladni split into
+  plate / pile / contacts, Plasma into ribbons / Filaments / Phosphor; `stepSand` takes an
+  options object.
+
 ## [0.19.0] - 2026-10-09
 
 ### Added (roadmap "Next candidates")

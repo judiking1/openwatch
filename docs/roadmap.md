@@ -71,18 +71,29 @@ backend), Plasma filaments follow a touch, and the shared strap, bracelet, crown
 are modelled in Blender (`blender/generate_assets.py`). A refactor pass shared the random
 numbers, clock angles, TSL node typing and test helpers.
 
+## 0.20.0 — Gallery polish, touch, physics and engraved cases
+
+The gallery's live views are centred in their cards and no longer trail behind while
+scrolling. Phase takes a touch as a third wave source; Plasma's filaments bend in 3D and
+strike with a synced crackle; Chladni sand holds an angle of repose and its grains collide;
+the Blender assets gained a coin-edge bezel and an engraved caseback and are
+meshopt-compressed. Refactor: shared async GPU resources and touch surface, split Chladni
+and Plasma modules.
+
 ## Next candidates
 
 Needs the user (cannot be done from the headless sandbox):
 
-- Visual review pass on real devices; tune lighting and the new Blender strap and lugs.
+- Visual review on real devices: lighting, the Blender strap, bezel, lugs and caseback
+  engraving; gallery scrolling smoothness.
 - Real-device check of `?renderer=auto` before making WebGPU the default
-  (`docs/rendering-and-webgpu.md` §9), of the tilt button on phones (gyroscope permission),
-  and of the frame cost of Phase's wave solver on low-end phones.
+  (`docs/rendering-and-webgpu.md` §9), the tilt button on phones (gyroscope permission),
+  and the frame cost of Phase's and Chladni's solvers on low-end phones.
+- Tags: release tags cannot be pushed from the cloud sandbox (see the release notes).
 
 Can be done next:
 
-- Phase: a touch on the crystal as a third wave source.
-- Plasma: filaments bending in 3D around the core; a crackle sound synced to the strikes.
-- Chladni: true grain–grain collisions (neighbour grid) and an angle of repose.
-- More Blender assets: bezels and engraved casebacks for the hero concepts.
+- Phase: emitters that can be switched off one by one to show how the focus degrades.
+- Plasma: branching filaments (short forks that die out in the gas).
+- Chladni: sand that spills off the plate edge; per-grain height for true 3D stacking.
+- Load the caseback only when the back of the watch is first shown (it is the largest asset).
