@@ -12,9 +12,11 @@ import { DIAL_RADIUS, dialRotationZ } from '../../three/utils/dial'
 import { useTimeStore } from '../../stores/timeStore'
 import { clockTimeFromMs, dialPoint } from '../../utils/time'
 import type { ChladniAppearance } from './appearance'
-import { createHeightfieldGeometry, writeHeightfield } from './heightfield'
+import { createHeightfieldGeometry, SAND_BASE_Z, writeHeightfield } from './heightfield'
 import {
+  createContacts,
   createGrid,
+  heightAt,
   PLATE_RADIUS,
   platePose,
   random,
@@ -28,6 +30,8 @@ const GRAINS = 4000
 /** Steps run on mount (~3 s of sand time). */
 const SETTLE_STEPS = 180
 const GRAIN_Z = 0.7
+/** Contact radius of a CPU grain (a little under the drawn pebbles, so ridges stay sharp). */
+const GRAIN_RADIUS = 0.4
 const HOUR_RING = 92.5
 
 /** Faint minute circles every five minutes with labels up the 12 o'clock radius (white mask). */
@@ -77,12 +81,14 @@ export function ChladniWatch({ appearance }: { appearance: ChladniAppearance }) 
   const rand = useMemo(() => random(1787), [])
   // Scattered, then settled to the current time so the pattern is there when the watch appears.
   const grid = useMemo(() => createGrid(), [])
+  const contacts = useMemo(() => createContacts(GRAINS, GRAIN_RADIUS), [])
   const grains = useMemo(() => {
     const scattered = scatterSand(GRAINS, random(1787))
     const pose = platePose(clockTimeFromMs(useTimeStore.getState().now()))
-    for (let i = 0; i < SETTLE_STEPS; i++) stepSand(scattered, pose, 1 / 60, rand, undefined, grid)
+    for (let i = 0; i < SETTLE_STEPS; i++)
+      stepSand(scattered, pose, 1 / 60, rand, { grid, contacts })
     return scattered
-  }, [rand, grid])
+  }, [rand, grid, contacts])
   const heightfield = useDisposable(createHeightfieldGeometry, [])
   const plate = useDialTexture(PLATE_RADIUS, drawPlate, [])
   const rim = useDialTexture(DIAL_RADIUS + 1, drawRim, [])
@@ -105,16 +111,20 @@ export function ChladniWatch({ appearance }: { appearance: ChladniAppearance }) 
       gpuSand.step(gl, pose, step, tilt)
       gpuSand.step(gl, pose, step, tilt)
     } else if (!compute) {
-      stepSand(grains, pose, step, rand, tilt, grid)
-      stepSand(grains, pose, step, rand, tilt, grid)
+      stepSand(grains, pose, step, rand, { tilt, grid, contacts })
+      stepSand(grains, pose, step, rand, { tilt, grid, contacts })
       writeHeightfield(heightfield, grid.heights)
     }
     const mesh = sand.current
     if (mesh && !compute) {
       const matrices = mesh.instanceMatrix.array as Float32Array
       for (let i = 0; i < GRAINS; i++) {
-        matrices[i * 16 + 12] = grains[i * 2]
-        matrices[i * 16 + 13] = grains[i * 2 + 1]
+        const x = grains[i * 2]
+        const y = grains[i * 2 + 1]
+        matrices[i * 16 + 12] = x
+        matrices[i * 16 + 13] = y
+        // Grains rest on top of the pile, not inside it.
+        matrices[i * 16 + 14] = Math.max(GRAIN_Z, SAND_BASE_Z + heightAt(grid, x, y))
       }
       mesh.instanceMatrix.needsUpdate = true
     }

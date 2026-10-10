@@ -36,6 +36,14 @@ pushes the sand into a shape; it only reveals where the plate is still.
   and 32 768 grains build the same ridges) and slide down its slope (`PILE`). Ridges get a
   width and a height instead of collapsing into a line. Tests check that the grid holds the
   whole volume and that piled ridges are wider but still on the still lines.
+- **Angle of repose:** the pile only slides where it is steeper than 34° (`REPOSE`), so
+  ridges hold a natural slope instead of flattening out. A test checks that loose sand
+  stacks far steeper than that and piled sand slides back to near it.
+- **Grain contacts:** a neighbour grid one grain diameter wide (linked lists per cell on the
+  CPU, fixed slots filled with an atomic counter on the GPU) pushes touching grains apart,
+  half the overlap each. The sand is a 3D pile drawn on a 2D plate, so contacts loosen the
+  ridges rather than forbid overlap entirely (the heightfield carries the stacking). Grains
+  rest on top of the pile (their height is read from the grid).
 - On mount the sand is pre-settled (180 steps) to the current time, so the figure is already
   drawn when the watch appears.
 
@@ -63,5 +71,4 @@ reworked. No timepiece that reads time from Chladni nodal lines was found (Octob
 
 ## Next
 
-True grain–grain collisions (a sorted neighbour grid) and an angle of repose; sand that
-spills off the plate edge.
+Sand that spills off the plate edge and is refilled; per-grain height for true 3D stacking.

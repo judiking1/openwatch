@@ -43,6 +43,7 @@ import {
   GRID,
   KICK,
   PILE,
+  REPOSE,
   PLATE_RADIUS,
   SAND_VOLUME,
   SLIDE,
@@ -50,6 +51,9 @@ import {
   type PlatePose,
 } from './sand'
 import { loose as n } from '../../three/utils/tsl'
+
+/** Grains one contact cell can hold (a cell is one grain diameter wide, so about four fit). */
+const SLOTS = 6
 
 /**
  * Chladni sand on the WebGPU backend: grains live in a storage buffer, a compute kernel
@@ -156,7 +160,10 @@ export function createComputeSand(initial: Float32Array, z: number, grainSize: n
       heightAt(cx.add(1), cy).sub(heightAt(cx.sub(1), cy)),
       heightAt(cx, cy.add(1)).sub(heightAt(cx, cy.sub(1))),
     ).div(2 * CELL)
-    p.subAssign(slope.mul(PILE).mul(u.dt))
+    // Only slopes steeper than the angle of repose slide.
+    const steep = slope.length()
+    const excess = max(steep.sub(REPOSE), 0).div(max(steep, 1e-6))
+    p.subAssign(slope.mul(excess).mul(PILE).mul(u.dt))
     const out = p.length()
     If(out.greaterThan(PLATE_RADIUS), () => {
       p.mulAssign(
@@ -168,17 +175,97 @@ export function createComputeSand(initial: Float32Array, z: number, grainSize: n
     grain.assign(p)
   })().compute(count, [64])
 
+  // Grain contacts: a neighbour grid one diameter wide with a fixed number of slots per cell
+  // (atomic counter per cell; a grain takes the next slot). Each grain then sums its pushes
+  // from the grains in the 3 × 3 cells around it into a second buffer (Jacobi), copied back.
+  const radius = grainSize * 0.75
+  const contactCell = 2 * radius
+  const side = Math.ceil((2 * PLATE_RADIUS) / contactCell) + 1
+  const contactCells = side * side
+  const slotCount = instancedArray(contactCells, 'uint').toAtomic()
+  const slots = instancedArray(contactCells * SLOTS, 'uint')
+  const moved = instancedArray(count, 'vec2')
+  const contactOf = (v: unknown) =>
+    int(clamp(floor(n(v).add(PLATE_RADIUS).div(contactCell)), 0, side - 1))
+  const eachGrain = (body: () => void) =>
+    Fn(() => {
+      If(instanceIndex.greaterThanEqual(count), () => {
+        Return()
+      })
+      body()
+    })().compute(count, [64])
+  const clearContacts = Fn(() => {
+    If(instanceIndex.greaterThanEqual(contactCells), () => {
+      Return()
+    })
+    atomicStore(slotCount.element(instanceIndex), uint(0))
+  })().compute(contactCells, [64])
+  const bin = eachGrain(() => {
+    const grain = n(grains.element(instanceIndex))
+    const cell = contactOf(grain.y).mul(side).add(contactOf(grain.x)).toVar()
+    const slot = n(atomicAdd(slotCount.element(cell), uint(1))).toVar()
+    If(slot.lessThan(SLOTS), () => {
+      n(slots.element(cell.mul(SLOTS).add(int(slot)))).assign(instanceIndex)
+    })
+  })
+  const collide = eachGrain(() => {
+    const me = n(grains.element(instanceIndex))
+    const p = vec2(me.x, me.y).toVar()
+    const push = vec2(0, 0).toVar()
+    const cx = contactOf(me.x)
+    const cy = contactOf(me.y)
+    for (const dy of [-1, 0, 1]) {
+      for (const dx of [-1, 0, 1]) {
+        const xx = n(clamp(n(cx.add(dx)), 0, side - 1))
+        const yy = n(clamp(n(cy.add(dy)), 0, side - 1))
+        const cell = yy.mul(side).add(xx).toVar()
+        const filled = n(min(n(atomicLoad(slotCount.element(cell))), n(uint(SLOTS)))).toVar()
+        for (let k = 0; k < SLOTS; k++) {
+          If(uint(k).lessThan(filled), () => {
+            const j = n(slots.element(cell.mul(SLOTS).add(k)))
+            If(j.notEqual(instanceIndex), () => {
+              const other = n(grains.element(j))
+              const e = p.sub(vec2(other.x, other.y))
+              const d = e.length()
+              If(d.lessThan(2 * radius), () => {
+                // Coincident grains: split along a direction picked from their indices.
+                const dir = select(
+                  d.greaterThan(1e-6),
+                  e.div(max(d, 1e-6)),
+                  vec2(select(instanceIndex.greaterThan(j), 1, -1), 0),
+                )
+                push.addAssign(
+                  dir.mul(
+                    float(2 * radius)
+                      .sub(d)
+                      .mul(0.5),
+                  ),
+                )
+              })
+            })
+          })
+        }
+      }
+    }
+    n(moved.element(instanceIndex)).assign(p.add(push))
+  })
+  const settle = eachGrain(() => {
+    n(grains.element(instanceIndex)).assign(n(moved.element(instanceIndex)))
+  })
+
   const material = new MeshStandardNodeMaterial({ roughness: 0.9 })
-  // Vertex shaders may only read storage buffers: a read-only view of the same buffer.
+  // Vertex shaders may only read storage buffers: read-only views of the same buffers.
   const view = storage(grains.value, 'vec2', count).toReadOnly()
+  const heightView = storage(heights.value, 'float', cells).toReadOnly()
   const grain = n(view.element(instanceIndex))
-  material.positionNode = positionLocal.add(vec3(grain.x, grain.y, z))
+  // Grains rest on top of the pile, not inside it.
+  const pile = n(heightView.element(cellOf(grain.y).mul(GRID).add(cellOf(grain.x))))
+  material.positionNode = positionLocal.add(vec3(grain.x, grain.y, max(z, pile.add(SAND_BASE_Z))))
   const mesh = new InstancedMesh(new IcosahedronGeometry(grainSize, 0), material, count)
   mesh.frustumCulled = false
   mesh.name = 'sand'
 
   // The heightfield: vertex k sits on cell (k mod GRID, GRID − 1 − k div GRID).
-  const heightView = storage(heights.value, 'float', cells).toReadOnly()
   const plate = new Float32Array(cells).map((_, c) =>
     onPlate(c % GRID, Math.floor(c / GRID)) ? 1 : 0,
   )
@@ -228,10 +315,20 @@ export function createComputeSand(initial: Float32Array, z: number, grainSize: n
       u.kick.value = KICK * Math.sqrt(dt) * (1 + 2.5 * Math.exp(-pose.pulse * 10))
       u.tilt.value.set(tilt.x, tilt.y)
       u.seed.value = (frame++ % 9973) * 0.731
-      ;(renderer as WebGPURenderer).compute([clear, deposit, blur, step])
+      ;(renderer as WebGPURenderer).compute([
+        clear,
+        deposit,
+        blur,
+        step,
+        clearContacts,
+        bin,
+        collide,
+        settle,
+      ])
     },
     dispose() {
-      for (const kernel of [clear, deposit, blur, step]) kernel.dispose()
+      for (const kernel of [clear, deposit, blur, step, clearContacts, bin, collide, settle])
+        kernel.dispose()
       mesh.geometry.dispose()
       material.dispose()
       heightfield.geometry.dispose()

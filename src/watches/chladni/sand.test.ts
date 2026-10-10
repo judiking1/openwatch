@@ -15,6 +15,10 @@ import {
   CELL,
   SAND_VOLUME,
   GRID,
+  REPOSE,
+  heightSlope,
+  createContacts,
+  collideGrains,
 } from './sand'
 import { createHeightfieldGeometry, SAND_BASE_Z, writeHeightfield } from './heightfield'
 
@@ -77,18 +81,15 @@ describe('chladni plate', () => {
     expect(volume / SAND_VOLUME).toBeLessThan(1.03)
   })
 
-  it('piles: settled ridges get wider but stay on the still lines', () => {
+  it('piles: ridges stay on the still lines and hold near the angle of repose', () => {
     const pose = { ...platePose(t(10, 15)), pulse: 0.5 }
+    const u = { x: Math.sin((pose.hour * Math.PI) / 180), y: Math.cos((pose.hour * Math.PI) / 180) }
     const run = (piled: boolean) => {
       const rand = random(7)
       const grains = scatterSand(3000, rand)
-      const grid = piled ? createGrid() : undefined
-      for (let k = 0; k < 360; k++) stepSand(grains, pose, 1 / 60, rand, undefined, grid)
+      const grid = createGrid()
+      for (let k = 0; k < 360; k++) stepSand(grains, pose, 1 / 60, rand, piled ? { grid } : {})
       // Spread of the grains across the still diameter, near the centre of it.
-      const u = {
-        x: Math.sin((pose.hour * Math.PI) / 180),
-        y: Math.cos((pose.hour * Math.PI) / 180),
-      }
       let sq = 0
       let count = 0
       for (let i = 0; i < grains.length; i += 2) {
@@ -101,12 +102,49 @@ describe('chladni plate', () => {
       }
       let e = 0
       for (let i = 0; i < grains.length; i += 2) e += energy(grains[i], grains[i + 1], pose)
-      return { width: Math.sqrt(sq / count), energy: e / (grains.length / 2) }
+      depositSand(grains, grid)
+      let steepest = 0
+      for (let y = 1; y < GRID - 1; y++) {
+        for (let x = 1; x < GRID - 1; x++) {
+          const s = heightSlope(
+            grid,
+            (x + 0.5) * CELL - PLATE_RADIUS,
+            (y + 0.5) * CELL - PLATE_RADIUS,
+          )
+          steepest = Math.max(steepest, Math.hypot(s.x, s.y))
+        }
+      }
+      return { width: Math.sqrt(sq / count), energy: e / (grains.length / 2), steepest }
     }
     const loose = run(false)
     const piled = run(true)
-    expect(piled.width).toBeGreaterThan(loose.width * 1.3)
+    expect(piled.width).toBeGreaterThanOrEqual(loose.width)
     expect(piled.energy).toBeLessThan(0.05)
+    // Loose sand stacks steeper than sand can stand; piled sand slides back towards repose
+    // (measured on the blurred grid, so a little above it).
+    expect(loose.steepest).toBeGreaterThan(REPOSE * 1.5)
+    expect(piled.steepest).toBeLessThan(REPOSE * 1.35)
+  })
+
+  it('grains in contact push apart instead of overlapping', () => {
+    const rand = random(11)
+    const grains = new Float32Array(400)
+    // 200 grains dropped into a 4 × 4 square: far too many to fit without overlapping.
+    for (let i = 0; i < grains.length; i++) grains[i] = (rand() - 0.5) * 4
+    const contacts = createContacts(200, 0.5)
+    for (let k = 0; k < 200; k++) collideGrains(grains, contacts)
+    let closest = Infinity
+    for (let i = 0; i < 200; i++) {
+      for (let j = i + 1; j < 200; j++) {
+        const d = Math.hypot(grains[i * 2] - grains[j * 2], grains[i * 2 + 1] - grains[j * 2 + 1])
+        closest = Math.min(closest, d)
+      }
+    }
+    expect(closest).toBeGreaterThan(0.85)
+    // Two grains on the very same spot are separated too.
+    const pair = new Float32Array([10, 10, 10, 10])
+    collideGrains(pair, createContacts(2, 0.5))
+    expect(Math.hypot(pair[0] - pair[2], pair[1] - pair[3])).toBeCloseTo(1, 5)
   })
 
   it('the heightfield puts sand on the plate and hides the rest below it', () => {

@@ -93,12 +93,6 @@ export const KICK = 60
 
 const g = { x: 0, y: 0 }
 
-/**
- * Advances grains (xy pairs) by `dt` seconds. Each grain drifts down ∇E and gets a random
- * kick proportional to the local vibration (√E), stronger during the pulse at the start of
- * every second; grains shaken loose slide with the watch's tilt (in-plane gravity, sin of
- * the tilt angle); grains leaving the plate are reflected back onto it.
- */
 /** How fast shaking grains slide downhill when the watch is tilted (units/s at full tilt). */
 export const SLIDE = 220
 
@@ -109,10 +103,12 @@ export const SLIDE = 220
  * so 4 000 CPU grains and 32 768 GPU grains build the same ridges.
  */
 export const GRID = 96
-/** Total sand volume, dial units³ (ridges ≈ 1–2 units high). */
-export const SAND_VOLUME = 1100
-/** Spreading speed per unit of slope, units/s. */
-export const PILE = 20
+/** Total sand volume, dial units³ (ridges ≈ 2–3 units high, steep enough to slide). */
+export const SAND_VOLUME = 2000
+/** Spreading speed per unit of slope beyond the angle of repose, units/s. */
+export const PILE = 80
+/** Sand slopes steeper than this (tan of a 34° angle of repose) slide; gentler ones hold. */
+export const REPOSE = Math.tan((34 * Math.PI) / 180)
 export const CELL = (2 * PLATE_RADIUS) / GRID
 
 export type SandGrid = { heights: Float32Array; counts: Float32Array }
@@ -157,6 +153,11 @@ export function depositSand(grains: Float32Array, grid: SandGrid) {
   }
 }
 
+/** Height of the pile at a dial position (nearest cell): grains rest on top of it. */
+export function heightAt(grid: SandGrid, x: number, y: number) {
+  return grid.heights[cellOf(y) * GRID + cellOf(x)]
+}
+
 /** Height slope at a dial position (central differences on the grid), written to `out`. */
 export function heightSlope(grid: SandGrid, x: number, y: number, out = { x: 0, y: 0 }) {
   const h = grid.heights
@@ -171,13 +172,28 @@ export function heightSlope(grid: SandGrid, x: number, y: number, out = { x: 0, 
 
 const slope = { x: 0, y: 0 }
 
+export type SandOptions = {
+  /** In-plane gravity from how the watch is held (see `three/stage/tilt`). */
+  tilt?: { x: number; y: number }
+  /** Height grid: grains pile up and slide where the pile is steeper than `REPOSE`. */
+  grid?: SandGrid
+  /** Neighbour grid: grains of this radius push each other apart instead of overlapping. */
+  contacts?: Contacts
+}
+
+/**
+ * Advances grains (xy pairs) by `dt` seconds. Each grain drifts down ∇E and gets a random
+ * kick proportional to the local vibration (√E), stronger during the pulse at the start of
+ * every second; grains shaken loose slide with the watch's tilt; on a pile they slide down
+ * slopes steeper than the angle of repose; touching grains push apart; grains leaving the
+ * plate are reflected back onto it.
+ */
 export function stepSand(
   grains: Float32Array,
   pose: PlatePose,
   dt: number,
   rand: () => number,
-  tilt: { x: number; y: number } = { x: 0, y: 0 },
-  grid?: SandGrid,
+  { tilt = { x: 0, y: 0 }, grid, contacts }: SandOptions = {},
 ) {
   const pulse = 1 + 2.5 * Math.exp(-pose.pulse * 10)
   const kick = KICK * Math.sqrt(dt) * pulse
@@ -193,8 +209,10 @@ export function stepSand(
     y += -DRIFT * g.y * dt + (rand() - 0.5) * kick * shake + tilt.y * slide
     if (grid) {
       heightSlope(grid, grains[i], grains[i + 1], slope)
-      x -= PILE * slope.x * dt
-      y -= PILE * slope.y * dt
+      const steep = Math.hypot(slope.x, slope.y)
+      const excess = Math.max(0, steep - REPOSE) / (steep || 1)
+      x -= PILE * slope.x * excess * dt
+      y -= PILE * slope.y * excess * dt
     }
     const r = Math.hypot(x, y)
     if (r > PLATE_RADIUS) {
@@ -204,6 +222,72 @@ export function stepSand(
     }
     grains[i] = x
     grains[i + 1] = y
+  }
+  if (contacts) collideGrains(grains, contacts)
+}
+
+/**
+ * A neighbour grid for grain contacts: cells one grain diameter wide, each with a linked list
+ * of the grains in it (`head` per cell, `next` per grain), rebuilt every step.
+ */
+export type Contacts = {
+  radius: number
+  size: number
+  cell: number
+  head: Int32Array
+  next: Int32Array
+}
+
+export function createContacts(count: number, radius: number): Contacts {
+  const cell = 2 * radius
+  const size = Math.ceil((2 * PLATE_RADIUS) / cell) + 1
+  return { radius, size, cell, head: new Int32Array(size * size), next: new Int32Array(count) }
+}
+
+function contactCell(c: Contacts, v: number) {
+  return Math.min(c.size - 1, Math.max(0, Math.floor((v + PLATE_RADIUS) / c.cell)))
+}
+
+/**
+ * Pushes overlapping grains apart (each moves half the overlap along the line between them).
+ * One pass per step; overlaps left over are resolved over the next steps.
+ */
+export function collideGrains(grains: Float32Array, c: Contacts) {
+  const { head, next, size } = c
+  const count = grains.length / 2
+  head.fill(-1)
+  for (let i = 0; i < count; i++) {
+    const k = contactCell(c, grains[i * 2 + 1]) * size + contactCell(c, grains[i * 2])
+    next[i] = head[k]
+    head[k] = i
+  }
+  const touch = 2 * c.radius
+  for (let i = 0; i < count; i++) {
+    const cx = contactCell(c, grains[i * 2])
+    const cy = contactCell(c, grains[i * 2 + 1])
+    for (let dy = -1; dy <= 1; dy++) {
+      const yy = cy + dy
+      if (yy < 0 || yy >= size) continue
+      for (let dx = -1; dx <= 1; dx++) {
+        const xx = cx + dx
+        if (xx < 0 || xx >= size) continue
+        for (let j = head[yy * size + xx]; j !== -1; j = next[j]) {
+          if (j <= i) continue
+          const ex = grains[j * 2] - grains[i * 2]
+          const ey = grains[j * 2 + 1] - grains[i * 2 + 1]
+          const d = Math.hypot(ex, ey)
+          if (d >= touch) continue
+          // Coincident grains: split along an arbitrary but fixed direction.
+          const nx = d > 1e-6 ? ex / d : 1
+          const ny = d > 1e-6 ? ey / d : 0
+          const push = (touch - d) / 2
+          grains[i * 2] -= nx * push
+          grains[i * 2 + 1] -= ny * push
+          grains[j * 2] += nx * push
+          grains[j * 2 + 1] += ny * push
+        }
+      }
+    }
   }
 }
 
