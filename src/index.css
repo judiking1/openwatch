@@ -321,6 +321,9 @@ input[type='range'] {
 }
 
 .gallery {
+  position: relative;
+  /* The live canvas never extends the scroll area. */
+  overflow: clip;
   padding: 40px 32px 64px;
   max-width: 1200px;
   width: 100%;
@@ -680,9 +683,18 @@ button:disabled {
   box-shadow: 0 0 8px var(--danger);
 }
 
-/* The live gallery canvas covers the scrolling area only, never the top bar. */
+/*
+ * The live gallery canvas: inside the scrolling gallery, one scroll-area tall, moved to the
+ * visible part every frame (LiveLayer.useFollowScroll). Never covers the top bar.
+ */
 .live-layer {
-  top: var(--topbar-height) !important;
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: calc(100dvh - var(--topbar-height));
+  pointer-events: none;
+  will-change: transform;
 }
 
 .section-actions {
