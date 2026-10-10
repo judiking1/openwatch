@@ -12,11 +12,18 @@ watch, and nothing here is meant for manufacture.
 
 import math
 import os
+import subprocess
+import tempfile
 
 import bpy  # noqa: I001 — bpy must be imported before bmesh
 import bmesh
 
-OUT = os.path.join(os.path.dirname(__file__), "..", "src", "assets", "models")
+ROOT = os.path.join(os.path.dirname(__file__), "..")
+OUT = os.path.join(ROOT, "src", "assets", "models")
+# meshopt compression (EXT_meshopt_compression, decoded by three's GLTFLoader) without
+# quantisation, so the geometry keeps its dial-unit coordinates (-kn keeps the names, -kv
+# the UVs that no exported material uses): about 3x smaller.
+GLTFPACK = os.path.join(ROOT, "node_modules", ".bin", "gltfpack")
 
 # Strap path (matches WatchCase.strapSegments): a straight run from the lugs, then an arc
 # bending back around an imaginary wrist.
@@ -233,6 +240,132 @@ def make_lug():
     return lug
 
 
+def lathe(name, profile, segments, shape=None):
+    """Revolves an (r, z) profile about the z axis. `shape(r, z, angle)` may adjust r."""
+    bm = bmesh.new()
+    rings = []
+    for k in range(segments):
+        a = 2 * math.pi * k / segments
+        ring = []
+        for r, z in profile:
+            rr = shape(r, z, a) if shape else r
+            ring.append(bm.verts.new((rr * math.sin(a), rr * math.cos(a), z)))
+        rings.append(ring)
+    n = len(profile)
+    for k in range(segments):
+        a, b = rings[k], rings[(k + 1) % segments]
+        for i in range(n - 1):
+            bm.faces.new((a[i], b[i], b[i + 1], a[i + 1]))
+    bmesh.ops.recalc_face_normals(bm, faces=bm.faces)
+    return obj_from_bmesh(name, bm)
+
+
+def make_bezel():
+    """Bezel for the 100-unit dial: a seat for the crystal, a sloped top and a coin edge."""
+    profile = [
+        (101.5, -1.0),
+        (101.5, 8.0),
+        (102.5, 10.2),
+        (106.0, 11.0),
+        (111.5, 10.4),
+        (113.5, 8.6),
+        (114.0, 7.6),
+        (114.0, 6.0),
+        (114.0, 1.0),
+        (113.6, -0.2),
+        (113.0, -1.0),
+        (101.5, -1.0),
+    ]
+    flutes = 120
+
+    def coin_edge(r, z, a):
+        if r >= 113.9 and 0.5 < z < 6.5:
+            return r - 0.7 * max(0.0, math.cos(flutes * a)) ** 2
+        return r
+
+    bezel = lathe("bezel", profile, flutes * 4, coin_edge)
+    smooth(bezel, 50)
+    return bezel
+
+
+def glyphs(text, radius, size, bottom):
+    """Characters of `text` set around an arc, read from the back of the watch (mirrored)."""
+    font = bpy.data.fonts.load("<builtin>")
+    parts = []
+    step = size * 0.72 / radius  # radians per character
+    span = step * (len(text) - 1)
+    for i, ch in enumerate(text):
+        if ch == " ":
+            continue
+        # Clock angle in the back view (as seen from behind, 12 o'clock up).
+        theta = math.pi + span / 2 - i * step if bottom else -span / 2 + i * step
+        curve = bpy.data.curves.new(f"g{i}", type="FONT")
+        curve.body = ch
+        curve.font = font
+        curve.size = size
+        curve.align_x = "CENTER"
+        curve.align_y = "CENTER"
+        curve.extrude = 0.8
+        obj = bpy.data.objects.new(f"g{i}", curve)
+        bpy.context.collection.objects.link(obj)
+        obj.location = (radius * math.sin(theta), radius * math.cos(theta), 0)
+        obj.rotation_euler = (0, 0, -(theta - math.pi) if bottom else -theta)
+        parts.append(obj)
+    bpy.ops.object.select_all(action="DESELECT")
+    for o in parts:
+        o.select_set(True)
+    bpy.context.view_layer.objects.active = parts[0]
+    bpy.ops.object.convert(target="MESH")
+    bpy.ops.object.join()
+    text_obj = bpy.context.view_layer.objects.active
+    # Seen from behind, +x is on the left: mirror so the text reads correctly there.
+    text_obj.scale = (-1, 1, 1)
+    bpy.ops.object.transform_apply(location=True, rotation=True, scale=True)
+    return text_obj
+
+
+def engrave(target, cutter):
+    mod = target.modifiers.new("engrave", "BOOLEAN")
+    mod.operation = "DIFFERENCE"
+    mod.solver = "EXACT"
+    mod.object = cutter
+    apply_modifiers(target)
+    bpy.data.objects.remove(cutter)
+
+
+def make_caseback():
+    """Caseback with engraved rings, an orbit emblem and lettering, facing −z (outward)."""
+    face = -4.2
+    profile = [(0.0, face), (107.0, face), (110.0, -3.0), (110.0, -1.0), (108.0, 0.0), (0.0, 0.0)]
+    back = lathe("caseback", profile, 128)
+    # V-grooves: rings cut 0.8 deep with sloped walls.
+    for r_mid, w in ((96.6, 1.4), (70.4, 1.0), (13.5, 1.0)):
+        ring = lathe("ring", [(r_mid - w, face - 1), (r_mid + w, face - 1), (r_mid, face + 0.8), (r_mid - w, face - 1)], 128)
+        engrave(back, ring)
+    # The orbit emblem: a small disc on the inner ring, as in Watch 001.
+    bpy.ops.mesh.primitive_cone_add(radius1=3.6, radius2=1.6, depth=1.8, location=(9.5, 9.5, face - 0.1))
+    engrave(back, bpy.context.view_layer.objects.active)
+    for text, bottom in (("ORBITAL WATCH LAB", False), ("VISUAL MODEL - NOT FOR MANUFACTURE", True)):
+        letters = glyphs(text, 82.0, 10.0, bottom)
+        letters.location.z = face
+        bpy.ops.object.select_all(action="DESELECT")
+        letters.select_set(True)
+        bpy.context.view_layer.objects.active = letters
+        bpy.ops.object.transform_apply(location=True)
+        engrave(back, letters)
+    # Chamfer the cut edges: sloped walls catch the light, as real engraving does. (Bevelled
+    # glyphs would do it in one step, but their outlines self-intersect and break the
+    # boolean.)
+    bevel(back, 0.3, 1)
+    smooth(back, 30)
+    # The boolean leaves long sliver triangles on the flat back; shade flat faces flat so
+    # they do not streak.
+    for poly in back.data.polygons:
+        if abs(poly.normal.z) > 0.999:
+            poly.use_smooth = False
+    return back
+
+
 def join(target, others):
     bpy.ops.object.select_all(action="DESELECT")
     for o in others:
@@ -256,8 +389,9 @@ def export(obj, filename):
     bpy.context.view_layer.objects.active = obj
     unwrap(obj)
     path = os.path.abspath(os.path.join(OUT, filename))
+    raw = os.path.join(tempfile.mkdtemp(), filename)
     bpy.ops.export_scene.gltf(
-        filepath=path,
+        filepath=raw,
         export_format="GLB",
         use_selection=True,
         export_yup=False,
@@ -266,6 +400,7 @@ def export(obj, filename):
         export_texcoords=True,
         export_extras=False,
     )
+    subprocess.run([GLTFPACK, "-i", raw, "-o", path, "-cc", "-noq", "-kn", "-kv"], check=True)
     tris = sum(len(p.vertices) - 2 for p in obj.data.polygons)
     print(f"wrote {filename}: {tris} triangles")
 
@@ -277,6 +412,8 @@ def main():
         (make_bracelet, "bracelet.glb"),
         (make_crown, "crown.glb"),
         (make_lug, "lug.glb"),
+        (make_bezel, "bezel.glb"),
+        (make_caseback, "caseback.glb"),
     ):
         reset()
         export(make(), filename)

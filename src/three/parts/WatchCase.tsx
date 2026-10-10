@@ -125,19 +125,20 @@ export function WatchCase({
         <mesh position={[0, 0, -1 - cavityDepth]} material={metal}>
           <circleGeometry args={[seat, 128]} />
         </mesh>
-        {/* bezel */}
-        <mesh position={[0, 0, 3]} material={metal} userData={BEZEL}>
-          <torusGeometry args={[radius + 6, 7, 32, 128]} />
-        </mesh>
-        {/* caseback */}
+        {/* bezel and engraved caseback (Blender, modelled for the 100-unit dial) */}
         <mesh
-          position={[0, 0, bottom - 1]}
-          rotation={[Math.PI / 2, 0, 0]}
+          geometry={assets.bezel}
+          scale={[radius / DIAL_RADIUS, radius / DIAL_RADIUS, 1]}
+          material={metal}
+          userData={BEZEL}
+        />
+        <mesh
+          geometry={assets.caseback}
+          position={[0, 0, bottom + 0.5]}
+          scale={[radius / DIAL_RADIUS, radius / DIAL_RADIUS, 1]}
           material={metal}
           userData={CASEBACK}
-        >
-          <cylinderGeometry args={[outer - 8, outer - 4, 4, 96]} />
-        </mesh>
+        />
         {/* crown */}
         <mesh geometry={assets.crown} position={[outer - 2, 0, -6]} material={metal} />
         {children}

@@ -1,8 +1,11 @@
 import { Box3, type Mesh } from 'three'
+import { MeshoptDecoder } from 'three/examples/jsm/libs/meshopt_decoder.module.js'
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js'
 import { describe, expect, it } from 'vitest'
 
+import bezel from '../../assets/models/bezel.glb?inline'
 import bracelet from '../../assets/models/bracelet.glb?inline'
+import caseback from '../../assets/models/caseback.glb?inline'
 import crown from '../../assets/models/crown.glb?inline'
 import lug from '../../assets/models/lug.glb?inline'
 import strap from '../../assets/models/strap.glb?inline'
@@ -12,6 +15,8 @@ const FILES: Record<string, string> = {
   'bracelet.glb': bracelet,
   'crown.glb': crown,
   'lug.glb': lug,
+  'bezel.glb': bezel,
+  'caseback.glb': caseback,
 }
 
 /** The GLB bytes from Vite's inline (base64 data URL) import. */
@@ -22,7 +27,7 @@ function bytes(dataUrl: string) {
 
 async function bounds(file: string, name: string) {
   const buffer = bytes(FILES[file])
-  const gltf = await new GLTFLoader().parseAsync(buffer, '')
+  const gltf = await new GLTFLoader().setMeshoptDecoder(MeshoptDecoder).parseAsync(buffer, '')
   const mesh = gltf.scene.getObjectByName(name) as Mesh
   expect(mesh?.geometry.getAttribute('normal')).toBeDefined()
   expect(mesh?.geometry.getAttribute('uv')).toBeDefined()
@@ -57,5 +62,20 @@ describe('Blender body assets (dial units, Z-up)', () => {
     const { box } = await bounds('lug.glb', 'lug')
     expect(box.max.y - box.min.y).toBeCloseTo(34, 0)
     expect(box.max.x - box.min.x).toBeCloseTo(14, 0)
+  })
+
+  it('bezel seats the crystal (radius 104 at z ≈ 9) and matches the case edge', async () => {
+    const { box } = await bounds('bezel.glb', 'bezel')
+    expect(box.max.x).toBeCloseTo(114, 0)
+    expect(box.max.z).toBeGreaterThan(9.6)
+    expect(box.min.z).toBeCloseTo(-1, 1)
+  })
+
+  it('caseback hangs below z = 0 and fits under the case', async () => {
+    const { box, tris } = await bounds('caseback.glb', 'caseback')
+    expect(box.max.z).toBeCloseTo(0, 1)
+    expect(box.min.z).toBeCloseTo(-4.2, 1)
+    expect(box.max.x).toBeLessThanOrEqual(110.01)
+    expect(tris).toBeLessThan(30000)
   })
 })
