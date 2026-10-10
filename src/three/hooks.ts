@@ -1,5 +1,5 @@
 import { useFrame } from '@react-three/fiber'
-import { useEffect, useMemo, useRef, type DependencyList } from 'react'
+import { useEffect, useMemo, useRef, useState, type DependencyList } from 'react'
 import type { CanvasTexture } from 'three'
 import { useTimeStore } from '../stores/timeStore'
 import { clockTimeFromMs, type ClockTime } from '../utils/time'
@@ -39,4 +39,35 @@ export function useClockFrame(update: (time: ClockTime, delta: number, epochMs: 
     const ms = useTimeStore.getState().now()
     latest.current(clockTimeFromMs(ms), delta, ms)
   })
+}
+
+/**
+ * A disposable resource built asynchronously, typically after a code-split import (compute
+ * shaders that only the WebGPU backend needs). Null while it loads or when `create` is
+ * null; disposed when the dependencies change or the component unmounts, even if it
+ * finishes loading after that.
+ */
+export function useAsyncDisposable<T extends { dispose(): void }>(
+  create: (() => Promise<T>) | null,
+  deps: DependencyList,
+): T | null {
+  const [value, setValue] = useState<T | null>(null)
+  useEffect(() => {
+    if (!create) return
+    let live = true
+    let made: T | undefined
+    void create().then((result) => {
+      if (live) {
+        made = result
+        setValue(result)
+      } else result.dispose()
+    })
+    return () => {
+      live = false
+      made?.dispose()
+      setValue(null)
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- deps are the caller's contract
+  }, deps)
+  return value
 }

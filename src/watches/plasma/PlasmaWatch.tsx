@@ -1,15 +1,5 @@
-import { useLayoutEffect, useMemo, useRef } from 'react'
-import {
-  AdditiveBlending,
-  BufferAttribute,
-  BufferGeometry,
-  Color,
-  DynamicDrawUsage,
-  Matrix4,
-  MeshBasicMaterial,
-  type Group,
-  type InstancedMesh,
-} from 'three'
+import { useMemo, useRef } from 'react'
+import { Color, type Group, type InstancedMesh } from 'three'
 import { useClockFrame, useDialTexture, useDisposable } from '../../three/hooks'
 import { Crystal } from '../../three/parts/Crystal'
 import { PrintLayer } from '../../three/parts/PrintLayer'
@@ -27,6 +17,9 @@ import { useTimeStore } from '../../stores/timeStore'
 import { randomEvents } from '../../utils/random'
 import { clockTimeFromMs } from '../../utils/time'
 import type { PlasmaAppearance } from './appearance'
+import { Filaments } from './Filaments'
+import { Phosphor } from './Phosphor'
+import { createCoreMaterial, flashCores, ribbonSet, SEGMENTS, writeRibbon } from './ribbons'
 import {
   AFTERGLOW,
   BINS,
@@ -49,11 +42,7 @@ import {
   type Band,
 } from './plasma'
 
-const SEGMENTS = 14
-const BAND_WIDTH = 3.2
-const BAND_Z = 0.4
 /** Filaments arc up from the electrodes towards the crystal. */
-const FILAMENT_Z = 1.6
 const ARC_HEIGHT = { hour: 4, minute: 7 }
 /** Phosphor brightness at the steady-state peak (> 1 blooms). */
 const GLOW_GAIN = 1.5
@@ -84,165 +73,6 @@ function drawScales(ctx: CanvasRenderingContext2D) {
     color: print,
   })
   drawLabels(ctx, FIVE_MINUTE_LABELS, { radius: 93, font: dialFont(600, 5), color: print })
-}
-
-/** Quad strips along each filament path: one draw for all filaments of a kind. */
-function createRibbons(count: number) {
-  const verts = count * (SEGMENTS + 1) * 2
-  const geometry = new BufferGeometry()
-  const position = new BufferAttribute(new Float32Array(verts * 3), 3)
-  position.setUsage(DynamicDrawUsage)
-  geometry.setAttribute('position', position)
-  const index: number[] = []
-  for (let f = 0; f < count; f++) {
-    const base = f * (SEGMENTS + 1) * 2
-    for (let i = 0; i < SEGMENTS; i++) {
-      const a = base + i * 2
-      index.push(a, a + 1, a + 2, a + 1, a + 3, a + 2)
-    }
-  }
-  geometry.setIndex(index)
-  return geometry
-}
-
-/** Ribbons for the hour, minute and touch filaments, disposed together. */
-function ribbonSet() {
-  const set = {
-    hour: createRibbons(FILAMENTS.hour),
-    minute: createRibbons(FILAMENTS.minute),
-    touch: createRibbons(TOUCH_FILAMENTS),
-  }
-  return {
-    ...set,
-    dispose() {
-      for (const geometry of Object.values(set)) geometry.dispose()
-    },
-  }
-}
-
-function writeRibbon(
-  geometry: BufferGeometry,
-  filament: number,
-  path: Float32Array,
-  width: number,
-  arc: number,
-  lift: Float32Array,
-  zEnd = FILAMENT_Z,
-) {
-  const out = geometry.getAttribute('position').array as Float32Array
-  const base = filament * (SEGMENTS + 1) * 2 * 3
-  for (let i = 0; i <= SEGMENTS; i++) {
-    const j = Math.min(i + 1, SEGMENTS)
-    const k = Math.max(i - 1, 0)
-    const dx = path[j * 2] - path[k * 2]
-    const dy = path[j * 2 + 1] - path[k * 2 + 1]
-    const len = Math.hypot(dx, dy) || 1
-    const f = i / SEGMENTS
-    // Thinner at the electrodes, widest mid-arc.
-    const w = (width / 2) * (0.35 + 0.65 * Math.sin(Math.PI * f))
-    const nx = (-dy / len) * w
-    const ny = (dx / len) * w
-    const z = FILAMENT_Z + (zEnd - FILAMENT_Z) * f * f + arc * Math.sin(Math.PI * f) + lift[i]
-    const o = base + i * 6
-    out[o] = path[i * 2] + nx
-    out[o + 1] = path[i * 2 + 1] + ny
-    out[o + 2] = z
-    out[o + 3] = path[i * 2] - nx
-    out[o + 4] = path[i * 2 + 1] - ny
-    out[o + 5] = z
-  }
-}
-
-/** Filament ribbons: a violet additive halo and a white-hot core (HDR, blooms). */
-/** The white-hot core of every filament, one shared material so a strike lights all of them. */
-function createCoreMaterial() {
-  return new MeshBasicMaterial({
-    color: '#ffffff',
-    transparent: true,
-    blending: AdditiveBlending,
-    depthWrite: false,
-    toneMapped: false,
-  })
-}
-
-/** A strike flashes the cores well above white (HDR, so the bloom flares with it). */
-function flashCores(material: MeshBasicMaterial, flash: number) {
-  material.color.setScalar(1 + 3 * flash)
-}
-
-function Filaments({
-  halo,
-  core,
-  color,
-  coreMaterial,
-}: {
-  halo: BufferGeometry
-  core: BufferGeometry
-  color: string
-  coreMaterial: MeshBasicMaterial
-}) {
-  return (
-    <>
-      <mesh geometry={halo} frustumCulled={false}>
-        <meshBasicMaterial
-          color={color}
-          transparent
-          opacity={0.55}
-          blending={AdditiveBlending}
-          depthWrite={false}
-          toneMapped={false}
-        />
-      </mesh>
-      <mesh geometry={core} material={coreMaterial} frustumCulled={false} />
-    </>
-  )
-}
-
-/** A phosphor band: one small additive tile per bin, brightness via instance colour. */
-function Phosphor({
-  ring,
-  color,
-  bandRef,
-}: {
-  ring: number
-  color: string
-  bandRef: (mesh: InstancedMesh | null) => void
-}) {
-  const local = useRef<InstancedMesh>(null)
-  useLayoutEffect(() => {
-    const mesh = local.current
-    if (!mesh) return
-    const m = new Matrix4()
-    const black = new Color(0, 0, 0)
-    for (let i = 0; i < BINS; i++) {
-      const a = ((i + 0.5) / BINS) * Math.PI * 2
-      m.makeRotationZ(-a).setPosition(ring * Math.sin(a), ring * Math.cos(a), BAND_Z)
-      mesh.setMatrixAt(i, m)
-      mesh.setColorAt(i, black)
-    }
-    mesh.instanceMatrix.needsUpdate = true
-  }, [ring])
-  const tile = (2 * Math.PI * ring) / BINS
-  return (
-    <instancedMesh
-      ref={(mesh) => {
-        local.current = mesh
-        bandRef(mesh)
-      }}
-      args={[undefined, undefined, BINS]}
-      frustumCulled={false}
-      userData={{ lume: true }}
-    >
-      <planeGeometry args={[tile * 1.05, BAND_WIDTH]} />
-      <meshBasicMaterial
-        color={color}
-        transparent
-        blending={AdditiveBlending}
-        depthWrite={false}
-        toneMapped={false}
-      />
-    </instancedMesh>
-  )
 }
 
 /** Watch 014 — Plasma: random filaments; their phosphor afterglow piles up at the time. */

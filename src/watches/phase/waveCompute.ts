@@ -29,6 +29,7 @@ import {
   AMP_TAU,
   createWaveSim,
   DAMPING,
+  FIELD_SHARE,
   setTouch,
   SIM_DT,
   SOURCE,
@@ -60,7 +61,8 @@ export function createComputeWaves(kind: WaveKind): WaveField {
   // Per source: grid cell, drive phase, weight. The last one is the touch.
   const SOURCES = EMITTERS + 1
   const sources = instancedArray(SOURCES * 3, 'float')
-  const peak = instancedArray(1, 'uint').toAtomic()
+  // Ring peak and field peak (float bits).
+  const peak = instancedArray(2, 'uint').toAtomic()
   const u = { w: uniform(0) }
 
   const texture = new StorageTexture(N, N)
@@ -138,6 +140,7 @@ export function createComputeWaves(kind: WaveKind): WaveField {
       .add(int(clamp(x.add(WALL).div(dx), 0, N - 1)))
   const resetPeak = Fn(() => {
     atomicStore(peak.element(0), uint(0))
+    atomicStore(peak.element(1), uint(0))
   })().compute(1, [1])
   const ringPeak = Fn(() => {
     If(instanceIndex.greaterThanEqual(RING_SAMPLES), () => {
@@ -149,6 +152,17 @@ export function createComputeWaves(kind: WaveKind): WaveField {
     )
     atomicMax(peak.element(0), floatBitsToUint(amp))
   })().compute(RING_SAMPLES, [64])
+  // The field's peak (spreading discounted), as in displayPeak.
+  const fieldPeak = perCell((i) => {
+    const px = float(i.mod(N)).add(0.5).mul(dx).sub(WALL)
+    const py = float(i.div(N)).add(0.5).mul(dx).sub(WALL)
+    const r = px.mul(px).add(py.mul(py)).sqrt()
+    If(r.greaterThan(EMITTER_RING + 3).and(r.lessThan(FIELD_RADIUS)), () => {
+      const spread = clamp(r.sub(EMITTER_RING).div(spec.ring - EMITTER_RING), 0.02, 1).sqrt()
+      const amp = sqrt(n(power.element(i)).mul(2)).mul(spread)
+      atomicMax(peak.element(1), floatBitsToUint(amp))
+    })
+  })
 
   /** Crests as in `writeCrests`, into the storage texture. */
   const publish = (cur: typeof a) =>
@@ -164,7 +178,9 @@ export function createComputeWaves(kind: WaveKind): WaveField {
       const amp = sqrt(n(power.element(i)).mul(2)).add(1e-9)
       const v = n(cur.element(i)).div(amp)
       const crest = min(1, max(v, 0).mul(max(v, 0)))
-      const top = max(n(uintBitsToFloat(atomicLoad(peak.element(0)))), 1e-9)
+      const ringTop = n(uintBitsToFloat(atomicLoad(peak.element(0))))
+      const fieldTop = n(uintBitsToFloat(atomicLoad(peak.element(1))))
+      const top = max(max(ringTop, fieldTop.mul(FIELD_SHARE)), 1e-9)
       const spread = clamp(r.sub(EMITTER_RING).div(spec.ring - EMITTER_RING), 0.02, 1).sqrt()
       const rel = min(1, amp.div(top).mul(spread))
       const value = crest.mul(rel.mul(rel).mul(0.82).add(0.18)).mul(fade)
@@ -200,11 +216,11 @@ export function createComputeWaves(kind: WaveKind): WaveField {
         gl.compute(steps[parity])
         parity ^= 1
       }
-      gl.compute([resetPeak, ringPeak, publishFrom[parity]])
+      gl.compute([resetPeak, ringPeak, fieldPeak, publishFrom[parity]])
     },
     dispose() {
       texture.dispose()
-      for (const k of [...steps.flat(), resetPeak, ringPeak, ...publishFrom]) k.dispose()
+      for (const k of [...steps.flat(), resetPeak, ringPeak, fieldPeak, ...publishFrom]) k.dispose()
     },
   }
 }

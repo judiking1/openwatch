@@ -1,7 +1,7 @@
 import { useThree } from '@react-three/fiber'
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef } from 'react'
 import { AdditiveBlending, Color, type Group } from 'three'
-import { useClockFrame, useDialTexture } from '../../three/hooks'
+import { useAsyncDisposable, useClockFrame, useDialTexture } from '../../three/hooks'
 import { Crystal } from '../../three/parts/Crystal'
 import { PrintLayer } from '../../three/parts/PrintLayer'
 import { TouchSurface, type TouchPoint } from '../../three/parts/TouchSurface'
@@ -70,26 +70,17 @@ const MAX_FRAME = 3 * SIM_DT
  * solver elsewhere. Null while the compute module loads.
  */
 function useWaveFields(compute: boolean) {
-  const [fields, setFields] = useState<Record<WaveKind, WaveField> | null>(null)
-  useEffect(() => {
-    let live = true
-    let made: Record<WaveKind, WaveField> | undefined
-    const factory = compute
-      ? import('./waveCompute').then((m) => m.createComputeWaves)
-      : Promise.resolve(createCpuWaves)
-    void factory.then((create) => {
-      if (!live) return
-      made = { hour: create('hour'), minute: create('minute') }
-      setFields(made)
-    })
-    return () => {
-      live = false
-      made?.hour.dispose()
-      made?.minute.dispose()
-      setFields(null)
+  return useAsyncDisposable(async () => {
+    const create = compute ? (await import('./waveCompute')).createComputeWaves : createCpuWaves
+    const fields = { hour: create('hour'), minute: create('minute') }
+    return {
+      fields: fields as Record<WaveKind, WaveField>,
+      dispose() {
+        fields.hour.dispose()
+        fields.minute.dispose()
+      },
     }
-  }, [compute])
-  return fields
+  }, [compute])?.fields
 }
 
 /** Wave colours are pushed into HDR so that only the foci cross the bloom threshold. */

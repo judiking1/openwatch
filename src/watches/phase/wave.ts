@@ -191,6 +191,28 @@ export function spreading(r: number, ring: number) {
 }
 
 /**
+ * Once the foci have formed, the strongest wave anywhere (spreading discounted) is at most
+ * about 2.5× the focus. While the waves are still spreading out from the emitters the ring
+ * is nearly empty, so the display never normalises by less than this share of the field's
+ * peak: the warm-up shows a spreading wavefront instead of a blown-out centre.
+ */
+export const FIELD_SHARE = 0.4
+
+/** Brightness reference for the display: the focus, but at least FIELD_SHARE of the field. */
+export function displayPeak(sim: WaveSim, ring: number) {
+  let field = 0
+  for (let j = 0; j < sim.n; j++) {
+    const y = cellCentre(sim, j)
+    for (let i = 0; i < sim.n; i++) {
+      const r = Math.hypot(cellCentre(sim, i), y)
+      if (r < EMITTER_RING + 3 || r > FIELD_RADIUS) continue
+      field = Math.max(field, Math.sqrt(2 * sim.power[j * sim.n + i]) * spreading(r, ring))
+    }
+  }
+  return Math.max(ringPeak(sim, ring), FIELD_SHARE * field)
+}
+
+/**
  * The instantaneous wave as crests, white on black, into an RGBA image of the grid: full
  * contrast everywhere so the ripples read, weighted by (amplitude / focus amplitude)² so the
  * focus wins. Close to the emitters every wave is strong; `spreading` discounts that, so the
