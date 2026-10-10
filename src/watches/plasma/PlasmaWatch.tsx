@@ -12,6 +12,7 @@ import {
 import { useClockFrame, useDialTexture, useDisposable } from '../../three/hooks'
 import { Crystal } from '../../three/parts/Crystal'
 import { PrintLayer } from '../../three/parts/PrintLayer'
+import { TouchSurface, type TouchPoint } from '../../three/parts/TouchSurface'
 import { WatchCase } from '../../three/parts/WatchCase'
 import {
   dialFont,
@@ -251,7 +252,7 @@ export function PlasmaWatch({ appearance }: { appearance: PlasmaAppearance }) {
   const path = useMemo(() => new Float32Array((SEGMENTS + 1) * 2), [])
   const glow = useMemo(() => new Color(), [])
   // Where the crystal is touched (dial units), or null.
-  const touch = useRef<{ x: number; y: number } | null>(null)
+  const touch = useRef<TouchPoint | null>(null)
   const touchGroup = useRef<Group>(null)
   const peaks = useMemo(
     () => ({
@@ -328,19 +329,7 @@ export function PlasmaWatch({ appearance }: { appearance: PlasmaAppearance }) {
       <group ref={touchGroup} visible={false}>
         <Filaments halo={halos.touch} core={cores.touch} color={appearance.filamentColor} />
       </group>
-      <mesh
-        position-z={CRYSTAL_Z + 0.4}
-        userData={{ helper: true }}
-        onPointerMove={(e) => {
-          const p = e.object.worldToLocal(e.point.clone())
-          touch.current = { x: p.x, y: p.y }
-        }}
-        onPointerOut={() => void (touch.current = null)}
-        onPointerUp={(e) => void (e.pointerType === 'touch' && (touch.current = null))}
-      >
-        <circleGeometry args={[DIAL_RADIUS, 64]} />
-        <meshBasicMaterial transparent opacity={0} depthWrite={false} colorWrite={false} />
-      </mesh>
+      <TouchSurface onTouch={(p) => void (touch.current = p)} z={CRYSTAL_Z + 0.4} />
 
       {/* the central electrode */}
       <mesh position-z={3}>

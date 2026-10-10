@@ -1,6 +1,6 @@
 import { DataTexture, LinearFilter, type Texture } from 'three'
 import { HOUR_RING, HOUR_WAVE, MINUTE_RING, MINUTE_WAVE } from './phase'
-import { aimWaves, createWaveSim, ringPeak, stepWave, writeCrests } from './wave'
+import { aimWaves, createWaveSim, ringPeak, setTouch, stepWave, writeCrests } from './wave'
 
 export type WaveKind = 'hour' | 'minute'
 
@@ -13,8 +13,16 @@ export const WAVE_FIELDS = {
 /** A simulated wave field drawn into a texture (crests, white on black). */
 export type WaveField = {
   texture: Texture
-  /** Aims the emitters at `focus`, runs `steps` simulation steps and redraws the texture. */
-  advance(renderer: unknown, focus: { x: number; y: number }, steps: number): void
+  /**
+   * Aims the emitters at `focus`, sets the touch source (`null`: none), runs `steps`
+   * simulation steps and redraws the texture.
+   */
+  advance(
+    renderer: unknown,
+    focus: { x: number; y: number },
+    touch: { x: number; y: number } | null,
+    steps: number,
+  ): void
   dispose(): void
 }
 
@@ -28,8 +36,9 @@ export function createCpuWaves(kind: WaveKind): WaveField {
   texture.needsUpdate = true
   return {
     texture,
-    advance(_renderer, focus, steps) {
+    advance(_renderer, focus, touch, steps) {
       aimWaves(sim, focus)
+      setTouch(sim, touch)
       for (let s = 0; s < steps; s++) stepWave(sim)
       writeCrests(sim, ringPeak(sim, spec.ring), spec.ring, pixels)
       texture.needsUpdate = true

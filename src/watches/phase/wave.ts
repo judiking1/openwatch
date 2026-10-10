@@ -34,6 +34,10 @@ export type WaveSim = {
   sourcePhase: Float32Array
   /** Drive strength, 0..1 (0 switches the emitters off). */
   drive: number
+  /** A touch on the crystal: one more source, at this cell, fading in and out. */
+  touchCell: number
+  touchTarget: number
+  touch: number
   time: number
 }
 
@@ -70,6 +74,9 @@ export function createWaveSim(n: number, wavelength: number): WaveSim {
     sourceCell,
     sourcePhase: new Float32Array(EMITTERS),
     drive: 1,
+    touchCell: -1,
+    touchTarget: 0,
+    touch: 0,
     time: 0,
   }
 }
@@ -86,6 +93,26 @@ export function aimWaves(sim: WaveSim, focus: { x: number; y: number }) {
     const y = cellCentre(sim, Math.floor(c / sim.n))
     sim.sourcePhase[e] = -k * Math.hypot(focus.x - x, focus.y - y)
   }
+}
+
+/** A touch is as strong as this many emitters: a finger in the water stirs it visibly. */
+export const TOUCH_STRENGTH = 6
+/** Time constant of a touch source fading in and out, seconds. */
+export const TOUCH_FADE = 0.25
+
+/**
+ * Starts (or moves) a touch source at dial point `point`, or fades it out (`null`). Points
+ * outside the wall are ignored.
+ */
+export function setTouch(sim: WaveSim, point: { x: number; y: number } | null) {
+  if (!point || Math.hypot(point.x, point.y) >= WALL - sim.dx) {
+    sim.touchTarget = 0
+    return
+  }
+  const i = Math.floor((point.x + WALL) / sim.dx)
+  const j = Math.floor((point.y + WALL) / sim.dx)
+  sim.touchCell = j * sim.n + i
+  sim.touchTarget = 1
 }
 
 /** Strength of each emitter's force (arbitrary units; display and reading normalise). */
@@ -110,6 +137,10 @@ export function stepWave(sim: WaveSim) {
   const w = 2 * Math.PI * FREQUENCY * (sim.time + dt)
   for (let e = 0; e < EMITTERS; e++) {
     prev[sim.sourceCell[e]] += sim.drive * SOURCE * dt * dt * Math.cos(w - sim.sourcePhase[e])
+  }
+  sim.touch += (sim.touchTarget - sim.touch) * (1 - Math.exp(-dt / TOUCH_FADE))
+  if (sim.touchCell >= 0 && sim.touch > 1e-3) {
+    prev[sim.touchCell] += sim.touch * TOUCH_STRENGTH * SOURCE * dt * dt * Math.cos(w)
   }
   sim.prev = cur
   sim.cur = prev

@@ -24,7 +24,18 @@ import {
   atomicLoad,
 } from 'three/tsl'
 import { EMITTER_RING, EMITTERS, FIELD_RADIUS, FREQUENCY } from './phase'
-import { aimWaves, AMP_TAU, createWaveSim, DAMPING, SIM_DT, SOURCE, WALL } from './wave'
+import {
+  aimWaves,
+  AMP_TAU,
+  createWaveSim,
+  DAMPING,
+  setTouch,
+  SIM_DT,
+  SOURCE,
+  TOUCH_FADE,
+  TOUCH_STRENGTH,
+  WALL,
+} from './wave'
 import { WAVE_FIELDS, type WaveField, type WaveKind } from './waveField'
 import { loose as n, type AnyNode } from '../../three/utils/tsl'
 
@@ -46,9 +57,11 @@ export function createComputeWaves(kind: WaveKind): WaveField {
   const b = instancedArray(cells, 'float')
   const power = instancedArray(cells, 'float')
   const inside = instancedArray(Float32Array.from(geometry.inside), 'float')
-  const sources = instancedArray(EMITTERS * 2, 'float')
+  // Per source: grid cell, drive phase, weight. The last one is the touch.
+  const SOURCES = EMITTERS + 1
+  const sources = instancedArray(SOURCES * 3, 'float')
   const peak = instancedArray(1, 'uint').toAtomic()
-  const u = { w: uniform(0), drive: uniform(1) }
+  const u = { w: uniform(0) }
 
   const texture = new StorageTexture(N, N)
   // Half floats: R3F tags `map` textures sRGB, and 8-bit sRGB formats cannot be storage-bound.
@@ -98,18 +111,19 @@ export function createComputeWaves(kind: WaveKind): WaveField {
       })
     }),
     Fn(() => {
-      If(instanceIndex.greaterThanEqual(EMITTERS), () => {
+      If(instanceIndex.greaterThanEqual(SOURCES), () => {
         Return()
       })
-      const cell = int(n(sources.element(instanceIndex.mul(2)))).toVar()
-      const phase = n(sources.element(instanceIndex.mul(2).add(1)))
+      const cell = int(n(sources.element(instanceIndex.mul(3)))).toVar()
+      const phase = n(sources.element(instanceIndex.mul(3).add(1)))
+      const weight = n(sources.element(instanceIndex.mul(3).add(2)))
       const target = n(prev.element(cell))
       target.addAssign(
         cos(u.w.sub(phase))
-          .mul(u.drive)
+          .mul(weight)
           .mul(SOURCE * SIM_DT * SIM_DT),
       )
-    })().compute(EMITTERS, [32]),
+    })().compute(SOURCES, [64]),
     perCell((i) => {
       const v = n(prev.element(i))
       const p = n(power.element(i))
@@ -163,14 +177,22 @@ export function createComputeWaves(kind: WaveKind): WaveField {
   let time = 0
   return {
     texture,
-    advance(renderer, focus, count) {
+    advance(renderer, focus, touch, count) {
       const gl = renderer as WebGPURenderer
       aimWaves(geometry, focus)
+      setTouch(geometry, touch)
+      // The touch fades as in stepWave, once per call instead of per step.
+      const fade = 1 - Math.exp((-count * SIM_DT) / TOUCH_FADE)
+      geometry.touch += (geometry.touchTarget - geometry.touch) * fade
       const data = sources.value.array as Float32Array
       for (let e = 0; e < EMITTERS; e++) {
-        data[e * 2] = geometry.sourceCell[e]
-        data[e * 2 + 1] = geometry.sourcePhase[e]
+        data[e * 3] = geometry.sourceCell[e]
+        data[e * 3 + 1] = geometry.sourcePhase[e]
+        data[e * 3 + 2] = 1
       }
+      data[EMITTERS * 3] = Math.max(0, geometry.touchCell)
+      data[EMITTERS * 3 + 1] = 0
+      data[EMITTERS * 3 + 2] = geometry.touchCell >= 0 ? geometry.touch * TOUCH_STRENGTH : 0
       sources.value.needsUpdate = true
       for (let s = 0; s < count; s++) {
         time += SIM_DT

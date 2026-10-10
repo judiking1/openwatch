@@ -43,6 +43,16 @@ As time passes only the delays change; the foci glide round the dial with nothin
   re-form after a jump; on mount the solver runs its warm-up (12 s / 18 s of wave time) fast
   over the first frames, so the waves visibly spread out from the emitters.
 
+## Touch
+
+Touching the crystal (or hovering over it with a mouse) dips a finger in the water: a third
+source at that point (`setTouch`, as strong as six emitters, fading in and out over a
+quarter of a second) sends rings out across both fields. Its waves interfere with the
+array's, so the foci shimmer while you touch — lift the finger and they settle again. The
+waves hold still while the watch's time is paused, so a touch only stirs a running watch.
+Both solvers support it (on the GPU it is one more entry in the source buffer). The touch
+surface is the shared `TouchSurface` part, also used by Plasma.
+
 ## Rendering
 
 Two additive planes, each showing one field (greyscale crests tinted by the material colour,
@@ -62,5 +72,4 @@ found (October 2026).
 
 ## Next
 
-A touch on the crystal as a third source; emitters that can be switched off one by one to
-show how the focus degrades.
+Emitters that can be switched off one by one to show how the focus degrades.

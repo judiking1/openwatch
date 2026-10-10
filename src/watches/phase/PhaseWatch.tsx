@@ -4,6 +4,7 @@ import { AdditiveBlending, Color, type Group } from 'three'
 import { useClockFrame, useDialTexture } from '../../three/hooks'
 import { Crystal } from '../../three/parts/Crystal'
 import { PrintLayer } from '../../three/parts/PrintLayer'
+import { TouchSurface, type TouchPoint } from '../../three/parts/TouchSurface'
 import { WatchCase } from '../../three/parts/WatchCase'
 import { rendererKind } from '../../three/renderer'
 import {
@@ -99,6 +100,8 @@ export function PhaseWatch({ appearance }: { appearance: PhaseAppearance }) {
   const scales = useDialTexture(DIAL_RADIUS, drawScales, [])
   const gl = useThree((state) => state.gl)
   const fields = useWaveFields(rendererKind(gl).compute)
+  // A touch on the crystal is a third wave source, in both fields.
+  const touch = useRef<TouchPoint | null>(null)
   const clock = useRef({ last: NaN, carry: 0, warm: { hour: 0, minute: 0 } })
   useEffect(() => {
     // New fields start empty: run their warm-up quickly over the next frames.
@@ -130,7 +133,12 @@ export function PhaseWatch({ appearance }: { appearance: PhaseAppearance }) {
       for (const kind of KINDS) {
         const catchUp = Math.min(c.warm[kind], CATCH_UP)
         c.warm[kind] -= catchUp
-        fields[kind].advance(gl, polar(WAVE_FIELDS[kind].ring, pose[kind]), steps + catchUp)
+        fields[kind].advance(
+          gl,
+          polar(WAVE_FIELDS[kind].ring, pose[kind]),
+          touch.current,
+          steps + catchUp,
+        )
       }
     }
     if (second.current) second.current.rotation.z = dialRotationZ(pose.second)
@@ -183,6 +191,7 @@ export function PhaseWatch({ appearance }: { appearance: PhaseAppearance }) {
         </mesh>
       </group>
 
+      <TouchSurface onTouch={(p) => void (touch.current = p)} />
       <Crystal {...appearance} />
     </WatchCase>
   )

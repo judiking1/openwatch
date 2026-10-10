@@ -8,6 +8,7 @@ import {
   createWaveSim,
   DAMPING,
   ringPeak,
+  setTouch,
   stepWave,
   strongestAngle,
   WALL,
@@ -73,5 +74,25 @@ describe('wave equation', () => {
       best = Math.max(best, out[(j * sim.n + i) * 4])
     }
     expect(best).toBeGreaterThan(180)
+  })
+})
+
+describe('touch source', () => {
+  it('a touch sends out waves of its own and fades out when lifted', () => {
+    const sim = createWaveSim(96, HOUR_WAVE)
+    sim.drive = 0
+    setTouch(sim, { x: 40, y: 0 })
+    for (let s = 0; s < 5 * 60; s++) stepWave(sim)
+    expect(amplitudeAt(sim, 40, 0)).toBeGreaterThan(0)
+    expect(amplitudeAt(sim, 0, 0)).toBeGreaterThan(0)
+    setTouch(sim, null)
+    for (let s = 0; s < 60; s++) stepWave(sim)
+    expect(sim.touch).toBeLessThan(0.02)
+  })
+
+  it('ignores touches outside the wall', () => {
+    const sim = createWaveSim(96, HOUR_WAVE)
+    setTouch(sim, { x: 95, y: 0 })
+    expect(sim.touchTarget).toBe(0)
   })
 })
